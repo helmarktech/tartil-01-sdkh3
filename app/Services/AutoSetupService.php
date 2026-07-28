@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\Guru;
+use App\Models\JurnalHarian;
+use App\Models\Kelas;
+use App\Models\KopSuratRapor;
+use App\Models\Siswa;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use App\Models\KopSurat;
+use Illuminate\Support\Facades\Schema;
 
 class AutoSetupService
 {
@@ -34,15 +37,18 @@ class AutoSetupService
 
         $results[] = static::step('Menjalankan migrasi database', function () {
             Artisan::call('migrate', ['--force' => true]);
-            return 'Migrasi berhasil: ' . trim(Artisan::output());
+
+            return 'Migrasi berhasil: '.trim(Artisan::output());
         });
 
         $results[] = static::step('Membuat queue table', function () {
-            if (!Schema::hasTable('jobs')) {
+            if (! Schema::hasTable('jobs')) {
                 Artisan::call('queue:table');
                 Artisan::call('migrate', ['--force' => true]);
+
                 return 'Queue table dibuat';
             }
+
             return 'Queue table sudah ada';
         });
 
@@ -64,13 +70,15 @@ class AutoSetupService
 
         $results[] = static::step('Menjalankan R2 precalculate pertama', function () {
             Artisan::call('r2:precalculate');
-            return 'R2 precalculate selesai: ' . trim(Artisan::output());
+
+            return 'R2 precalculate selesai: '.trim(Artisan::output());
         });
 
         $results[] = static::step('Clear dan cache ulang', function () {
             Artisan::call('config:cache');
             Artisan::call('route:cache');
             Artisan::call('view:cache');
+
             return 'Config, route, view dicache';
         });
 
@@ -86,6 +94,7 @@ class AutoSetupService
     {
         try {
             $message = $callback();
+
             return ['status' => 'success', 'label' => $label, 'message' => $message];
         } catch (\Throwable $e) {
             return ['status' => 'error', 'label' => $label, 'message' => $e->getMessage()];
@@ -121,11 +130,13 @@ class AutoSetupService
      */
     public static function checkPerformanceIndexes(): bool
     {
-        if (!Schema::hasTable('jurnal_harians')) return false;
-        
-        $indexes = DB::select("SHOW INDEX FROM jurnal_harians");
+        if (! Schema::hasTable('jurnal_harians')) {
+            return false;
+        }
+
+        $indexes = DB::select('SHOW INDEX FROM jurnal_harians');
         $indexNames = array_column($indexes, 'Key_name');
-        
+
         return in_array('idx_jurnal_siswa_bulan', $indexNames);
     }
 
@@ -143,7 +154,7 @@ class AutoSetupService
     public static function checkKopSurat(): bool
     {
         try {
-            return KopSurat::count() > 0;
+            return KopSuratRapor::count() > 0;
         } catch (\Throwable $e) {
             return false;
         }
@@ -171,12 +182,14 @@ class AutoSetupService
 
         $added = 0;
         foreach ($indexes as $table => $tableIndexes) {
-            if (!Schema::hasTable($table)) continue;
-            
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
             $existing = array_column(DB::select("SHOW INDEX FROM {$table}"), 'Key_name');
-            
+
             foreach ($tableIndexes as $name => $columns) {
-                if (!in_array($name, $existing)) {
+                if (! in_array($name, $existing)) {
                     try {
                         DB::statement("CREATE INDEX {$name} ON {$table} ({$columns})");
                         $added++;
@@ -256,11 +269,11 @@ class AutoSetupService
     protected static function createDefaultKopSurat(): string
     {
         try {
-            if (KopSurat::count() > 0) {
+            if (KopSuratRapor::count() > 0) {
                 return 'Kop surat sudah ada';
             }
 
-            KopSurat::create([
+            KopSuratRapor::create([
                 'judul' => 'LAPORAN HASIL PEMBELAJARAN TARTIL',
                 'sub_judul' => 'MADRASAH DINIYAH / TPQ',
                 'nama_sekolah' => 'Nama Sekolah Anda',
@@ -268,7 +281,7 @@ class AutoSetupService
                 'telepon' => '(021) 1234567',
                 'email' => 'sekolah@email.com',
                 'website' => 'www.sekolah.sch.id',
-                'tahun_ajaran' => date('Y') . '/' . (date('Y') + 1),
+                'tahun_ajaran' => date('Y').'/'.(date('Y') + 1),
                 'catatan_kaki' => 'Laporan ini merupakan hasil penilaian pembelajaran tartil selama satu semester.',
                 'kepala_sekolah' => 'Nama Kepala Sekolah',
                 'nip_kepala_sekolah' => 'NIP. 1234567890',
@@ -276,7 +289,7 @@ class AutoSetupService
 
             return 'Kop surat default dibuat';
         } catch (\Throwable $e) {
-            return 'Error kop surat: ' . $e->getMessage();
+            return 'Error kop surat: '.$e->getMessage();
         }
     }
 
@@ -286,13 +299,13 @@ class AutoSetupService
     public static function getSystemStatus(): array
     {
         $status = [];
-        
+
         try {
-            $dbSize = DB::selectOne("
+            $dbSize = DB::selectOne('
                 SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size
                 FROM information_schema.tables
                 WHERE table_schema = DATABASE()
-            ");
+            ');
             $status['db_size_mb'] = $dbSize->size ?? 0;
         } catch (\Throwable $e) {
             $status['db_size_mb'] = 0;
@@ -314,10 +327,10 @@ class AutoSetupService
         // Statistik data
         try {
             $status['stats'] = [
-                'total_siswa' => \App\Models\Siswa::count(),
-                'total_guru' => \App\Models\Guru::count(),
-                'total_kelas' => \App\Models\Kelas::count(),
-                'total_jurnal' => \App\Models\JurnalHarian::count(),
+                'total_siswa' => Siswa::count(),
+                'total_guru' => Guru::count(),
+                'total_kelas' => Kelas::count(),
+                'total_jurnal' => JurnalHarian::count(),
                 'total_jurnal_bulanan' => DB::table('rekap_jurnal_bulanans')->count(),
                 'r2_cached' => DB::table('rekap_r2_akhirs')->count(),
                 'activity_logs' => DB::table('activity_logs')->count(),
@@ -337,9 +350,10 @@ class AutoSetupService
         try {
             DB::table('rekap_r2_akhirs')->truncate();
             Artisan::call('r2:precalculate');
-            return 'R2 cache di-reset dan dihitung ulang: ' . trim(Artisan::output());
+
+            return 'R2 cache di-reset dan dihitung ulang: '.trim(Artisan::output());
         } catch (\Throwable $e) {
-            return 'Error: ' . $e->getMessage();
+            return 'Error: '.$e->getMessage();
         }
     }
 
@@ -351,7 +365,7 @@ class AutoSetupService
         try {
             $exitCode = Artisan::call($command, $options);
             $output = trim(Artisan::output());
-            
+
             return [
                 'status' => $exitCode === 0 ? 'success' : 'warning',
                 'exit_code' => $exitCode,

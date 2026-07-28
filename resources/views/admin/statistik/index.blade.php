@@ -174,6 +174,59 @@
         </div>
     </div>
 
+    {{-- ══════ TAHFIDZ RINGKASAN ══════ --}}
+    @if(!empty($chartData['tahfidz']) && ($chartData['tahfidz']['totalKelasTahfidz'] ?? 0) > 0)
+    <div class="stat-card" style="margin-bottom: 24px;">
+        <div class="stat-card-title">&#128218; Tahfidz — Ringkasan Kumulatif</div>
+        <div class="summary-grid">
+            <div class="summary-box">
+                <div class="val">{{ $chartData['tahfidz']['totalKelasTahfidz'] ?? 0 }}</div>
+                <div class="lbl">Kelas Tahfidz</div>
+            </div>
+            <div class="summary-box">
+                <div class="val">{{ $chartData['tahfidz']['totalSiswaTahfidz'] ?? 0 }}</div>
+                <div class="lbl">Siswa Tahfidz</div>
+            </div>
+            <div class="summary-box">
+                <div class="val">{{ $chartData['tahfidz']['totalJuzEntries'] ?? 0 }}</div>
+                <div class="lbl">Total Setoran Juz</div>
+            </div>
+            <div class="summary-box">
+                <div class="val">
+                    {{ !empty($chartData['tahfidz']['perKelas']) ? round(collect($chartData['tahfidz']['perKelas'])->avg('avgJuz'), 1) : 0 }}
+                </div>
+                <div class="lbl">Rata-rata Juz per Kelas</div>
+            </div>
+        </div>
+
+        @if(!empty($chartData['tahfidz']['perKelas']))
+        <div style="margin-top: 16px;">
+            <div style="font-size: 12px; font-weight: 700; color: #555; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Per Kelas</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+                @foreach($chartData['tahfidz']['perKelas'] as $kelas)
+                <div style="background: #f8faf8; border-radius: 8px; padding: 14px; border-left: 3px solid #0c8a5f;">
+                    <div style="font-weight: 700; color: #1a1a2e; font-size: 14px;">{{ $kelas['nama'] }}</div>
+                    <div style="font-size: 11px; color: #888; margin-bottom: 10px;">Guru: {{ $kelas['guru'] }} &middot; {{ $kelas['totalSiswa'] }} siswa</div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+                        <span style="color: #555;">Rata-rata juz</span>
+                        <span style="font-weight: 700; color: #0c8a5f;">{{ $kelas['avgJuz'] }}</span>
+                    </div>
+                    @if(!empty($kelas['topSiswa']))
+                    <div style="font-size: 10px; color: #555; margin-top: 8px; line-height: 1.5;">
+                        <span style="font-weight: 600;">Top:</span>
+                        @foreach($kelas['topSiswa'] as $s)
+                            {{ $s['siswa']['nama'] ?? '-' }} ({{ $s['juzHafal'] }} juz){{ !$loop->last ? ', ' : '' }}
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+    </div>
+    @endif
+
     {{-- ══════ PER TA: Ringkasan + Munaqosyah ══════ --}}
     @foreach($chartData['taLabels'] as $taIdx => $ta)
         @php

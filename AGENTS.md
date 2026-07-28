@@ -24,7 +24,7 @@ Fitur inti meliputi:
 - Ujian munaqosyah dengan pendaftaran dan approval.
 - Manajemen tahun ajaran dan semester (ganjil/genap).
 - Hari libur per kelas.
-- Tahfidz: tracking hafalan siswa.
+- Tahfidz: tracking hafalan siswa per juz 1–30 (tidak harus berurutan), dengan rekap per semester yang membedakan total siswa, siswa sudah hafal, dan siswa tuntas per juz.
 - Audit trail perubahan data via `activity_logs`.
 
 ---
@@ -33,7 +33,7 @@ Fitur inti meliputi:
 
 - **Framework Backend:** Laravel 13.x (PHP ^8.3).
 - **Frontend:** Blade templates, Tailwind CSS v4, Vite.
-  - Catatan: file entry Vite (`resources/css/app.css` dan `resources/js/app.js`) serta hasil build (`public/build`) saat ini **belum ada** di repositori. Halaman publik/landing (`resources/views/landing.blade.php`) menggunakan inline CSS dan Google Fonts, tidak bergantung pada build Vite.
+  - File entry Vite (`resources/css/app.css` dan `resources/js/app.js`) sudah tersedia; hasil build (`public/build`) di-generate saat `npm run build` dan di-gitignore.
 - **Database:** MySQL/MariaDB (default `.env`), SQLite untuk testing.
 - **Dependensi Utama:**
   - `laravel/framework` ^13.0
@@ -185,7 +185,14 @@ php artisan test
 
 Konfigurasi PHPUnit ada di `phpunit.xml`. Saat test, aplikasi menggunakan SQLite in-memory (`:memory:`) dengan environment `testing`.
 
-> Saat ini test suite hanya berisi `ExampleTest.php` kosong di `tests/Unit/` dan `tests/Feature/`. Tambahkan test nyata jika mengubah logika penting.
+Test suite saat ini mencakup:
+
+- `tests/Unit/ExampleTest.php`
+- `tests/Feature/ExampleTest.php`
+- `tests/Feature/TahfidzKumulatifTest.php` — memastikan hafalan Tahfidz kumulatif antar semester/TA dan pemilihan juz 1–30 berfungsi.
+- `tests/Feature/DataAmanTutupSemesterTest.php` — memastikan data jurnal, munaqosyah, penilaian rapor, dan tahfidz tidak hilang saat semester ditutup.
+
+> Migration yang mengandung raw SQL khusus MySQL (`SHOW COLUMNS`, `ALTER TABLE ... MODIFY`, dsb.) sudah dibungkus dengan pengecekan driver agar test SQLite bisa berjalan, tanpa mengubah perilaku di MySQL/MariaDB.
 
 ### Code Style
 
@@ -291,11 +298,14 @@ Proyek ini memiliki dokumen arsitektur tersendiri:
 | `perpindahan_kelas` | Riwayat perpindahan kelas tartil |
 | `kelas_liburs` | Hari libur per kelas |
 | `hafalan_tahfidzs` / `rekap_tahfidz_semesters` | Tracking hafalan |
+| `juz_surats` | Mapping surat-ayat per juz untuk perhitungan persentase hafalan |
 | `activity_logs` | Audit trail perubahan data |
 | `kop_surat_rapors` | Pengaturan kop surat rapor PDF |
 | `semester_audit_logs` | Log proses lock/snapshot semester |
 
 ### Seeding
+
+:heavy_check_mark: Data transaksional (jurnal, munaqosyah, penilaian rapor, tahfidz) **tidak dihapus** saat semester/TA ditutup. Hanya flag status semester yang berubah.
 
 ```bash
 php artisan migrate --seed
@@ -309,6 +319,40 @@ php artisan migrate --seed
 4. `SuratSeeder`
 5. `Siswa30Seeder`
 6. `JurnalPenilaianMunaqosyahSeeder`
+
+### Seeder Minimal (Deploy Production Baru)
+
+Untuk deploy aplikasi baru tanpa data dummy, gunakan `DatabaseSeederMinimal`:
+
+```bash
+php artisan db:seed --class=DatabaseSeederMinimal
+```
+
+Yang di-seed:
+
+1. `KelasRegulerOnlySeeder` — kelas reguler 1A–6B saja.
+2. `AdminOnlySeeder` — satu akun admin `admin@tartil.id` / `admin123`.
+3. `SuratSeeder` — data surat Al-Quran.
+4. `KopSuratRaporSeeder` — kop surat default.
+5. `IndikatorSeeder` — indikator penilaian default per jenis kelas.
+6. `JuzSuratSeeder` — mapping surat-ayat per juz untuk perhitungan persentase hafalan.
+
+Yang **tidak** di-seed (admin buat sendiri via dashboard):
+- Tahun Ajaran & Semester
+- Guru & Kelas Tartil
+- Siswa
+- Jurnal, Penilaian, Munaqosyah, Tahfidz
+
+### Snapshot Semester
+
+Saat semester ditutup, sistem dapat membuat snapshot di tabel berikut (data asli tetap utuh):
+
+| Tabel Snapshot | Sumber Data |
+|------------------|-------------|
+| `rekap_jurnal_semesters` | `jurnal_harians` |
+| `rekap_munaqosyah_semesters` | `ujian_munaqosyahs` + `munaqosyah_pendaftarans` |
+| `rekap_tahfidz_semesters` | `hafalan_tahfidzs` |
+| `rekap_riwayat_semesters` | `perpindahan_kelas`, `kenaikan_kelas_regulers` |
 
 ---
 
@@ -363,6 +407,18 @@ php artisan migrate --seed
 - `SessionFallbackServiceProvider` otomatis mengalihkan `SESSION_DRIVER=database` ke `file` jika tabel `sessions` belum ada.
 - Command `session:fix` tersedia untuk diagnosa manual.
 
+### 8.8 Tahfidz
+
+- Tracking hafalan per siswa per juz (1–30), tidak harus berurutan (misal: Juz 30 bisa didahulukan).
+- Persentase hafalan dihitung berdasarkan mapping `juz_surats` (total ayat per juz).
+- Hafalan dengan status `hafal` atau `murajaah` dihitung sebagai ayat yang sudah dikuasai.
+- Perhitungan kumulatif menggunakan `tanggal_hafalan <= tanggal_selesai semester`, sehingga hafalan semester/TA lalu tetap masuk di semester berikutnya.
+- Rekap admin per semester membedakan:
+  - Total siswa di kelas jenis Tahfidz.
+  - Siswa yang sudah hafal juz tertentu (punya setoran `hafal`).
+  - Siswa yang tuntas (persentase ≥ 100%).
+- Halaman rekap semester berada di `/admin/tahfidz/rekap-semester` (`TahfidzController::adminRekapSemester`).
+
 ---
 
 ## 9. Keamanan
@@ -383,23 +439,24 @@ php artisan migrate --seed
 1. Salin `.env.example` ke `.env` dan isi dengan konfigurasi production.
 2. Generate key: `php artisan key:generate`.
 3. Jalankan migrasi: `php artisan migrate --force`.
-4. Jalankan seeder pertama kali jika database kosong: `php artisan db:seed`.
+4. Jalankan seeder pertama kali jika database kosong:
+   - Untuk development/demo: `php artisan db:seed` (menggunakan `DatabaseSeeder`).
+   - Untuk production/deploy baru: `php artisan db:seed --class=DatabaseSeederMinimal` (hanya admin, kelas reguler, surat, indikator, juz mapping).
 5. Jalankan setup sistem dari admin panel (`/admin/system/setup`) atau via command `php artisan migrate --force` + `php artisan r2:precalculate`.
 6. Buat symbolic link storage: `php artisan storage:link`.
-7. Pastikan file entry Vite (`resources/css/app.css`, `resources/js/app.js`) tersedia, lalu build: `npm run build`.
+7. Jalankan build: `npm install && npm run build` (file entry Vite sudah tersedia).
 8. Cache config, route, view: `php artisan config:cache`, `php artisan route:cache`, `php artisan view:cache`.
 9. Atur queue worker jika menggunakan queue untuk PDF/R2: `php artisan queue:work`.
 
 ### Catatan Vite
 
-File `vite.config.js` mereferensikan `resources/css/app.css` dan `resources/js/app.js`. Namun, kedua direktori/file tersebut **belum ada** di repositori. Halaman landing menggunakan inline CSS dan Google Fonts. Sebelum menjalankan `npm run build`, pastikan file entry Vite sudah dibuat atau sesuaikan konfigurasi Vite.
+File entry Vite (`resources/css/app.css` dan `resources/js/app.js`) sudah tersedia. Jalankan `npm install && npm run build` saat deploy; hasil build (`public/build`) di-generate dan di-gitignore.
 
 ---
 
 ## 11. Known Issues & Catatan Penting
 
-- **`App\Services\AutoSetupService` mereferensikan model `KopSurat`** (baris `use App\Models\KopSurat;` dan pemanggilan `KopSurat::count()` / `KopSurat::create()`), tetapi file model yang ada adalah `App\Models\KopSuratRapor.php`. Jika setup sistem dipanggil, bagian pembuatan default kop surat kemungkinan akan error. Sesuaikan nama class sebelum digunakan.
-- **Test suite masih minimal** — hanya `ExampleTest.php`. Tambahkan test unit/feature saat mengubah logika inti.
+- **Test suite sudah berkembang** — kini terdapat `TahfidzKumulatifTest` dan `DataAmanTutupSemesterTest`. Tambahkan test baru saat mengubah logika inti.
 - **Performance jurnal** — perhatikan query N+1 saat data siswa/jurnal besar. Gunakan `cursor()`, `chunk()`, dan eager load sesuai rekomendasi di `ANALISIS_SISTEM_TARTIL.md`.
 - **Mobile responsiveness** — beberapa form panjang masih perlu disesuaikan untuk layar kecil.
 - **File `name('daftar-jurnal')`** ada di root repositori dan tampaknya merupakan file tidak sengaja yang tidak berfungsi; bisa dihapus.
