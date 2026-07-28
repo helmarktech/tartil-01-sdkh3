@@ -15,7 +15,18 @@ return [
     |
     */
 
-    'default' => env('CACHE_STORE', env('CACHE_DRIVER', 'array')),
+    'default' => env('CACHE_STORE', env('CACHE_DRIVER', 'file')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Path
+    |--------------------------------------------------------------------------
+    |
+    | Used by the file cache driver. Some PaaS environments (e.g. Laravel Cloud)
+    | require an absolute, writable path during build. Set CACHE_PATH in env.
+    |
+    */
+    'path' => env('CACHE_PATH', storage_path('framework/cache/data')),
 
     /*
     |--------------------------------------------------------------------------
@@ -49,8 +60,8 @@ return [
 
         'file' => [
             'driver' => 'file',
-            'path' => storage_path('framework/cache/data'),
-            'lock_path' => storage_path('framework/cache/data'),
+            'path' => env('CACHE_PATH', storage_path('framework/cache/data')),
+            'lock_path' => env('CACHE_PATH', storage_path('framework/cache/data')),
         ],
 
         'storage' => [
