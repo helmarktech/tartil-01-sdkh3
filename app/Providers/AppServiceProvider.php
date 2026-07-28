@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,6 +15,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Gunakan Tailwind untuk komponen pagination Laravel
+        Paginator::useTailwind();
+
         // ════════════════════════════════════════════
         // GATE: Laravel Pulse — hanya email tertentu
         // ════════════════════════════════════════════
@@ -34,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
             $token = request('pulse_token');
             if ($token) {
                 return hash_equals(
-                    hash('sha256', $allowedEmail . config('app.key')),
+                    hash('sha256', $allowedEmail.config('app.key')),
                     $token
                 );
             }
