@@ -328,3 +328,10 @@ Route::middleware(['auth:siswa'])->prefix('siswa')->name('siswa.')->group(functi
     Route::get('/rapor', [RaporController::class, 'pdfRaporSiswaSendiri'])->name('rapor');
     Route::get('/hafalan', [SiswaDashboardController::class, 'hafalan'])->name('hafalan');
 });
+
+// ════════════════════════════════════════════
+// LARAVEL PULSE — Monitoring (protected by Gate)
+// ════════════════════════════════════════════
+// Akses via: /pulse (production) atau /pulse?pulse_token=<token>
+// Generate token: php artisan pulse:token
+// ════════════════════════════════════════════
