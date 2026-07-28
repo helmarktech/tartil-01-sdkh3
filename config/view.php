@@ -30,7 +30,7 @@ return [
 
     'compiled' => env(
         'VIEW_CACHE_PATH',
-        env('VIEW_COMPILED_PATH', realpath(storage_path('framework/views')))
+        env('VIEW_COMPILED_PATH', storage_path('framework/views'))
     ),
 
 ];
