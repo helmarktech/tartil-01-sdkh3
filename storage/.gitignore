@@ -1,0 +1,8 @@
+/framework/cache/data/
+/framework/sessions/
+/framework/testing/
+/framework/views/
+/logs/*.log
+/logs/**/
+!/logs/.gitignore
+!/app/public/.gitignore

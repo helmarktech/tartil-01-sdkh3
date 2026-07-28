@@ -1,0 +1,544 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Guru;
+use App\Models\JurnalHarian;
+use App\Models\Kelas;
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\TahunAjaran;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class ProgressJurnalController extends Controller
+{
+    // ═══════════════════════════════════════════════════
+    // PROGRESS JURNAL — 4 step: TA → Semester → Guru → Kelas
+    // ═══════════════════════════════════════════════════
+    public function progressJurnal(Request $request)
+    {
+        $step = $request->get('step', 'ta');
+        $ta = $request->get('ta');
+        $semesterId = $request->get('semester_id');
+        $guruId = $request->get('guru_id');
+        $kelasId = $request->get('kelas_id');
+
+        // Safety: jika step 'guru'/'kelas' tapi semester_id tidak ada, redirect ke pilih semester
+        if (($step === 'guru' || $step === 'kelas') && !$semesterId && $ta) {
+            return redirect()->route('admin.progress.jurnal', ['step' => 'semester', 'ta' => $ta]);
+        }
+
+        // Step 1: Pilih Tahun Ajaran
+        if ($step === 'ta' || !$ta) {
+            $tahunAjarans = TahunAjaran::orderBy('nama', 'desc')->get();
+            return view('admin.progress.jurnal', compact('step', 'tahunAjarans'));
+        }
+
+        // Step 2: Pilih Semester
+        if ($step === 'semester' || ($ta && !$semesterId)) {
+            $semesters = Semester::where('tahun_ajaran', $ta)
+                ->orderBy('tanggal_mulai')
+                ->get();
+            return view('admin.progress.jurnal', compact('step', 'ta', 'semesters'));
+        }
+
+        // Step 3: Pilih Guru
+        if ($step === 'guru' || ($semesterId && !$guruId && $step !== 'kelas')) {
+            // Ambil kelas yang punya jurnal atau siswa di semester ini
+            $kelasIdsJurnal = JurnalHarian::where('semester_id', $semesterId)
+                ->distinct('kelas_id')
+                ->pluck('kelas_id')
+                ->toArray();
+
+            $kelasIdsSiswa = \App\Models\SemesterSiswa::where('semester_id', $semesterId)
+                ->distinct('kelas_id')
+                ->pluck('kelas_id')
+                ->toArray();
+
+            $kelasIds = array_unique(array_merge($kelasIdsJurnal, $kelasIdsSiswa));
+
+            // Ambil guru yang mengajar kelas-kelas tersebut
+            $gurus = Guru::whereHas('kelas', fn($q) => $q->whereIn('id', $kelasIds))
+                ->with(['kelas' => fn($q) => $q->whereIn('id', $kelasIds)])
+                ->get();
+
+            // Hitung progress jurnal: distinct tanggal / target 20
+            foreach ($gurus as $guru) {
+                foreach ($guru->kelas as $kelas) {
+                    $kelas->progressJurnal = $this->hitungProgressJurnal($kelas->id, [$semesterId]);
+                }
+            }
+
+            $semester = Semester::find($semesterId);
+            return view('admin.progress.jurnal', compact('step', 'ta', 'semesterId', 'semester', 'gurus'));
+        }
+
+        // Step 4: Detail per Kelas
+        if ($step === 'kelas' && $kelasId) {
+            $semester = Semester::find($semesterId);
+            $kelas = Kelas::with('guru')->findOrFail($kelasId);
+
+            // Ambil siswa dari snapshot + jurnal
+            $siswaIdsSemester = \App\Models\SemesterSiswa::where('semester_id', $semesterId)
+                ->where('kelas_id', $kelasId)
+                ->pluck('siswa_id')
+                ->unique()
+                ->toArray();
+
+            $siswaIdsJurnal = JurnalHarian::where('kelas_id', $kelasId)
+                ->where('semester_id', $semesterId)
+                ->distinct('siswa_id')
+                ->pluck('siswa_id')
+                ->toArray();
+
+            $siswaIds = array_unique(array_merge($siswaIdsSemester, $siswaIdsJurnal));
+            $siswas = Siswa::whereIn('id', $siswaIds)
+                ->orderBy('nama')
+                ->get();
+
+            // Hitung progress kelas DULU (diperlukan untuk perhitungan persentase siswa reguler)
+            $progressKelas = $this->hitungProgressJurnal($kelasId, [$semesterId]);
+
+            // Detail jurnal per siswa (dengan penyesuaian siswa mutasi)
+            $semester = \App\Models\Semester::find($semesterId);
+            $detailSiswa = [];
+            foreach ($siswas as $siswa) {
+                $totalHari = JurnalHarian::where('siswa_id', $siswa->id)
+                    ->where('semester_id', $semesterId)
+                    ->count();
+
+                $countB = JurnalHarian::where('siswa_id', $siswa->id)
+                    ->where('semester_id', $semesterId)
+                    ->where('penilaian', 'B')
+                    ->count();
+                $countC = JurnalHarian::where('siswa_id', $siswa->id)
+                    ->where('semester_id', $semesterId)
+                    ->where('penilaian', 'C')
+                    ->count();
+                $countK = JurnalHarian::where('siswa_id', $siswa->id)
+                    ->where('semester_id', $semesterId)
+                    ->where('penilaian', 'K')
+                    ->count();
+
+                // Penyesuaian target untuk siswa mutasi
+                $targetDinamis = null;
+                $persenSiswa = 0;
+                if ($siswa->isMutasi && $semester) {
+                    $targetDinamis = $siswa->getTargetPertemuanDinamis($semester);
+                    if ($targetDinamis && $targetDinamis > 0) {
+                        $persenSiswa = min(100, round(($totalHari / $targetDinamis) * 100));
+                    }
+                } else {
+                    // Siswa reguler: persentase dari target kelas
+                    $persenSiswa = $progressKelas['target'] > 0
+                        ? min(100, round(($totalHari / $progressKelas['target']) * 100))
+                        : 0;
+                }
+
+                $detailSiswa[] = [
+                    'siswa' => $siswa,
+                    'total' => $totalHari,
+                    'B' => $countB,
+                    'C' => $countC,
+                    'K' => $countK,
+                    'is_mutasi' => $siswa->isMutasi,
+                    'tanggal_masuk' => $siswa->tanggal_masuk_kelas_tartil,
+                    'target_dinamis' => $targetDinamis,
+                    'persen_siswa' => $persenSiswa,
+                ];
+            }
+
+            return view('admin.progress.jurnal', compact(
+                'step', 'ta', 'semesterId', 'semester', 'guruId', 'kelas', 'detailSiswa', 'progressKelas'
+            ));
+        }
+
+        return redirect()->route('admin.progress.jurnal');
+    }
+
+    // ═══════════════════════════════════════════════════
+    // PROGRESS ABSENSI — 4 step: TA → Semester → Guru → Kelas
+    // ═══════════════════════════════════════════════════
+    public function progressAbsensi(Request $request)
+    {
+        $step = $request->get('step', 'ta');
+        $ta = $request->get('ta');
+        $semesterId = $request->get('semester_id');
+        $guruId = $request->get('guru_id');
+        $kelasId = $request->get('kelas_id');
+
+        // Safety: jika step 'guru'/'kelas' tapi semester_id tidak ada, redirect ke pilih semester
+        if (($step === 'guru' || $step === 'kelas') && !$semesterId && $ta) {
+            return redirect()->route('admin.progress.absensi', ['step' => 'semester', 'ta' => $ta]);
+        }
+
+        // Step 1: Pilih Tahun Ajaran
+        if ($step === 'ta' || !$ta) {
+            $tahunAjarans = TahunAjaran::orderBy('nama', 'desc')->get();
+            return view('admin.progress.absensi', compact('step', 'tahunAjarans'));
+        }
+
+        // Step 2: Pilih Semester
+        if ($step === 'semester' || ($ta && !$semesterId)) {
+            $semesters = Semester::where('tahun_ajaran', $ta)
+                ->orderBy('tanggal_mulai')
+                ->get();
+            return view('admin.progress.absensi', compact('step', 'ta', 'semesters'));
+        }
+
+        // Step 3: Pilih Guru
+        if ($step === 'guru' || ($semesterId && !$guruId && $step !== 'kelas')) {
+            $kelasIdsJurnal = JurnalHarian::where('semester_id', $semesterId)
+                ->distinct('kelas_id')
+                ->pluck('kelas_id')
+                ->toArray();
+
+            $kelasIdsSiswa = \App\Models\SemesterSiswa::where('semester_id', $semesterId)
+                ->distinct('kelas_id')
+                ->pluck('kelas_id')
+                ->toArray();
+
+            $kelasIds = array_unique(array_merge($kelasIdsJurnal, $kelasIdsSiswa));
+
+            $gurus = Guru::whereHas('kelas', fn($q) => $q->whereIn('id', $kelasIds))
+                ->with(['kelas' => fn($q) => $q->whereIn('id', $kelasIds)])
+                ->get();
+
+            // Hitung progress absensi: entry dengan penilaian / total entry
+            foreach ($gurus as $guru) {
+                foreach ($guru->kelas as $kelas) {
+                    $kelas->progressAbsensi = $this->hitungProgressAbsensi($kelas->id, [$semesterId]);
+                }
+            }
+
+            $semester = Semester::find($semesterId);
+            return view('admin.progress.absensi', compact('step', 'ta', 'semesterId', 'semester', 'gurus'));
+        }
+
+        // Step 4: Detail per Kelas
+        if ($step === 'kelas' && $kelasId) {
+            $semester = Semester::find($semesterId);
+            $kelas = Kelas::with('guru')->findOrFail($kelasId);
+
+            $siswaIdsSemester = \App\Models\SemesterSiswa::where('semester_id', $semesterId)
+                ->where('kelas_id', $kelasId)
+                ->pluck('siswa_id')
+                ->unique()
+                ->toArray();
+
+            $siswaIdsJurnal = JurnalHarian::where('kelas_id', $kelasId)
+                ->where('semester_id', $semesterId)
+                ->distinct('siswa_id')
+                ->pluck('siswa_id')
+                ->toArray();
+
+            $siswaIds = array_unique(array_merge($siswaIdsSemester, $siswaIdsJurnal));
+            $siswas = Siswa::whereIn('id', $siswaIds)
+                ->orderBy('nama')
+                ->get();
+
+            $detailSiswa = [];
+            foreach ($siswas as $siswa) {
+                $totalEntry = JurnalHarian::where('siswa_id', $siswa->id)
+                    ->where('semester_id', $semesterId)
+                    ->count();
+
+                $dinilai = JurnalHarian::where('siswa_id', $siswa->id)
+                    ->where('semester_id', $semesterId)
+                    ->whereNotNull('penilaian')
+                    ->count();
+
+                $belum = $totalEntry - $dinilai;
+
+                // Penyesuaian untuk siswa mutasi: totalEntry sudah otomatis
+                // lebih kecil karena jurnal sebelum tanggal masuk tidak ada
+                $detailSiswa[] = [
+                    'siswa' => $siswa,
+                    'total' => $totalEntry,
+                    'dinilai' => $dinilai,
+                    'belum' => $belum,
+                    'persen' => $totalEntry > 0 ? round(($dinilai / $totalEntry) * 100) : 0,
+                    'is_mutasi' => $siswa->isMutasi,
+                    'tanggal_masuk' => $siswa->tanggal_masuk_kelas_tartil,
+                ];
+            }
+
+            $progressKelas = $this->hitungProgressAbsensi($kelasId, [$semesterId]);
+
+            return view('admin.progress.absensi', compact(
+                'step', 'ta', 'semesterId', 'semester', 'guruId', 'kelas', 'detailSiswa', 'progressKelas'
+            ));
+        }
+
+        return redirect()->route('admin.progress.absensi');
+    }
+
+    // ═══════════════════════════════════════════════════
+    // MANAJEMEN HARI LIBUR PER KELAS
+    // ═══════════════════════════════════════════════════
+
+    /**
+     * Tandai hari libur untuk kelas tertentu.
+     */
+    public function liburStore(Request $request)
+    {
+        $validated = $request->validate([
+            'kelas_id' => 'required|exists:kelas,id',
+            'tanggal' => 'required|date',
+            'keterangan' => 'required|max:255',
+        ]);
+
+        $validated['created_by'] = auth()->id();
+
+        \App\Models\KelasLibur::firstOrCreate(
+            ['kelas_id' => $validated['kelas_id'], 'tanggal' => $validated['tanggal']],
+            $validated
+        );
+
+        return back()->with('success', 'Hari libur berhasil ditandai.');
+    }
+
+    /**
+     * Hapus tanda hari libur.
+     */
+    public function liburDestroy(\App\Models\KelasLibur $libur)
+    {
+        $libur->delete();
+        return back()->with('success', 'Tanda libur berhasil dihapus.');
+    }
+
+    // ═══════════════════════════════════════════════════
+    // MONITORING: Guru yang belum mengisi jurnal
+    // ═══════════════════════════════════════════════════
+
+    /**
+     * Monitoring guru yang belum mengisi jurnal.
+     *
+     * Logika (dengan penyesuaian hari libur per kelas):
+     * 1. Hitung hari kerja (Senin-Jumat) dari awal semester sampai hari ini
+     * 2. Kurangi hari libur yang sudah ditandai per kelas
+     * 3. Target per kelas = hari kerja − hari libur kelas tersebut
+     * 4. Terisi = distinct tanggal jurnal yang sudah ada
+     * 5. Kurang = target − terisi
+     */
+    public function monitoringGuru(Request $request)
+    {
+        $semesterAktif = Semester::aktif()->first();
+        if (!$semesterAktif) {
+            return view('admin.monitoring.guru', [
+                'semesterAktif' => null,
+                'dataGuru' => collect(),
+                'ringkasan' => [],
+            ]);
+        }
+
+        $endDate = min($semesterAktif->tanggal_selesai, now());
+
+        // Hitung hari kerja dasar (Senin-Jumat)
+        $hariKerjaDasar = $this->hitungHariKerja($semesterAktif->tanggal_mulai, $endDate);
+
+        // Ambil semua kelas aktif dengan guru
+        $kelasList = Kelas::where('status', 'aktif')
+            ->with(['guru', 'siswas' => fn($q) => $q->where('status', 'aktif')])
+            ->withCount(['siswas' => fn($q) => $q->where('status', 'aktif')])
+            ->get();
+
+        $dataGuru = [];
+        $totalKelasKurang = 0;
+        $totalHariKurang = 0;
+        $totalHariLibur = 0;
+
+        foreach ($kelasList as $kelas) {
+            $guru = $kelas->guru;
+            if (!$guru) continue;
+
+            // Hitung hari libur khusus kelas ini (dari tanggal_dibuat atau awal semester)
+            // Referensi tanggal mulai dari semester yang terhubung ke tahun ajaran
+            $semesterMulai = $semesterAktif->tanggal_mulai ?? $semesterAktif->tahunAjaran?->tanggal_mulai ?? now()->startOfYear();
+            $awalHitung = $kelas->getAwalHitungHari($semesterMulai);
+            $hariKerjaKelas = $this->hitungHariKerja($awalHitung, $endDate);
+            $hariLibur = $kelas->jumlahHariLibur($awalHitung, $endDate);
+            $targetHari = max(0, $hariKerjaKelas - $hariLibur);
+
+            // Distinct tanggal jurnal yang sudah ada untuk kelas ini
+            $terisi = JurnalHarian::where('kelas_id', $kelas->id)
+                ->where('semester_id', $semesterAktif->id)
+                ->distinct('tanggal')
+                ->count('tanggal');
+
+            $kurang = $targetHari - $terisi;
+
+            // Ambil tanggal terakhir mengisi jurnal
+            $terakhir = JurnalHarian::where('kelas_id', $kelas->id)
+                ->where('semester_id', $semesterAktif->id)
+                ->max('tanggal');
+
+            $dataGuru[$guru->id]['nama'] = $guru->nama;
+            $dataGuru[$guru->id]['inisial'] = $guru->initials ?? substr($guru->nama, 0, 1);
+            $dataGuru[$guru->id]['kelas'][] = [
+                'kelas' => $kelas,
+                'jumlah_siswa' => $kelas->siswas_count,
+                'hari_kerja' => $hariKerjaDasar,
+                'hari_libur' => $hariLibur,
+                'target_hari' => $targetHari,
+                'terisi' => $terisi,
+                'kurang' => max(0, $kurang),
+                'persen' => $targetHari > 0 ? min(100, round(($terisi / $targetHari) * 100)) : 0,
+                'terakhir' => $terakhir,
+            ];
+
+            $totalHariLibur += $hariLibur;
+
+            if ($kurang > 0) {
+                $totalKelasKurang++;
+                $totalHariKurang += $kurang;
+            }
+        }
+
+        // Urutkan: guru dengan kelas paling tertinggal di atas
+        uasort($dataGuru, function($a, $b) {
+            $minA = min(array_column($a['kelas'], 'persen'));
+            $minB = min(array_column($b['kelas'], 'persen'));
+            return $minA <=> $minB;
+        });
+
+        $ringkasan = [
+            'hari_kerja' => $hariKerjaDasar,
+            'total_hari_libur' => $totalHariLibur,
+            'total_kelas' => $kelasList->count(),
+            'total_kelas_kurang' => $totalKelasKurang,
+            'total_hari_kurang' => $totalHariKurang,
+        ];
+
+        return view('admin.monitoring.guru', compact('semesterAktif', 'dataGuru', 'ringkasan'));
+    }
+
+    /**
+     * Hitung hari kerja (Senin-Jumat) antara dua tanggal.
+     */
+    private function hitungHariKerja($mulai, $selesai): int
+    {
+        $count = 0;
+        $current = $mulai->copy();
+        $end = $selesai->copy();
+
+        while ($current->lte($end)) {
+            if ($current->isWeekday()) $count++;
+            $current->addDay();
+        }
+
+        return $count;
+    }
+
+    // ═══════════════════════════════════════════════════
+    // Helpers
+    // ═══════════════════════════════════════════════════
+
+    /**
+     * Progress Jurnal:
+     * Persentase = distinct tanggal kelas ini / target hari di semester
+     * Target = hari kerja (Senin-Jumat) − hari libur yang ditandai untuk kelas ini
+     */
+    private function hitungProgressJurnal($kelasId, $semesterIds): array
+    {
+        $semester = Semester::find($semesterIds[0] ?? null);
+        $kelas = Kelas::find($kelasId);
+
+        // Distinct tanggal yang sudah ada jurnal untuk kelas ini
+        $tanggalTerisi = JurnalHarian::where('kelas_id', $kelasId)
+            ->whereIn('semester_id', $semesterIds)
+            ->distinct('tanggal')
+            ->count('tanggal');
+
+        // Target: hari kerja dari tanggal_dibuat (atau awal semester) − hari libur
+        // Referensi tanggal mulai dari semester yang terhubung ke tahun ajaran
+        if ($semester && $kelas) {
+            $endDate = min($semester->tanggal_selesai, now());
+            // Fallback: kalau semester tidak punya tanggal_mulai, gunakan tahun ajaran
+            $semesterMulai = $semester->tanggal_mulai ?? $semester->tahunAjaran?->tanggal_mulai ?? now()->startOfYear();
+            $awalHitung = $kelas->getAwalHitungHari($semesterMulai);
+            $hariKerja = $this->hitungHariKerja($awalHitung, $endDate);
+            $hariLibur = $kelas->jumlahHariLibur($awalHitung, $endDate);
+            $targetPertemuan = max(1, $hariKerja - $hariLibur);
+        } else {
+            $targetPertemuan = 1;
+            $hariLibur = 0;
+        }
+
+        return [
+            'tanggal_terisi' => $tanggalTerisi,
+            'target' => $targetPertemuan,
+            'hari_libur' => $hariLibur,
+            'is_kelas_baru' => $kelas?->is_kelas_baru ?? false,
+            'tanggal_dibuat' => $kelas?->tanggal_dibuat,
+            'persen' => $targetPertemuan > 0 ? min(100, round(($tanggalTerisi / $targetPertemuan) * 100)) : 0,
+        ];
+    }
+
+    /**
+     * Progress Absensi:
+     * Persentase = total jurnal terisi / (jumlah_siswa × jumlah_hari_efektif) × 100
+     *
+     * jumlah_hari_efektif = hari kerja (Senin-Jumat) − hari libur yang ditandai
+     * total_yang_seharusnya = setiap siswa seharusnya punya jurnal di setiap hari efektif
+     * terisi = baris jurnal yang sudah ada (dengan nilai B/C/K)
+     */
+    private function hitungProgressAbsensi($kelasId, $semesterIds): array
+    {
+        $semester = Semester::find($semesterIds[0] ?? null);
+        $kelas = Kelas::find($kelasId);
+
+        // Ambil semua siswa yang terdaftar di kelas ini di semester ini
+        $siswaIds = \App\Models\SemesterSiswa::whereIn('semester_id', $semesterIds)
+            ->where('kelas_id', $kelasId)
+            ->distinct('siswa_id')
+            ->pluck('siswa_id')
+            ->toArray();
+
+        // Juga ambil siswa yang punya jurnal (backup jika snapshot kosong)
+        $siswaIdsJurnal = JurnalHarian::where('kelas_id', $kelasId)
+            ->whereIn('semester_id', $semesterIds)
+            ->distinct('siswa_id')
+            ->pluck('siswa_id')
+            ->toArray();
+
+        $siswaIds = array_unique(array_merge($siswaIds, $siswaIdsJurnal));
+        $jumlahSiswa = count($siswaIds);
+
+        // Hitung hari efektif = hari kerja dari tanggal_dibuat − hari libur
+        // Referensi tanggal mulai dari semester yang terhubung ke tahun ajaran
+        if ($semester && $kelas) {
+            $endDate = min($semester->tanggal_selesai, now());
+            $semesterMulai = $semester->tanggal_mulai ?? $semester->tahunAjaran?->tanggal_mulai ?? now()->startOfYear();
+            $awalHitung = $kelas->getAwalHitungHari($semesterMulai);
+            $hariKerja = $this->hitungHariKerja($awalHitung, $endDate);
+            $hariLibur = $kelas->jumlahHariLibur($awalHitung, $endDate);
+            $jumlahHari = max(0, $hariKerja - $hariLibur);
+        } else {
+            $jumlahHari = JurnalHarian::where('kelas_id', $kelasId)
+                ->whereIn('semester_id', $semesterIds)
+                ->distinct('tanggal')
+                ->count('tanggal');
+            $hariLibur = 0;
+        }
+
+        // Total slot yang seharusnya terisi = siswa × hari efektif
+        $totalSlot = $jumlahSiswa * $jumlahHari;
+
+        // Total jurnal yang sudah terisi
+        $terisi = JurnalHarian::where('kelas_id', $kelasId)
+            ->whereIn('semester_id', $semesterIds)
+            ->whereNotNull('penilaian')
+            ->count();
+
+        return [
+            'jumlah_siswa' => $jumlahSiswa,
+            'jumlah_hari' => $jumlahHari,
+            'total_slot' => $totalSlot,
+            'terisi' => $terisi,
+            'hari_libur' => $hariLibur ?? 0,
+            'persen' => $totalSlot > 0 ? min(100, round(($terisi / $totalSlot) * 100)) : 0,
+        ];
+    }
+}
