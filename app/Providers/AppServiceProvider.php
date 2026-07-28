@@ -15,8 +15,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Gunakan Tailwind untuk komponen pagination Laravel
-        Paginator::useTailwind();
+        // Gunakan view pagination custom Tartil (sesuai CSS .pagination-tartil)
+        Paginator::defaultView('pagination::tartil');
+        Paginator::defaultSimpleView('pagination::tartil');
 
         // ════════════════════════════════════════════
         // GATE: Laravel Pulse — hanya email tertentu

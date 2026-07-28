@@ -581,6 +581,40 @@ input[type="checkbox"] {
   cursor: not-allowed;
 }
 
+/* ===== Pagination Tartil Layout ===== */
+.tartil-pagination-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pagination-mobile-only {
+  display: none;
+  gap: 8px;
+}
+
+.pagination-desktop-only {
+  display: flex;
+}
+
+.pagination-info {
+  margin: 0;
+  font-size: 12px;
+  color: #6B5E51;
+}
+
+@media (max-width: 640px) {
+  .pagination-mobile-only {
+    display: flex;
+  }
+
+  .pagination-desktop-only {
+    display: none;
+  }
+}
+
 /* ===== Attendance ===== */
 .student-check-item {
   display: flex;
