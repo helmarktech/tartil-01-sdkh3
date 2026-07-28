@@ -2,17 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\HafalanTahfidz;
 use App\Models\JurnalHarian;
-use App\Models\JurnalDetail;
+use App\Models\MunaqosyahPendaftaran;
 use App\Models\PerpindahanKelas;
-use App\Models\Semester;
-use App\Models\RekapR2Akhir;
 use App\Models\RekapJurnalSemester;
 use App\Models\RekapMunaqosyahSemester;
-use App\Models\MunaqosyahPendaftaran;
-use App\Models\HafalanTahfidz;
-use App\Models\RekapTahfidzSemester;
+use App\Models\RekapR2Akhir;
+use App\Models\Semester;
+use Illuminate\Http\Request;
 
 class SiswaDashboardController extends Controller
 {
@@ -37,7 +35,9 @@ class SiswaDashboardController extends Controller
         // Note: 1 jurnal = 1 hari mengaji (1 entri per siswa per hari)
         $jurnals = collect();
         $totalJurnal = 0;
-        $bCount = 0; $cCount = 0; $kCount = 0;
+        $bCount = 0;
+        $cCount = 0;
+        $kCount = 0;
 
         if ($semesterId && $siswa->kelas_tartil_id) {
             $jurnals = JurnalHarian::where('siswa_id', $siswa->id)
@@ -93,9 +93,9 @@ class SiswaDashboardController extends Controller
                     ->where('siswa_id', $siswa->id)
                     ->first();
             }
-            if (!$snapMunaqosyah) {
+            if (! $snapMunaqosyah) {
                 $munaqosyah = MunaqosyahPendaftaran::where('siswa_id', $siswa->id)
-                    ->whereHas('munaqosyah', fn($q) => $q->where('semester_id', $semesterId))
+                    ->whereHas('munaqosyah', fn ($q) => $q->where('semester_id', $semesterId))
                     ->with('munaqosyah')
                     ->get();
             }
@@ -189,7 +189,7 @@ class SiswaDashboardController extends Controller
             $r2A = $rekap?->r2_akhir ?? 0;
 
             // Predikat
-            $predikat = match(true) {
+            $predikat = match (true) {
                 $r2A >= 85 => 'A — Sangat Baik',
                 $r2A >= 70 => 'B — Baik',
                 $r2A >= 60 => 'C — Cukup',
@@ -242,9 +242,11 @@ class SiswaDashboardController extends Controller
             ->orderBy('tanggal_hafalan', 'desc')
             ->first();
 
+        $isTahfidz = $siswa->kelasTartil?->jenis === 'Tahfidz';
+
         return view('siswa.hafalan', compact(
             'siswa', 'semester', 'progressJuz', 'totalJuzHafal',
-            'juzDistinct', 'hafalanList', 'juzAktif'
+            'juzDistinct', 'hafalanList', 'juzAktif', 'isTahfidz'
         ));
     }
 }

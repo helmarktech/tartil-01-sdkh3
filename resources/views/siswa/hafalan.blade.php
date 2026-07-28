@@ -78,6 +78,16 @@
     </div>
 </div>
 
+@if(!$isTahfidz)
+<div class="sd-section" style="text-align: center; padding: 48px 24px;">
+    <div style="font-size: 56px; margin-bottom: 16px;">&#128218;</div>
+    <h2 style="font-size: 16px; font-weight: 700; color: #1c1917; margin-bottom: 8px;">Anda Belum Terdaftar di Kelas Tahfidz</h2>
+    <p style="font-size: 13px; color: #78716c; max-width: 420px; margin: 0 auto; line-height: 1.5;">
+        Data hafalan hanya tersedia bagi siswa yang ditempatkan di kelas Tahfidz. Silakan hubungi admin jika seharusnya Anda sudah terdaftar.
+    </p>
+</div>
+@else
+
 {{-- Progress Juz --}}
 <div class="sd-section" style="margin-bottom: 20px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -147,4 +157,6 @@
         </div>
     @endif
 </div>
+@endif
+
 @endsection
