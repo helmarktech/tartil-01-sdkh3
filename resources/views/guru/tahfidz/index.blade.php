@@ -72,6 +72,66 @@
     padding: 48px;
     color: #888;
 }
+.juz-panel {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.juz-select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    min-width: 160px;
+}
+.juz-surat-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+.juz-surat-chip {
+    background: #f4fbf7;
+    border: 1px solid #d1e7dd;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #155724;
+}
+.juz-progress-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 12px;
+}
+.juz-progress-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #f8faf8;
+    font-size: 11px;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+}
+.juz-progress-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.progress-bar-bg {
+    background: #e9ecef;
+    border-radius: 6px;
+    height: 8px;
+    width: 100%;
+    overflow: hidden;
+}
+.progress-bar-fill {
+    height: 100%;
+    background: #0c8a5f;
+    border-radius: 6px;
+    transition: width 0.3s;
+}
 </style>
 
 <div class="page-header" style="margin-bottom: 20px;">
@@ -79,6 +139,72 @@
         <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 26px; margin: 0;">&#128218; Tahfidz</h1>
         <p style="color: #666; font-size: 14px; margin: 4px 0 0;">Input setoran hafalan siswa kelas Anda</p>
     </div>
+</div>
+
+{{-- Panel Pilih Juz --}}
+<div class="juz-panel">
+    <form method="GET" action="{{ route('guru.tahfidz.index') }}" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <label style="font-size: 13px; font-weight: 600; color: #555;">Pilih Juz:</label>
+        <select name="juz" class="juz-select" onchange="this.form.submit()">
+            <option value="">-- Semua Juz --</option>
+            @for($j = 1; $j <= 30; $j++)
+                <option value="{{ $j }}" {{ $juzSelected == $j ? 'selected' : '' }}>Juz {{ $j }}</option>
+            @endfor
+        </select>
+        @if($juzSelected)
+            <span style="font-size: 13px; color: #888;">
+                Total {{ $juzSurat->sum('total_ayat') }} ayat &middot; {{ $juzSurat->count() }} surat
+            </span>
+        @endif
+    </form>
+
+    @if($juzSelected && $juzSurat->isNotEmpty())
+        <div class="juz-surat-list">
+            @foreach($juzSurat as $js)
+                <div class="juz-surat-chip" title="Ayat {{ $js->ayat_mulai }}-{{ $js->ayat_selesai }}">
+                    {{ $js->surat?->nama_latin ?? '-' }} ({{ $js->total_ayat }} ayat)
+                </div>
+            @endforeach
+        </div>
+    @endif
+
+    @if($juzSelected && !empty($persentaseJuz))
+        <div style="font-size: 13px; font-weight: 700; color: #555; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+            Persentase Hafalan Juz {{ $juzSelected }}
+        </div>
+        <table class="juz-progress-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nama Siswa</th>
+                    <th>Ayat Hafal</th>
+                    <th style="width: 200px;">Progress</th>
+                    <th style="text-align: right;">%</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($persentaseJuz as $i => $p)
+                    <tr>
+                        <td>{{ $i + 1 }}</td>
+                        <td style="font-weight: 600;">{{ $p['siswa']['nama'] }}</td>
+                        <td>{{ $p['persentase']['ayatHafal'] }} / {{ $p['persentase']['totalAyat'] }}</td>
+                        <td>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: {{ min($p['persentase']['persentase'], 100) }}%;"></div>
+                            </div>
+                        </td>
+                        <td style="text-align: right; font-weight: 700; color: #0c8a5f;">
+                            {{ $p['persentase']['persentase'] }}%
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @elseif($juzSelected)
+        <div style="text-align: center; padding: 24px; color: #888; font-size: 13px; margin-top: 12px;">
+            Tidak ada data siswa untuk dihitung persentasenya.
+        </div>
+    @endif
 </div>
 
 @if(!$kelas)
@@ -101,15 +227,11 @@
                     <div>#</div>
                     <div>Nama Siswa</div>
                     <div style="text-align: center;">Juz Hafal</div>
-                    <div>Sedang Proses</div>
+                    <div>Setoran Terakhir</div>
                     <div></div>
                 </div>
             </div>
             @foreach($rekap['perSiswa'] as $i => $s)
-            @php
-                $progress = \App\Models\HafalanTahfidz::progressJuz($s['siswa']['id'], $semester?->id);
-                $juzAktif = collect($progress)->first(fn($p) => $p['status'] && $p['status'] !== 'hafal');
-            @endphp
             <div class="siswa-row">
                 <div style="font-weight: 600; color: #888;">{{ $i + 1 }}</div>
                 <div style="font-weight: 600;">{{ $s['siswa']['nama'] }}</div>
@@ -117,11 +239,12 @@
                     <span class="juz-pill" style="{{ $s['juzHafal'] > 0 ? '' : 'background: #ccc;' }}">{{ $s['juzHafal'] }}</span>
                 </div>
                 <div style="font-size: 12px;">
-                    @if($juzAktif && $juzAktif['status'])
-                        <span style="color: #e65100; font-weight: 600;">Juz {{ $juzAktif['juz'] }}</span>
-                        <span style="color: #888;">({{ \App\Models\HafalanTahfidz::labelStatus($juzAktif['status']) }})</span>
-                    @elseif($s['juzHafal'] > 0)
-                        <span style="color: #0c8a5f; font-size: 11px;">Lanjut Juz {{ $s['juzHafal'] + 1 }}</span>
+                    @if($s['lastJuz'] !== '-')
+                        <span style="color: #0c8a5f; font-weight: 600;">Juz {{ $s['lastJuz'] }}</span>
+                        @if($s['lastStatus'])
+                            <span style="color: #888;">({{ \App\Models\HafalanTahfidz::labelStatus($s['lastStatus']) }})</span>
+                        @endif
+                        <div style="font-size: 11px; color: #aaa;">{{ $s['lastTanggal'] }}</div>
                     @else
                         <span style="color: #aaa;">-</span>
                     @endif
@@ -162,10 +285,10 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" style="font-size: 12px;">Surat</label>
-                    <select name="surat_id" class="form-input">
+                    <select name="surat_id" class="form-input" id="modalSuratSelect">
                         <option value="">- Pilih -</option>
                         @foreach(\App\Models\Surat::orderBy('urutan')->get() as $surat)
-                            <option value="{{ $surat->id }}">{{ $surat->urutan }}. {{ $surat->nama_latin }}</option>
+                            <option value="{{ $surat->id }}">{{ $surat->urutan }}. {{ $surat->nama_latin }} ({{ $surat->jumlah_ayat }} ayat)</option>
                         @endforeach
                     </select>
                 </div>
@@ -213,6 +336,8 @@
 </div>
 
 <script>
+window.juzSuratMap = @json($juzSuratMap ?? []);
+
 function openForm(siswaId, siswaName) {
     document.getElementById('modalSiswaId').value = siswaId;
     document.getElementById('modalSiswaName').textContent = siswaName;
@@ -224,5 +349,28 @@ function closeForm() {
 document.getElementById('formModal').addEventListener('click', function(e) {
     if (e.target === this) closeForm();
 });
+
+// Filter surat berdasarkan juz di modal
+(function () {
+    const juzSelect = document.querySelector('#formModal select[name="juz"]');
+    const suratSelect = document.getElementById('modalSuratSelect');
+    if (!juzSelect || !suratSelect) return;
+    const allOptions = Array.from(suratSelect.options).slice(1);
+
+    function filterSurat() {
+        const juz = parseInt(juzSelect.value) || 0;
+        const allowedIds = window.juzSuratMap[juz] || [];
+        suratSelect.innerHTML = '<option value="">- Pilih -</option>';
+        allOptions.forEach(function (opt) {
+            const suratId = parseInt(opt.value);
+            if (juz === 0 || allowedIds.includes(suratId)) {
+                suratSelect.appendChild(opt);
+            }
+        });
+    }
+
+    juzSelect.addEventListener('change', filterSurat);
+    filterSurat();
+})();
 </script>
 @endsection

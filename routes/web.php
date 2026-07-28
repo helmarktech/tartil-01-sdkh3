@@ -1,24 +1,24 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GuruController;
-use App\Http\Controllers\SiswaDashboardController;
-use App\Http\Controllers\RaporController;
-use App\Http\Controllers\ManajemenController;
-use App\Http\Controllers\KenaikanKelasController;
-use App\Http\Controllers\PerpindahanTartilController;
-use App\Http\Controllers\MunaqosyahController;
+use App\Http\Controllers\ImportExcelSiswaController;
 use App\Http\Controllers\JurnalController;
-use App\Http\Controllers\TrackRecordController;
+use App\Http\Controllers\KenaikanKelasController;
+use App\Http\Controllers\ManajemenController;
+use App\Http\Controllers\MunaqosyahController;
+use App\Http\Controllers\PenempatanTartilController;
 use App\Http\Controllers\PengaturanKelasController;
 use App\Http\Controllers\PenilaianRaporInternalController;
+use App\Http\Controllers\PerpindahanTartilController;
 use App\Http\Controllers\ProgressJurnalController;
-use App\Http\Controllers\ImportExcelSiswaController;
-use App\Http\Controllers\PenempatanTartilController;
+use App\Http\Controllers\RaporController;
+use App\Http\Controllers\SiswaDashboardController;
 use App\Http\Controllers\SystemSetupController;
 use App\Http\Controllers\TahfidzController;
+use App\Http\Controllers\TrackRecordController;
+use Illuminate\Support\Facades\Route;
 
 // ==================== PUBLIC ====================
 Route::get('/', function () {
@@ -27,6 +27,7 @@ Route::get('/', function () {
             ? redirect()->route('admin.dashboard')
             : redirect()->route('guru.dashboard');
     }
+
     return view('landing');
 });
 
@@ -47,14 +48,14 @@ Route::post('/siswa/logout', [AuthController::class, 'siswaLogout'])->name('sisw
 // ==================== ADMIN ====================
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    
+
     // Guru
     Route::get('/guru', [AdminController::class, 'guruIndex'])->name('guru.index');
     Route::get('/guru/create', [AdminController::class, 'guruCreate'])->name('guru.create');
     Route::post('/guru', [AdminController::class, 'guruStore'])->name('guru.store');
     Route::get('/guru/{guru}/edit', [AdminController::class, 'guruEdit'])->name('guru.edit');
     Route::put('/guru/{guru}', [AdminController::class, 'guruUpdate'])->name('guru.update');
-    
+
     // Siswa
     Route::get('/siswa', [AdminController::class, 'siswaIndex'])->name('siswa.index');
     Route::get('/siswa/create', [AdminController::class, 'siswaCreate'])->name('siswa.create');
@@ -70,7 +71,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/siswa/penempatan', [PenempatanTartilController::class, 'tempatkan'])->name('siswa.penempatan.proses');
 
     Route::get('/siswa/{siswa}', [AdminController::class, 'siswaShow'])->name('siswa.show');
-    
+
     // Kelas
     Route::get('/kelas', [AdminController::class, 'kelasIndex'])->name('kelas.index');
     Route::get('/kelas/create', [AdminController::class, 'kelasCreate'])->name('kelas.create');
@@ -79,7 +80,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/kelas/{kelas}', [AdminController::class, 'kelasUpdate'])->name('kelas.update');
 
     // List Kelas Tartil (dedicated view under Kelas Tartil menu)
-    Route::get('/kelas-tartil', fn() => redirect()->route('admin.kelas.index'))->name('kelastartil.index');
+    Route::get('/kelas-tartil', fn () => redirect()->route('admin.kelas.index'))->name('kelastartil.index');
 
     // Kelas Reguler (static routes first to avoid parameter conflict)
     Route::get('/kelas-reguler/daftar', [AdminController::class, 'kelasRegulerIndex'])->name('kelas-reguler.daftar');
@@ -92,7 +93,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Parameter routes must be LAST (otherwise "pindah-kelas" matches as {kelasReguler} parameter)
     Route::get('/kelas-reguler/{kelasReguler}', [AdminController::class, 'kelasRegulerDetail'])->name('kelas-reguler.detail');
     Route::post('/kelas-reguler/{kelasReguler}/daftarkan-siswa', [AdminController::class, 'kelasRegulerDaftarkanSiswa'])->name('kelas-reguler.daftarkan-siswa');
-    
+
     // Tahun Ajaran (auto buat ganjil+genap + kenaikan kelas + snapshot)
     Route::get('/tahun-ajaran', [AdminController::class, 'tahunAjaranIndex'])->name('tahun-ajaran.index');
     Route::post('/tahun-ajaran', [AdminController::class, 'tahunAjaranStore'])->name('tahun-ajaran.store');
@@ -103,7 +104,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/semester/{semester}', [AdminController::class, 'semesterDetail'])->name('semester.detail');
     Route::post('/semester/{semester}/aktifkan', [AdminController::class, 'semesterAktifkan'])->name('semester.aktifkan');
     Route::post('/semester/{semester}/tutup', [AdminController::class, 'semesterTutup'])->name('semester.tutup');
-    
+
     // Audit & Rekap Semester (track record terkunci)
     // ===== AUDIT: TAHUN AJARAN (track record terkunci) =====
     Route::get('/audit-semester', [AdminController::class, 'auditPilihTahunAjaran'])->name('audit-semester.pilih-ta');
@@ -115,14 +116,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // ===== STATISTIK: Dashboard grafik perkembangan =====
     Route::get('/statistik', [AdminController::class, 'statistikDashboard'])->name('statistik.index');
     Route::get('/statistik/data', [AdminController::class, 'statistikData'])->name('statistik.data');
-    
+
     // Munaqosyah: Approval Pendaftaran
     Route::get('/munaqosyah-approval', [AdminController::class, 'munaqosyahApprovalIndex'])->name('munaqosyah.approval.index');
     Route::post('/munaqosyah-approval/{approval}/setuju', [AdminController::class, 'munaqosyahApprovalSetuju'])->name('munaqosyah.approval.setuju');
     Route::post('/munaqosyah-approval/{approval}/tolak', [AdminController::class, 'munaqosyahApprovalTolak'])->name('munaqosyah.approval.tolak');
     Route::post('/munaqosyah-approval/setuju-massal', [AdminController::class, 'munaqosyahApprovalSetujuMassal'])->name('munaqosyah.approval.setuju-massal');
     Route::post('/munaqosyah-approval/tolak-massal', [AdminController::class, 'munaqosyahApprovalTolakMassal'])->name('munaqosyah.approval.tolak-massal');
-    
+
     // Perpindahan Kelas
     Route::get('/perpindahan', [AdminController::class, 'perpindahanIndex'])->name('perpindahan.index');
     Route::post('/perpindahan/{perpindahan}/approve', [AdminController::class, 'perpindahanApprove'])->name('perpindahan.approve');
@@ -137,7 +138,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/guru-reguler', [AdminController::class, 'guruRegulerStore'])->name('guru-reguler.store');
     Route::get('/guru-reguler/{guruReguler}/edit', [AdminController::class, 'guruRegulerEdit'])->name('guru-reguler.edit');
     Route::put('/guru-reguler/{guruReguler}', [AdminController::class, 'guruRegulerUpdate'])->name('guru-reguler.update');
-    
+
     // ===== MANAJEMEN USER (CRUD + PASSWORD + MUTASI) =====
     Route::get('/manajemen/guru', [ManajemenController::class, 'guruIndex'])->name('manajemen.guru');
     Route::post('/manajemen/guru', [ManajemenController::class, 'guruStore'])->name('manajemen.guru.store');
@@ -147,7 +148,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/manajemen/guru/{guru}/nonaktifkan', [ManajemenController::class, 'guruNonaktifkan'])->name('manajemen.guru.nonaktif');
     Route::post('/manajemen/guru/{guru}/hapus', [ManajemenController::class, 'guruHapus'])->name('manajemen.guru.hapus');
     Route::post('/manajemen/guru/{guru}/aktifkan', [ManajemenController::class, 'guruAktifkan'])->name('manajemen.guru.aktif');
-    
+
     Route::get('/manajemen/siswa', [ManajemenController::class, 'siswaIndex'])->name('manajemen.siswa');
     Route::post('/manajemen/siswa', [ManajemenController::class, 'siswaStore'])->name('manajemen.siswa.store');
     Route::get('/manajemen/siswa/{siswa}/edit', [ManajemenController::class, 'siswaEdit'])->name('manajemen.siswa.edit');
@@ -156,12 +157,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/manajemen/siswa/{siswa}/nonaktifkan', [ManajemenController::class, 'siswaNonaktifkan'])->name('manajemen.siswa.nonaktif');
     Route::post('/manajemen/siswa/{siswa}/hapus', [ManajemenController::class, 'siswaHapus'])->name('manajemen.siswa.hapus');
     Route::post('/manajemen/siswa/{siswa}/aktifkan', [ManajemenController::class, 'siswaAktifkan'])->name('manajemen.siswa.aktif');
-    
+
     // ===== KENAIKAN KELAS REGULER MASSAL =====
     Route::get('/kenaikan-kelas', [KenaikanKelasController::class, 'index'])->name('kenaikan.index');
     Route::post('/kenaikan-kelas/proses', [KenaikanKelasController::class, 'prosesMassal'])->name('kenaikan.proses');
     Route::post('/kenaikan-kelas/mutasi', [KenaikanKelasController::class, 'prosesMutasi'])->name('kenaikan.mutasi');
-    
+
     // ===== PERPINDAHAN KELAS TARTIL (ADMIN VIEW) =====
     Route::get('/perpindahan-tartil', [PerpindahanTartilController::class, 'adminIndex'])->name('perpindahan-tartil.admin');
     Route::post('/perpindahan-tartil/ajukan', [PerpindahanTartilController::class, 'adminAjukan'])->name('perpindahan-tartil.ajukan');
@@ -224,6 +225,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // ===== TAHFIDZ: TRACKING HAFALAN =====
     Route::get('/tahfidz', [TahfidzController::class, 'adminIndex'])->name('tahfidz.index');
+    Route::get('/tahfidz/rekap-semester', [TahfidzController::class, 'adminRekapSemester'])->name('tahfidz.rekap-semester');
     Route::get('/tahfidz/siswa/{siswa}', [TahfidzController::class, 'adminDetailSiswa'])->name('tahfidz.detail-siswa');
     Route::get('/tahfidz/hafalan/create', [TahfidzController::class, 'adminCreate'])->name('tahfidz.hafalan.create');
     Route::post('/tahfidz/hafalan', [TahfidzController::class, 'adminStore'])->name('tahfidz.hafalan.store');
@@ -254,7 +256,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 // ==================== GURU ====================
 Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(function () {
     Route::get('/dashboard', [GuruController::class, 'dashboard'])->name('dashboard');
-    
+
     // JURNAL HARIAN (batch grid, keyboard shortcuts, 7.000+ entri/hari)
     Route::middleware('semester')->group(function () {
         Route::get('/jurnal', [JurnalController::class, 'index'])->name('jurnal.index');
@@ -265,19 +267,19 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     // Rekap bulanan (tanpa semester check)
     Route::get('/jurnal/rekap', [JurnalController::class, 'rekapBulanan'])->name('jurnal.rekap');
     Route::get('/jurnal/bulanan', [JurnalController::class, 'guruJurnalBulanan'])->name('jurnal.bulanan');
-    
+
     // Track Record Siswa
     Route::get('/track-record', [TrackRecordController::class, 'guruIndex'])->name('track-record.index');
     Route::get('/track-record/{siswa}/detail', [TrackRecordController::class, 'detail'])->name('track-record.detail');
-    
+
     // API: Get siswa by kelas
     Route::get('/api/siswa-by-kelas', [GuruController::class, 'getSiswaByKelas'])->name('api.siswa');
     Route::get('/api/siswa-by-kelas-reguler', [KenaikanKelasController::class, 'getSiswaByKelasReguler'])->name('api.siswa.reguler');
-    
+
     // Perpindahan
     Route::get('/perpindahan/create', [PerpindahanTartilController::class, 'guruCreate'])->name('perpindahan.create');
     Route::post('/perpindahan', [PerpindahanTartilController::class, 'guruStore'])->name('perpindahan.store');
-    
+
     // Approval perpindahan (hanya guru kelas tujuan)
     Route::get('/perpindahan/approval', [PerpindahanTartilController::class, 'guruApprovalIndex'])->name('perpindahan.approval');
     Route::post('/perpindahan/{perpindahan}/guru-approve', [PerpindahanTartilController::class, 'guruApprove'])->name('perpindahan.guru.approve');
@@ -286,13 +288,13 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     // Perpindahan massal 3-step (guru)
     Route::get('/perpindahan/massal', [PerpindahanTartilController::class, 'guruMassalIndex'])->name('perpindahan.massal');
     Route::post('/perpindahan/massal', [PerpindahanTartilController::class, 'guruMassalStore'])->name('perpindahan.massal.store');
-    
+
     // Rapor
     Route::get('/rapor', [RaporController::class, 'pilihKelas'])->name('rapor.pilih');
     Route::post('/rapor/preview', [RaporController::class, 'previewRaporKelas'])->name('rapor.preview');
     Route::get('/rapor/pdf/siswa', [RaporController::class, 'pdfRaporSiswa'])->name('rapor.pdf.siswa');
     Route::get('/rapor/pdf/kelas', [RaporController::class, 'pdfRaporKelas'])->name('rapor.pdf.kelas');
-    
+
     // ===== UJIAN MUNAQOSYAH (guru hanya daftarkan siswa kelas sendiri, semester aktif required) =====
     Route::middleware('semester')->group(function () {
         Route::get('/munaqosyah', [MunaqosyahController::class, 'guruIndex'])->name('munaqosyah.index');

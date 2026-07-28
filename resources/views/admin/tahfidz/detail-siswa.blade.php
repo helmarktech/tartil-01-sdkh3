@@ -90,19 +90,20 @@
 
 @php
     $progressJuz = \App\Models\HafalanTahfidz::progressJuz($siswa->id, $semester?->id);
-    $juzAktif = collect($progressJuz)->firstWhere('status', '!=', 'hafal');
+    $setoranTerakhir = $hafalanList->first();
 @endphp
 
 {{-- Ring Juz 1-30 --}}
 <div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <div style="font-size: 13px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px;">
             Progress Juz ({{ $totalJuzHafal }}/30)
         </div>
-        @if($juzAktif && $juzAktif['status'])
-        <div style="font-size: 12px; color: #e65100; background: #fff3cd; padding: 4px 12px; border-radius: 20px; font-weight: 600;">
-            &#128308; Sedang: Juz {{ $juzAktif['juz'] }} ({{ \App\Models\HafalanTahfidz::labelStatus($juzAktif['status']) }})
-            @if($juzAktif['surat']) &middot; {{ $juzAktif['surat'] }}@endif
+        @if($setoranTerakhir)
+        <div style="font-size: 12px; color: #0c8a5f; background: #e8f5e9; padding: 4px 12px; border-radius: 20px; font-weight: 600;">
+            &#128308; Setoran Terakhir: Juz {{ $setoranTerakhir->juz }}
+            @if($setoranTerakhir->surat) &middot; {{ $setoranTerakhir->surat->nama_latin }}@endif
+            <span style="color: #888; font-weight: 400;">({{ \App\Models\HafalanTahfidz::labelStatus($setoranTerakhir->status) }})</span>
         </div>
         @endif
     </div>

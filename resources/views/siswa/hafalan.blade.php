@@ -83,8 +83,8 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h2 class="sd-section-title" style="margin: 0;">Progress Juz ({{ $totalJuzHafal }}/30)</h2>
         @if($juzAktif)
-        <span style="font-size: 12px; color: #e65100; background: #fff3cd; padding: 4px 12px; border-radius: 20px; font-weight: 600;">
-            &#128308; Sedang: Juz {{ $juzAktif->juz }} ({{ \App\Models\HafalanTahfidz::labelStatus($juzAktif->status) }})
+        <span style="font-size: 12px; color: #0c8a5f; background: #e8f5e9; padding: 4px 12px; border-radius: 20px; font-weight: 600;">
+            &#128308; Setoran Terakhir: Juz {{ $juzAktif->juz }} ({{ \App\Models\HafalanTahfidz::labelStatus($juzAktif->status) }})
         </span>
         @endif
     </div>

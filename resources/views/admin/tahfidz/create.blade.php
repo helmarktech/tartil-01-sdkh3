@@ -32,13 +32,39 @@
 
                 <div class="form-group">
                     <label class="form-label" style="font-size: 13px;">Surat</label>
-                    <select name="surat_id" class="form-input">
+                    <select name="surat_id" class="form-input" id="suratSelect">
                         <option value="">- Pilih Surat -</option>
                         @foreach($suratList as $surat)
-                            <option value="{{ $surat->id }}">{{ $surat->urutan }}. {{ $surat->nama_latin }} ({{ $surat->jenis }})</option>
+                            <option value="{{ $surat->id }}" data-juz-list="{{ json_encode(collect($juzSuratMap)->filter(fn($ids) => in_array($surat->id, $ids))->keys()->values()) }}">
+                                {{ $surat->urutan }}. {{ $surat->nama_latin }} ({{ $surat->jumlah_ayat }} ayat)
+                            </option>
                         @endforeach
                     </select>
                 </div>
+
+                <script>
+                    window.juzSuratMap = @json($juzSuratMap);
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const juzSelect = document.querySelector('select[name="juz"]');
+                        const suratSelect = document.getElementById('suratSelect');
+                        const allOptions = Array.from(suratSelect.options).slice(1);
+
+                        function filterSurat() {
+                            const juz = parseInt(juzSelect.value) || 0;
+                            const allowedIds = window.juzSuratMap[juz] || [];
+                            suratSelect.innerHTML = '<option value="">- Pilih Surat -</option>';
+                            allOptions.forEach(function (opt) {
+                                const suratId = parseInt(opt.value);
+                                if (juz === 0 || allowedIds.includes(suratId)) {
+                                    suratSelect.appendChild(opt);
+                                }
+                            });
+                        }
+
+                        juzSelect.addEventListener('change', filterSurat);
+                        filterSurat();
+                    });
+                </script>
 
                 <div class="form-group">
                     <label class="form-label" style="font-size: 13px;">Ayat Mulai <span style="color:#c62828">*</span></label>
