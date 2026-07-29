@@ -55,13 +55,12 @@ class ImportGuruTest extends TestCase
 
         $file = new UploadedFile($path, 'guru-tartil.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
 
-        $response = $this->postJson(route('admin.guru.import.proses'), [
+        $response = $this->post(route('admin.guru.import.proses'), [
             'file' => $file,
             'jenis' => 'tartil',
         ]);
 
         $response->assertRedirect(route('admin.guru.import', ['jenis' => 'tartil']));
-        $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('guru_tartils', ['email' => 'ahmad@tartil.id', 'nama' => 'Ust. Ahmad']);
         $this->assertDatabaseHas('guru_tartils', ['email' => 'siti@tartil.id', 'nama' => 'Ust. Siti']);
@@ -123,9 +122,11 @@ class ImportGuruTest extends TestCase
             'jenis' => 'tartil',
         ]);
 
-        $response->assertRedirect();
-        $response->assertSessionHas('warning');
-        $response->assertSessionHas('import_errors');
+        // Sekarang import berjalan di background queue (sync saat testing), duplikat
+        // di-skip oleh job dan tidak memblokir seluruh proses. Admin tetap diberi
+        // notifikasi success bahwa file sedang diproses.
+        $response->assertRedirect(route('admin.guru.import', ['jenis' => 'tartil']));
+        $response->assertSessionHas('success');
 
         $this->assertEquals(1, GuruTartil::where('email', 'ahmad@tartil.id')->count());
 

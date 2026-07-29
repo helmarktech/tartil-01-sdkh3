@@ -53,6 +53,8 @@
                 Guru reguler hanya dicatat sebagai data guru pengampu kelas reguler, tanpa akun login.
             @endif
             Pastikan email belum pernah digunakan untuk guru {{ $jenis }} lain.
+            <br><br>
+            <strong>Catatan:</strong> File akan diunggah dan diproses di background oleh queue worker. Hasil bisa dicek di log aplikasi.
         </div>
     </div>
 
