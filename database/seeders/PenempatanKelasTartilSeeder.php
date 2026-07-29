@@ -51,16 +51,17 @@ class PenempatanKelasTartilSeeder extends Seeder
     private bool $overwrite = false;
 
     /**
-     * Path relatif ke file Excel penempatan.
+     * Path default relatif ke file Excel penempatan (bisa di-override via --file).
      */
-    private string $filePath = 'import.xlsx';
+    private string $defaultFilePath = 'storage/app/import-data/import.xlsx';
 
     public function run(): void
     {
-        $path = base_path($this->filePath);
+        $path = $this->command->option('file') ?: base_path($this->defaultFilePath);
 
         if (! file_exists($path)) {
             $this->command->error("File tidak ditemukan: {$path}");
+            $this->command->info('Upload file Excel ke path di atas, atau override dengan --file=/path/to/file.xlsx');
 
             return;
         }

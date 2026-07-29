@@ -24,16 +24,17 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 class ImportSiswaSeeder extends Seeder
 {
     /**
-     * Path relatif ke file Excel siswa (dari root project).
+     * Path default relatif ke file Excel siswa (bisa di-override via --file).
      */
-    private string $filePath = 'template-import-siswa (3).xlsx';
+    private string $defaultFilePath = 'storage/app/import-data/template-import-siswa.xlsx';
 
     public function run(): void
     {
-        $path = base_path($this->filePath);
+        $path = $this->command->option('file') ?: base_path($this->defaultFilePath);
 
         if (! file_exists($path)) {
             $this->command->error("File tidak ditemukan: {$path}");
+            $this->command->info('Upload file Excel ke path di atas, atau override dengan --file=/path/to/file.xlsx');
 
             return;
         }
