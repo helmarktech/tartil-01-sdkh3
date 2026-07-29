@@ -47,6 +47,6 @@ class PulseAccess
             return $next($request);
         }
 
-        abort(403, 'This action is unauthorized.');
+        abort(403, 'Akses Laravel Pulse ditolak: token tidak valid atau user tidak memiliki hak akses.');
     }
 }

@@ -346,4 +346,4 @@ Route::middleware(['auth:siswa'])->prefix('siswa')->name('siswa.')->group(functi
 // ════════════════════════════════════════════
 Route::get('/admin/pulse', function () {
     return view('pulse::dashboard');
-})->middleware('pulse')->name('admin.pulse');
+})->middleware(['web', \App\Http\Middleware\PulseAccess::class])->name('admin.pulse');
