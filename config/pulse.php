@@ -1,5 +1,7 @@
 <?php
 
+use Laravel\Pulse\Http\Middleware\Authorize;
+use Laravel\Pulse\Pulse;
 use Laravel\Pulse\Recorders;
 
 return [
@@ -44,6 +46,7 @@ return [
     'servers' => [
         'server_name' => 'TartilPro Server',
         'direction' => 'desc',
+        'directories' => explode(':', env('PULSE_SERVER_DIRECTORIES', '/')),
     ],
 
     'recorders' => [
@@ -78,6 +81,9 @@ return [
             'enabled' => env('PULSE_SLOW_JOBS_ENABLED', true),
             'sample_rate' => env('PULSE_SLOW_JOBS_SAMPLE_RATE', 1),
             'threshold' => env('PULSE_SLOW_JOBS_THRESHOLD', 1000),
+            'ignore' => [
+                // '/^Package\\Jobs\\/',
+            ],
         ],
         Recorders\SlowOutgoingRequests::class => [
             'enabled' => env('PULSE_SLOW_OUTGOING_REQUESTS_ENABLED', true),
@@ -87,6 +93,11 @@ return [
                 '/^127\.0\.0\.1/',
                 '/^localhost/',
             ],
+            'groups' => [
+                // '#^https://api\.github\.com/repos/.*$#' => 'api.github.com/repos/*',
+                // '#^https?://([^/]*).*$#' => '\1',
+                // '#/\d+#' => '/*',
+            ],
         ],
         Recorders\SlowQueries::class => [
             'enabled' => env('PULSE_SLOW_QUERIES_ENABLED', true),
@@ -94,6 +105,10 @@ return [
             'threshold' => env('PULSE_SLOW_QUERIES_THRESHOLD', 1000),
             'location' => true,
             'max_query_length' => env('PULSE_SLOW_QUERIES_MAX_QUERY_LENGTH', null),
+            'ignore' => [
+                '/(["`])pulse_[\w]+?\1/', // Pulse tables...
+                '/(["`])telescope_[\w]+?\1/', // Telescope tables...
+            ],
         ],
         Recorders\SlowRequests::class => [
             'enabled' => env('PULSE_SLOW_REQUESTS_ENABLED', true),
