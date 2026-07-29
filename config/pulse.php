@@ -13,7 +13,7 @@ return [
 
     'middleware' => [
         'web',
-        Illuminate\Auth\Middleware\Authorize::class . ':viewPulse',
+        App\Http\Middleware\PulseAccess::class,
     ],
 
     'timezone' => env('PULSE_TIMEZONE', config('app.timezone')),
