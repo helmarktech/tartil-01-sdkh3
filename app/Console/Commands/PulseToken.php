@@ -19,6 +19,7 @@ class PulseToken extends Command
         $this->newLine();
         $this->info("URL akses:");
         $this->info(config('app.url') . '/pulse?pulse_token=' . $token);
+        $this->info(config('app.url') . '/admin/pulse?pulse_token=' . $token);
 
         return 0;
     }

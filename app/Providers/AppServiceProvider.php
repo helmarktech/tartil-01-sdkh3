@@ -22,29 +22,33 @@ class AppServiceProvider extends ServiceProvider
         // ════════════════════════════════════════════
         // GATE: Laravel Pulse — hanya email tertentu
         // ════════════════════════════════════════════
-        Gate::define('viewPulse', function ($user = null) {
-            // Hanya bisa diakses saat deploy (production)
-            if (app()->environment('local')) {
-                return true;
-            }
+        // Didefinisikan di app->booted() agar menimpa definisi default
+        // Laravel Pulse yang membatasi akses hanya di environment local.
+        // ════════════════════════════════════════════
+        $this->app->booted(function () {
+            Gate::define('viewPulse', function ($user = null) {
+                // Hanya bisa diakses saat deploy (production)
+                if (app()->environment('local')) {
+                    return true;
+                }
 
-            // Di production: hanya admin@tartil.id
-            $allowedEmail = config('pulse.authorized_email', 'admin@tartil.id');
+                $allowedEmail = config('pulse.authorized_email', 'admin@tartil.id');
 
-            if ($user && method_exists($user, 'email')) {
-                return $user->email === $allowedEmail;
-            }
+                // Token-based access (bisa digunakan meski user login dengan email lain)
+                $token = request('pulse_token');
+                if ($token) {
+                    $expected = hash('sha256', $allowedEmail.config('app.key'));
 
-            // Fallback: cek dari request query token (untuk akses tanpa login)
-            $token = request('pulse_token');
-            if ($token) {
-                return hash_equals(
-                    hash('sha256', $allowedEmail.config('app.key')),
-                    $token
-                );
-            }
+                    return hash_equals($expected, $token);
+                }
 
-            return false;
+                // User-based access
+                if ($user && method_exists($user, 'email')) {
+                    return $user->email === $allowedEmail;
+                }
+
+                return false;
+            });
         });
     }
 }

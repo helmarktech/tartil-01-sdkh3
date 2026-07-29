@@ -341,5 +341,9 @@ Route::middleware(['auth:siswa'])->prefix('siswa')->name('siswa.')->group(functi
 // LARAVEL PULSE — Monitoring (protected by Gate)
 // ════════════════════════════════════════════
 // Akses via: /pulse (production) atau /pulse?pulse_token=<token>
+//            /admin/pulse (alternatif tanpa ubah .env)
 // Generate token: php artisan pulse:token
 // ════════════════════════════════════════════
+Route::get('/admin/pulse', function () {
+    return view('pulse::dashboard');
+})->middleware('pulse')->name('admin.pulse');
