@@ -8,7 +8,8 @@ use Illuminate\Console\Command;
 class ImportSiswaCommand extends Command
 {
     protected $signature = 'import:siswa
-                            {file? : Path ke file Excel siswa (default: storage/app/import-data/template-import-siswa.xlsx)}';
+                            {file? : Path ke file Excel siswa (default: storage/app/import-data/template-import-siswa.xlsx)}
+                            {--force : Jalankan meskipun environment production}';
 
     protected $description = 'Import data siswa dari file Excel';
 

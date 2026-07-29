@@ -9,7 +9,8 @@ class PenempatanKelasTartilCommand extends Command
 {
     protected $signature = 'import:penempatan
                             {file? : Path ke file Excel penempatan kelas (default: storage/app/import-data/import.xlsx)}
-                            {--overwrite : Timpa penempatan yang sudah ada}';
+                            {--overwrite : Timpa penempatan yang sudah ada}
+                            {--force : Jalankan meskipun environment production}';
 
     protected $description = 'Import penempatan kelas tartil/tahfidz dari file Excel';
 
