@@ -5,8 +5,6 @@
 
     <livewire:pulse.queues cols="4" />
 
-    <livewire:pulse.cache cols="4" />
-
     <livewire:pulse.slow-queries cols="8" />
 
     <livewire:pulse.exceptions cols="6" />
