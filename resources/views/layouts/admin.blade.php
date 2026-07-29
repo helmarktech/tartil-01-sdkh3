@@ -135,7 +135,8 @@
 
                 // ====== KELAS REGULER GROUP ======
                 $kelasRegulerOpen = str_contains($p, 'admin/guru-reguler')
-                    || str_contains($p, 'admin/kelas-reguler');
+                    || str_contains($p, 'admin/kelas-reguler')
+                    || str_contains($p, 'admin/guru/import') && request('jenis') === 'reguler';
 
                 // ====== KELAS TARTIL GROUP ======
                 // Halaman kelas tartil: /admin/kelas (CRUD kelas tartil)
@@ -145,6 +146,7 @@
                 $isPengaturanKelas = str_contains($p, 'admin/pengaturan-kelas') && !str_contains($p, 'aktifkan');
 
                 $kelasTartilOpen = str_contains($p, 'admin/manajemen/guru')
+                    || str_contains($p, 'admin/guru/import') && request('jenis') !== 'reguler'
                     || $isKelasTartil
                     || $isPindahTartil
                     || $isRekapKelasTartil
@@ -187,6 +189,7 @@
                         </button>
                         <div class="nav-submenu {{ $kelasRegulerOpen ? 'open' : '' }}">
                             <a href="{{ route('admin.guru-reguler.index') }}" class="nav-subitem {{ str_contains($p, 'admin/guru-reguler') ? 'active' : '' }}">Guru Reguler</a>
+                            <a href="{{ route('admin.guru.import', ['jenis' => 'reguler']) }}" class="nav-subitem {{ str_contains($p, 'admin/guru/import') && request('jenis') === 'reguler' ? 'active' : '' }}">Import Guru Reguler</a>
                             <a href="{{ route('admin.kelas-reguler.daftar') }}" class="nav-subitem {{ str_contains($p, 'admin/kelas-reguler/daftar') ? 'active' : '' }}">Daftar Kelas Reguler</a>
                             <a href="{{ route('admin.kelas-reguler.keterangan') }}" class="nav-subitem {{ str_contains($p, 'admin/kelas-reguler/keterangan') ? 'active' : '' }}">Keterangan Kelas</a>
                             <a href="{{ route('admin.kelas-reguler.pindah-index') }}" class="nav-subitem {{ str_contains($p, 'admin/kelas-reguler/pindah') ? 'active' : '' }}">Pindah Kelas</a>
@@ -201,6 +204,7 @@
                         </button>
                         <div class="nav-submenu {{ $kelasTartilOpen ? 'open' : '' }}">
                             <a href="{{ route('admin.manajemen.guru') }}" class="nav-subitem {{ str_contains($p, 'admin/manajemen/guru') ? 'active' : '' }}">Guru Tartil</a>
+                            <a href="{{ route('admin.guru.import', ['jenis' => 'tartil']) }}" class="nav-subitem {{ str_contains($p, 'admin/guru/import') && request('jenis') !== 'reguler' ? 'active' : '' }}">Import Guru Tartil</a>
                             <a href="{{ route('admin.kelas.index') }}" class="nav-subitem {{ $isKelasTartil ? 'active' : '' }}">Kelas Tartil</a>
                             <a href="{{ route('admin.pengaturan-kelas.index') }}" class="nav-subitem {{ $isPengaturanKelas ? 'active' : '' }}">Pengaturan Indikator</a>
                             <a href="{{ route('admin.perpindahan-tartil.admin') }}" class="nav-subitem {{ $isPindahTartil ? 'active' : '' }}">Pindah Tartil</a>

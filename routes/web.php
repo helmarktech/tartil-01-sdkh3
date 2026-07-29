@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GuruController;
+use App\Http\Controllers\ImportExcelGuruController;
 use App\Http\Controllers\ImportExcelSiswaController;
 use App\Http\Controllers\JurnalController;
 use App\Http\Controllers\KenaikanKelasController;
@@ -69,6 +70,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/siswa/import/template', [ImportExcelSiswaController::class, 'template'])->name('siswa.import.template');
     Route::get('/siswa/penempatan', [PenempatanTartilController::class, 'index'])->name('siswa.penempatan');
     Route::post('/siswa/penempatan', [PenempatanTartilController::class, 'tempatkan'])->name('siswa.penempatan.proses');
+
+    // ===== IMPORT GURU (statis HARUS sebelum {guru}) =====
+    Route::get('/guru/import', [ImportExcelGuruController::class, 'index'])->name('guru.import');
+    Route::post('/guru/import', [ImportExcelGuruController::class, 'proses'])->name('guru.import.proses');
+    Route::get('/guru/import/template', [ImportExcelGuruController::class, 'template'])->name('guru.import.template');
 
     Route::get('/siswa/{siswa}', [AdminController::class, 'siswaShow'])->name('siswa.show');
 
