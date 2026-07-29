@@ -39,7 +39,7 @@ return [
         ],
     ],
 
-    'cache' => env('PULSE_CACHE_DRIVER'),
+    'cache' => env('PULSE_CACHE_DRIVER', 'array'),
 
     'servers' => [
         'server_name' => 'TartilPro Server',

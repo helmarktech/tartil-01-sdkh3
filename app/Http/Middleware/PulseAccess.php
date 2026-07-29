@@ -37,8 +37,6 @@ class PulseAccess
 
         // User-based access
         $user = auth()->user();
-        $userEmail = $user ? ($user->email ?? 'null') : 'not-authenticated';
-        $userRole = $user ? ($user->role ?? 'null') : 'not-authenticated';
 
         if ($user && $user->email === $allowedEmail) {
             return $next($request);
@@ -49,6 +47,6 @@ class PulseAccess
             return $next($request);
         }
 
-        abort(403, 'Akses Laravel Pulse ditolak. User: '.$userEmail.' | Role: '.$userRole.' | Token provided: '.($token ? 'yes' : 'no'));
+        abort(403, 'Akses Laravel Pulse ditolak: token tidak valid atau user tidak memiliki hak akses.');
     }
 }
