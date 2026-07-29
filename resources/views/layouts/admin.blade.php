@@ -134,9 +134,7 @@
                 $p = request()->path();
 
                 // ====== KELAS REGULER GROUP ======
-                $kelasRegulerOpen = str_contains($p, 'admin/guru-reguler')
-                    || str_contains($p, 'admin/kelas-reguler')
-                    || str_contains($p, 'admin/guru/import') && request('jenis') === 'reguler';
+                $kelasRegulerOpen = str_contains($p, 'admin/kelas-reguler');
 
                 // ====== KELAS TARTIL GROUP ======
                 // Halaman kelas tartil: /admin/kelas (CRUD kelas tartil)
@@ -145,12 +143,15 @@
                 $isRekapKelasTartil = str_contains($p, 'admin/rekap-kelas-tartil');
                 $isPengaturanKelas = str_contains($p, 'admin/pengaturan-kelas') && !str_contains($p, 'aktifkan');
 
-                $kelasTartilOpen = str_contains($p, 'admin/manajemen/guru')
-                    || str_contains($p, 'admin/guru/import') && request('jenis') !== 'reguler'
-                    || $isKelasTartil
+                $kelasTartilOpen = $isKelasTartil
                     || $isPindahTartil
                     || $isRekapKelasTartil
                     || $isPengaturanKelas;
+
+                // ====== DATA GURU GROUP ======
+                $dataGuruOpen = str_contains($p, 'admin/guru-reguler')
+                    || str_contains($p, 'admin/manajemen/guru')
+                    || str_contains($p, 'admin/guru/import');
 
                 // ====== MUNAQOSYAH GROUP ======
                 $munaqosyahOpen = str_contains($p, 'admin/munaqosyah') || str_contains($p, 'admin/munaqosyah-rekap');
@@ -181,6 +182,20 @@
                         </div>
                     </div>
 
+                    {{-- Data Guru (submenu) --}}
+                    <div class="nav-group">
+                        <button type="button" class="nav-item nav-toggle {{ $dataGuruOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
+                            <span>Data Guru</span>
+                            <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <div class="nav-submenu {{ $dataGuruOpen ? 'open' : '' }}">
+                            <a href="{{ route('admin.guru-reguler.index') }}" class="nav-subitem {{ str_contains($p, 'admin/guru-reguler') ? 'active' : '' }}">Guru Reguler</a>
+                            <a href="{{ route('admin.guru.import', ['jenis' => 'reguler']) }}" class="nav-subitem {{ str_contains($p, 'admin/guru/import') && request('jenis') === 'reguler' ? 'active' : '' }}">Import Guru Reguler</a>
+                            <a href="{{ route('admin.manajemen.guru') }}" class="nav-subitem {{ str_contains($p, 'admin/manajemen/guru') ? 'active' : '' }}">Guru Tartil</a>
+                            <a href="{{ route('admin.guru.import', ['jenis' => 'tartil']) }}" class="nav-subitem {{ str_contains($p, 'admin/guru/import') && request('jenis') !== 'reguler' ? 'active' : '' }}">Import Guru Tartil</a>
+                        </div>
+                    </div>
+
                     {{-- Kelas Reguler --}}
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $kelasRegulerOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
@@ -188,8 +203,6 @@
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $kelasRegulerOpen ? 'open' : '' }}">
-                            <a href="{{ route('admin.guru-reguler.index') }}" class="nav-subitem {{ str_contains($p, 'admin/guru-reguler') ? 'active' : '' }}">Guru Reguler</a>
-                            <a href="{{ route('admin.guru.import', ['jenis' => 'reguler']) }}" class="nav-subitem {{ str_contains($p, 'admin/guru/import') && request('jenis') === 'reguler' ? 'active' : '' }}">Import Guru Reguler</a>
                             <a href="{{ route('admin.kelas-reguler.daftar') }}" class="nav-subitem {{ str_contains($p, 'admin/kelas-reguler/daftar') ? 'active' : '' }}">Daftar Kelas Reguler</a>
                             <a href="{{ route('admin.kelas-reguler.keterangan') }}" class="nav-subitem {{ str_contains($p, 'admin/kelas-reguler/keterangan') ? 'active' : '' }}">Keterangan Kelas</a>
                             <a href="{{ route('admin.kelas-reguler.pindah-index') }}" class="nav-subitem {{ str_contains($p, 'admin/kelas-reguler/pindah') ? 'active' : '' }}">Pindah Kelas</a>
@@ -203,8 +216,6 @@
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $kelasTartilOpen ? 'open' : '' }}">
-                            <a href="{{ route('admin.manajemen.guru') }}" class="nav-subitem {{ str_contains($p, 'admin/manajemen/guru') ? 'active' : '' }}">Guru Tartil</a>
-                            <a href="{{ route('admin.guru.import', ['jenis' => 'tartil']) }}" class="nav-subitem {{ str_contains($p, 'admin/guru/import') && request('jenis') !== 'reguler' ? 'active' : '' }}">Import Guru Tartil</a>
                             <a href="{{ route('admin.kelas.index') }}" class="nav-subitem {{ $isKelasTartil ? 'active' : '' }}">Kelas Tartil</a>
                             <a href="{{ route('admin.pengaturan-kelas.index') }}" class="nav-subitem {{ $isPengaturanKelas ? 'active' : '' }}">Pengaturan Indikator</a>
                             <a href="{{ route('admin.perpindahan-tartil.admin') }}" class="nav-subitem {{ $isPindahTartil ? 'active' : '' }}">Pindah Tartil</a>
