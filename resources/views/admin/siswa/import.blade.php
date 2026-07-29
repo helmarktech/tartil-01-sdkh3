@@ -39,6 +39,8 @@
         <div style="margin-top: 10px; font-size: 11px; color: var(--text-muted);">
             Kelas tartil akan diisi nanti melalui menu <strong>Penempatan Tartil</strong>.
             Pastikan data kelas reguler sudah dibuat sebelum import.
+            <br><br>
+            <strong>Catatan:</strong> File akan diunggah dan diproses di background oleh queue worker. Untuk data besar (lebih dari 500 baris), proses membutuhkan waktu beberapa menit. Hasil bisa dicek di log aplikasi.
         </div>
     </div>
 
