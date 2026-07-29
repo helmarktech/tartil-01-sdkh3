@@ -15,19 +15,20 @@ use Symfony\Component\Console\Output\OutputInterface;
 class PenempatanKelasTartilService
 {
     /**
-     * Mapping nama program di Excel → nama kelas tartil di database.
+     * Mapping nama program di Excel → daftar alias nama kelas tartil di database.
+     * Sistem akan mencoba alias pertama yang cocok. Terakhir bisa fallback ke nama program itu sendiri.
      */
     private array $programMapping = [
-        'BILQOLAM 1' => 'BQ 1',
-        'BILQOLAM 2' => 'BQ 2',
-        'BILQOLAM 3' => 'BQ 3',
-        'BILQOLAM 4' => 'BQ 4',
-        'JUZ AMMA' => 'Tahfidz',
-        'MARHALAH 1' => 'Tartil',
-        'MARHALAH 2' => 'Tartil',
-        'MARHALAH 3' => 'Tartil',
-        'MUNAQOSYAH' => 'Tartil',
-        'TAHFIDZ' => 'Tahfidz',
+        'BILQOLAM 1' => ['Bilqolam 1', 'BQ 1'],
+        'BILQOLAM 2' => ['Bilqolam 2', 'BQ 2'],
+        'BILQOLAM 3' => ['Bilqolam 3', 'BQ 3'],
+        'BILQOLAM 4' => ['Bilqolam 4', 'BQ 4'],
+        'JUZ AMMA' => ['Juz Amma', 'Tahfidz'],
+        'MARHALAH 1' => ['Marhalah 1', 'Tartil'],
+        'MARHALAH 2' => ['Marhalah 2', 'Tartil'],
+        'MARHALAH 3' => ['Marhalah 3', 'Tartil'],
+        'MUNAQOSYAH' => ['Munaqosyah', 'Tartil'],
+        'TAHFIDZ' => ['Tahfidz'],
     ];
 
     public static function process(string $path, OutputInterface $output, bool $overwrite = false): array
@@ -43,12 +44,28 @@ class PenempatanKelasTartilService
             ->keyBy(fn ($k) => strtoupper(trim($k->nama)));
 
         $mappingKelasId = [];
-        foreach ($instance->programMapping as $program => $kelasNama) {
-            $key = strtoupper(trim($kelasNama));
-            if (! $kelasTartil->has($key)) {
-                throw new \InvalidArgumentException("Kelas tartil '{$kelasNama}' tidak ditemukan di database. Periksa mapping.");
+        foreach ($instance->programMapping as $program => $aliases) {
+            $aliases = (array) $aliases;
+            // Fallback ke nama program itu sendiri jika tidak ada alias yang cocok
+            $aliases[] = strtoupper(trim($program));
+
+            $currentKelasId = null;
+            $matchedName = null;
+            foreach ($aliases as $alias) {
+                $key = strtoupper(trim($alias));
+                if ($kelasTartil->has($key)) {
+                    $currentKelasId = $kelasTartil->get($key)->id;
+                    $matchedName = $kelasTartil->get($key)->nama;
+                    break;
+                }
             }
-            $mappingKelasId[strtoupper(trim($program))] = $kelasTartil->get($key)->id;
+
+            if (! $currentKelasId) {
+                throw new \InvalidArgumentException("Kelas tartil untuk program '{$program}' tidak ditemukan di database. Dicoba alias: ".implode(', ', $aliases).'. Periksa mapping atau data kelas.');
+            }
+
+            $mappingKelasId[strtoupper(trim($program))] = $currentKelasId;
+            $instance->programMapping[$program] = $matchedName; // Simpan nama yang cocok untuk info log
         }
 
         $semesterAktif = Semester::aktif()->first();
