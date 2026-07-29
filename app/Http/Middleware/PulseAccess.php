@@ -40,12 +40,12 @@ class PulseAccess
         $userEmail = $user ? ($user->email ?? 'null') : 'not-authenticated';
         $userRole = $user ? ($user->role ?? 'null') : 'not-authenticated';
 
-        if ($user && method_exists($user, 'email') && $user->email === $allowedEmail) {
+        if ($user && $user->email === $allowedEmail) {
             return $next($request);
         }
 
         // Role-based admin access
-        if ($user && method_exists($user, 'role') && $user->role === 'admin') {
+        if ($user && $user->role === 'admin') {
             return $next($request);
         }
 
