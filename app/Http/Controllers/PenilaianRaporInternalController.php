@@ -429,6 +429,10 @@ class PenilaianRaporInternalController extends Controller
     {
         $penilaian = PenilaianRaporInternal::where('status', 'aktif')->with('semester')->first();
 
+        if (! $penilaian) {
+            return back()->with('error', 'Tidak ada penilaian rapor aktif. Silakan buat penilaian rapor terlebih dahulu.');
+        }
+
         // Mode: 'tartil' | 'reguler'
         $mode = $request->get('mode', 'tartil');
 

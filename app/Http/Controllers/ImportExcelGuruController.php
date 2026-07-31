@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Jobs\ImportGuruJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
@@ -58,14 +57,16 @@ class ImportExcelGuruController extends Controller
                 return redirect()->back()->with('error', 'Kolom wajib tidak ditemukan: '.implode(', ', $missing).'. Pastikan header baris pertama sesuai.');
             }
 
-            // Simpan file ke storage agar queue worker bisa mengaksesnya
-            $path = $file->storeAs('imports/guru', date('YmdHis').'_'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName), 'local');
-            $fullPath = Storage::disk('local')->path($path);
+            // Baca konten file dan encode ke base64 agar bisa dibawa oleh job queue.
+            // Database queue menyimpan payload sebagai JSON; binary Excel tidak bisa
+            // di-encode langsung. Base64 memastikan worker di instance lain tetap
+            // bisa merekonstruksi file Excel yang sama.
+            $fileContent = base64_encode(file_get_contents($file->getPathname()));
 
-            ImportGuruJob::dispatch($fullPath, $jenis, auth()->id());
+            ImportGuruJob::dispatch($fileContent, $jenis, auth()->id(), $originalName);
 
             Log::info('Import guru di-queue', [
-                'file' => $fullPath,
+                'file' => $originalName,
                 'jenis' => $jenis,
                 'admin_id' => auth()->id(),
                 'rows' => count($rows) - 1,
