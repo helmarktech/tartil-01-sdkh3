@@ -34,7 +34,7 @@ class ImportSiswaService
         }
 
         $header = array_map('strtoupper', array_map('trim', $rows[0]));
-        $required = ['NIS', 'NAMA', 'JENIS_KELAMIN', 'KELAS_NAMA', 'KELAS_JENJANG', 'KELAS_TINGKAT'];
+        $required = ['NIS', 'NAMA', 'JENIS_KELAMIN', 'KELAS_NAMA', 'KELAS_JENJANG', 'KELAS_TINGKAT', 'TANGGAL_LAHIR', 'TEMPAT_LAHIR', 'NAMA_AYAH'];
         $missing = array_diff($required, $header);
         if (! empty($missing)) {
             throw new \InvalidArgumentException('Kolom wajib tidak ditemukan: '.implode(', ', $missing));
@@ -76,6 +76,9 @@ class ImportSiswaService
                 $output->writeln('<comment>Baris '.($i + 1).': NO_HP kosong, diisi default 000000000000 untuk NIS '.$nis.'.</comment>');
             }
             $tglMasuk = $colIdx['TANGGAL_MASUK'] !== false ? trim((string) ($row[$colIdx['TANGGAL_MASUK']] ?? '')) : $now->format('Y-m-d');
+            $tglLahir = trim((string) ($row[$colIdx['TANGGAL_LAHIR']] ?? ''));
+            $tempatLahir = trim((string) ($row[$colIdx['TEMPAT_LAHIR']] ?? ''));
+            $namaAyah = trim((string) ($row[$colIdx['NAMA_AYAH']] ?? ''));
 
             if (! $nis) {
                 $errors[] = 'Baris '.($i + 1).': NIS wajib diisi.';
@@ -97,6 +100,31 @@ class ImportSiswaService
             }
             if (! $kelasNama || ! $kelasJenjang || ! $kelasTingkat) {
                 $errors[] = 'Baris '.($i + 1).': Kelas (nama, jenjang, tingkat) wajib diisi.';
+                $gagal++;
+
+                continue;
+            }
+            if (! $tglLahir) {
+                $errors[] = 'Baris '.($i + 1).': Tanggal lahir wajib diisi.';
+                $gagal++;
+
+                continue;
+            }
+            $parsedTglLahir = self::parseTanggal($tglLahir);
+            if (! $parsedTglLahir) {
+                $errors[] = 'Baris '.($i + 1).': Format tanggal lahir tidak valid (gunakan YYYY-MM-DD).';
+                $gagal++;
+
+                continue;
+            }
+            if (! $tempatLahir) {
+                $errors[] = 'Baris '.($i + 1).': Tempat lahir wajib diisi.';
+                $gagal++;
+
+                continue;
+            }
+            if (! $namaAyah) {
+                $errors[] = 'Baris '.($i + 1).': Nama ayah wajib diisi.';
                 $gagal++;
 
                 continue;
@@ -132,6 +160,9 @@ class ImportSiswaService
                 'jenis_kelamin' => strtoupper($jk),
                 'kelas_reguler_id' => $kelasReguler->id,
                 'kelas_tartil_id' => null,
+                'tanggal_lahir' => $parsedTglLahir,
+                'tempat_lahir' => $tempatLahir,
+                'nama_ayah' => $namaAyah,
                 'tanggal_masuk' => self::parseTanggal($tglMasuk) ?: $now,
                 'status' => 'aktif',
                 'created_at' => $now,

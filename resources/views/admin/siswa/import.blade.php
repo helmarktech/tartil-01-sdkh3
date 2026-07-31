@@ -33,6 +33,9 @@
             <li><span class="required">KELAS_NAMA*</span> — Nama kelas reguler (contoh: 1A)</li>
             <li><span class="required">KELAS_JENJANG*</span> — Angka jenjang (1, 2, 3...)</li>
             <li><span class="required">KELAS_TINGKAT*</span> — Huruf tingkat (A, B, C...)</li>
+            <li><span class="required">TANGGAL_LAHIR*</span> — Format YYYY-MM-DD</li>
+            <li><span class="required">TEMPAT_LAHIR*</span> — Kota/kabupaten lahir</li>
+            <li><span class="required">NAMA_AYAH*</span> — Nama ayah kandung/wali</li>
             <li>NO_HP — Nomor HP (opsional)</li>
             <li>TANGGAL_MASUK — Format YYYY-MM-DD (opsional, default hari ini)</li>
         </ul>

@@ -20,30 +20,44 @@ class ImportSiswaJob implements ShouldQueue
     public int $timeout = 600;
 
     public function __construct(
-        public string $path,
-        public ?int $adminId = null
+        public string $fileContent,
+        public ?int $adminId = null,
+        public string $originalName = ''
     ) {}
 
     public function handle(): void
     {
         $output = new BufferedOutput;
+        $tempPath = tempnam(sys_get_temp_dir(), 'import_siswa_').'.xlsx';
 
         try {
-            $result = ImportSiswaService::process($this->path, $output);
+            $binaryContent = base64_decode($this->fileContent, true);
+
+            if ($binaryContent === false) {
+                throw new \InvalidArgumentException('Konten file tidak valid (base64 decode gagal).');
+            }
+
+            file_put_contents($tempPath, $binaryContent);
+
+            $result = ImportSiswaService::process($tempPath, $output);
 
             Log::info('Import siswa via queue selesai', [
                 'sukses' => $result['sukses'],
                 'gagal' => $result['gagal'],
                 'admin_id' => $this->adminId,
-                'file' => $this->path,
+                'file' => $this->originalName,
             ]);
         } catch (\Throwable $e) {
             Log::error('Import siswa via queue gagal', [
                 'error' => $e->getMessage(),
                 'admin_id' => $this->adminId,
-                'file' => $this->path,
+                'file' => $this->originalName,
             ]);
             throw $e;
+        } finally {
+            if (file_exists($tempPath)) {
+                unlink($tempPath);
+            }
         }
     }
 }
