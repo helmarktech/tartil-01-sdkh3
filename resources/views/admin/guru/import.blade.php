@@ -111,18 +111,28 @@
             <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                 <thead>
                     <tr style="background: var(--bg-elevated); color: var(--text-muted);">
-                        <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);">Waktu Upload</th>
+                        <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);">Waktu Upload (WIB)</th>
                         <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);">File</th>
                         <th style="padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border);">Status</th>
                         <th style="padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border);">Sukses</th>
                         <th style="padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border);">Gagal</th>
+                        <th style="padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border);">Durasi Proses</th>
                         <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);">Keterangan</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($importLogs as $log)
+                    @php
+                        $createdJakarta = $log->created_at->timezone('Asia/Jakarta');
+                        $finishedAt = $log->processed_at ?? now();
+                        $diffSeconds = $log->created_at->diffInSeconds($finishedAt);
+                        $diffMinutes = ceil($diffSeconds / 60);
+                        $durasi = $log->processed_at
+                            ? ($diffMinutes < 1 ? '<1 menit' : $diffMinutes . ' menit')
+                            : 'sedang diproses';
+                    @endphp
                     <tr style="border-bottom: 1px solid var(--border);">
-                        <td style="padding: 10px 12px; color: var(--text-primary);">{{ $log->created_at->format('d/m/Y H:i') }}</td>
+                        <td style="padding: 10px 12px; color: var(--text-primary);">{{ $createdJakarta->format('d/m/Y H:i') }}</td>
                         <td style="padding: 10px 12px; color: var(--text-primary);">{{ $log->file_name }}</td>
                         <td style="padding: 10px 12px; text-align: center;">
                             @if($log->status === 'success')
@@ -137,6 +147,7 @@
                         </td>
                         <td style="padding: 10px 12px; text-align: center; color: var(--text-primary);">{{ $log->sukses }}</td>
                         <td style="padding: 10px 12px; text-align: center; color: var(--text-primary);">{{ $log->gagal }}</td>
+                        <td style="padding: 10px 12px; text-align: center; color: var(--text-primary);">{{ $durasi }}</td>
                         <td style="padding: 10px 12px; color: var(--text-primary);">
                             @if(!empty($log->errors))
                                 @if(is_array($log->errors))
@@ -154,7 +165,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" style="padding: 16px; text-align: center; color: var(--text-muted);">Belum ada riwayat import.</td>
+                        <td colspan="7" style="padding: 16px; text-align: center; color: var(--text-muted);">Belum ada riwayat import.</td>
                     </tr>
                     @endforelse
                 </tbody>
