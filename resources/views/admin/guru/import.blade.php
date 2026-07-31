@@ -101,5 +101,65 @@
         </div>
     </div>
     @endif
+
+    {{-- Log Import --}}
+    <div class="card-tartil" style="padding: 0; margin-top: 20px; overflow: hidden;">
+        <div style="padding: 12px 16px; background: var(--bg-elevated); border-bottom: 1px solid var(--border);">
+            <strong style="font-size: 13px; color: var(--text-primary);">Riwayat Import Guru {{ $jenis === 'tartil' ? 'Tartil' : 'Reguler' }}</strong>
+        </div>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                    <tr style="background: var(--bg-elevated); color: var(--text-muted);">
+                        <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);">Waktu Upload</th>
+                        <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);">File</th>
+                        <th style="padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border);">Status</th>
+                        <th style="padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border);">Sukses</th>
+                        <th style="padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border);">Gagal</th>
+                        <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);">Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($importLogs as $log)
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 10px 12px; color: var(--text-primary);">{{ $log->created_at->format('d/m/Y H:i') }}</td>
+                        <td style="padding: 10px 12px; color: var(--text-primary);">{{ $log->file_name }}</td>
+                        <td style="padding: 10px 12px; text-align: center;">
+                            @if($log->status === 'success')
+                                <span style="padding: 3px 8px; border-radius: 4px; background: #E8F5E9; color: #2E7D32; font-size: 11px; font-weight: 600;">Berhasil</span>
+                            @elseif($log->status === 'failed')
+                                <span style="padding: 3px 8px; border-radius: 4px; background: #FFEBEE; color: #C62828; font-size: 11px; font-weight: 600;">Gagal</span>
+                            @elseif($log->status === 'processing')
+                                <span style="padding: 3px 8px; border-radius: 4px; background: #FFF3E0; color: #EF6C00; font-size: 11px; font-weight: 600;">Diproses</span>
+                            @else
+                                <span style="padding: 3px 8px; border-radius: 4px; background: #E3F2FD; color: #1565C0; font-size: 11px; font-weight: 600;">Menunggu</span>
+                            @endif
+                        </td>
+                        <td style="padding: 10px 12px; text-align: center; color: var(--text-primary);">{{ $log->sukses }}</td>
+                        <td style="padding: 10px 12px; text-align: center; color: var(--text-primary);">{{ $log->gagal }}</td>
+                        <td style="padding: 10px 12px; color: var(--text-primary);">
+                            @if(!empty($log->errors))
+                                @if(is_array($log->errors))
+                                    {{ $log->errors[0] }}
+                                    @if(count($log->errors) > 1)
+                                        <span style="color: var(--text-muted);">(+{{ count($log->errors) - 1 }} error lain)</span>
+                                    @endif
+                                @else
+                                    {{ $log->errors }}
+                                @endif
+                            @else
+                                -
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" style="padding: 16px; text-align: center; color: var(--text-muted);">Belum ada riwayat import.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 @endsection

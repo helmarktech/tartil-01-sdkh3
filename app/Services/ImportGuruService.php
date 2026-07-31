@@ -51,6 +51,8 @@ class ImportGuruService
         $gagal = 0;
         $errors = [];
         $insertGuru = [];
+        $seenEmails = [];
+        $seenNips = [];
         $now = now();
 
         $model = $isTartil ? GuruTartil::class : GuruReguler::class;
@@ -107,6 +109,24 @@ class ImportGuruService
 
             $emailUpper = strtoupper($email);
             $nipUpper = $nip ? strtoupper($nip) : null;
+
+            if (in_array($emailUpper, $seenEmails, true)) {
+                $errors[] = 'Baris '.($i + 1).': Email "'.$email.'" muncul lebih dari satu kali di file.';
+                $gagal++;
+
+                continue;
+            }
+            $seenEmails[] = $emailUpper;
+
+            if ($nipUpper) {
+                if (in_array($nipUpper, $seenNips, true)) {
+                    $errors[] = 'Baris '.($i + 1).': NIP "'.$nip.'" muncul lebih dari satu kali di file.';
+                    $gagal++;
+
+                    continue;
+                }
+                $seenNips[] = $nipUpper;
+            }
 
             if ($model::whereRaw('UPPER(email) = ?', [$emailUpper])->exists()) {
                 $errors[] = 'Baris '.($i + 1).': Email "'.$email.'" sudah terdaftar sebagai guru '.$jenis.'.';

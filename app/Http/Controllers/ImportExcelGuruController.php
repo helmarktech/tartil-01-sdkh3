@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ImportGuruJob;
+use App\Models\ImportLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -17,7 +18,13 @@ class ImportExcelGuruController extends Controller
     {
         $jenis = $request->get('jenis', 'tartil');
 
-        return view('admin.guru.import', compact('jenis'));
+        $importLogs = ImportLog::where('jenis', $jenis)
+            ->with('user:id,nama')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        return view('admin.guru.import', compact('jenis', 'importLogs'));
     }
 
     // ═══════════════════════════════════════════════════
@@ -63,9 +70,19 @@ class ImportExcelGuruController extends Controller
             // bisa merekonstruksi file Excel yang sama.
             $fileContent = base64_encode(file_get_contents($file->getPathname()));
 
-            ImportGuruJob::dispatch($fileContent, $jenis, auth()->id(), $originalName);
+            $importLog = ImportLog::create([
+                'user_id' => auth()->id(),
+                'jenis' => $jenis,
+                'file_name' => $originalName,
+                'status' => 'pending',
+                'sukses' => 0,
+                'gagal' => 0,
+            ]);
+
+            ImportGuruJob::dispatch($fileContent, $jenis, auth()->id(), $originalName, $importLog->id);
 
             Log::info('Import guru di-queue', [
+                'import_log_id' => $importLog->id,
                 'file' => $originalName,
                 'jenis' => $jenis,
                 'admin_id' => auth()->id(),
@@ -73,7 +90,7 @@ class ImportExcelGuruController extends Controller
             ]);
 
             return redirect()->route('admin.guru.import', ['jenis' => $jenis])
-                ->with('success', 'File "'.$originalName.'" berhasil diunggah. Import '.(count($rows) - 1).' guru '.($jenis === 'tartil' ? 'tartil' : 'reguler').' sedang diproses di background oleh queue worker. Hasil bisa dicek di log aplikasi.');
+                ->with('success', 'File "'.$originalName.'" berhasil diunggah. Import '.(count($rows) - 1).' guru '.($jenis === 'tartil' ? 'tartil' : 'reguler').' sedang diproses di background. Silakan pantau status di tabel log di bawah.');
 
         } catch (\Exception $e) {
             Log::error('Gagal queue import guru', ['error' => $e->getMessage(), 'jenis' => $jenis]);

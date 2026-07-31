@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\GuruTartil;
+use App\Models\ImportLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -67,6 +68,13 @@ class ImportGuruTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'ahmad@tartil.id', 'role' => 'guru']);
         $this->assertDatabaseHas('users', ['email' => 'siti@tartil.id', 'role' => 'guru']);
 
+        $log = ImportLog::latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertEquals('tartil', $log->jenis);
+        $this->assertEquals('success', $log->status);
+        $this->assertEquals(2, $log->sukses);
+        $this->assertEquals(0, $log->gagal);
+
         $user = User::where('email', 'ahmad@tartil.id')->first();
         $this->assertTrue(Hash::check('guru123', $user->password));
         $this->assertEquals($user->guru_id, GuruTartil::where('email', 'ahmad@tartil.id')->first()->id);
@@ -129,6 +137,70 @@ class ImportGuruTest extends TestCase
         $response->assertSessionHas('success');
 
         $this->assertEquals(1, GuruTartil::where('email', 'ahmad@tartil.id')->count());
+
+        @unlink($path);
+    }
+
+    public function test_import_guru_menolak_email_duplikat_dalam_file(): void
+    {
+        $this->actingAs($this->admin);
+
+        $path = $this->createExcelFile([
+            ['NIP', 'NAMA', 'EMAIL', 'NO_HP', 'JENIS_KELAMIN', 'ALAMAT'],
+            ['GT001', 'Ust. Ahmad', 'ahmad@tartil.id', '08123456789', 'L', 'Jl. Mawar'],
+            ['GT002', 'Ust. Ahmad Lain', 'ahmad@tartil.id', '08123456788', 'L', 'Jl. Melati'],
+        ]);
+
+        $file = new UploadedFile($path, 'guru-duplikat-email.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        $response = $this->postJson(route('admin.guru.import.proses'), [
+            'file' => $file,
+            'jenis' => 'tartil',
+        ]);
+
+        $response->assertRedirect(route('admin.guru.import', ['jenis' => 'tartil']));
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(1, GuruTartil::where('email', 'ahmad@tartil.id')->count());
+
+        $log = ImportLog::latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertEquals('success', $log->status);
+        $this->assertEquals(1, $log->sukses);
+        $this->assertEquals(1, $log->gagal);
+        $this->assertNotEmpty($log->errors);
+
+        @unlink($path);
+    }
+
+    public function test_import_guru_menolak_nip_duplikat_dalam_file(): void
+    {
+        $this->actingAs($this->admin);
+
+        $path = $this->createExcelFile([
+            ['NIP', 'NAMA', 'EMAIL', 'NO_HP', 'JENIS_KELAMIN', 'ALAMAT'],
+            ['2026', 'Ust. A', 'a@tartil.id', '08123456789', 'L', 'Jl. Mawar'],
+            ['2026', 'Ust. B', 'b@tartil.id', '08123456788', 'L', 'Jl. Melati'],
+        ]);
+
+        $file = new UploadedFile($path, 'guru-duplikat-nip.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+        $response = $this->postJson(route('admin.guru.import.proses'), [
+            'file' => $file,
+            'jenis' => 'tartil',
+        ]);
+
+        $response->assertRedirect(route('admin.guru.import', ['jenis' => 'tartil']));
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(1, GuruTartil::where('nip', '2026')->count());
+
+        $log = ImportLog::latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertEquals('success', $log->status);
+        $this->assertEquals(1, $log->sukses);
+        $this->assertEquals(1, $log->gagal);
+        $this->assertNotEmpty($log->errors);
 
         @unlink($path);
     }
