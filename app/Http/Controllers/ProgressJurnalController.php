@@ -45,25 +45,14 @@ class ProgressJurnalController extends Controller
 
         // Step 3: Pilih Guru
         if ($step === 'guru' || ($semesterId && !$guruId && $step !== 'kelas')) {
-            // Ambil kelas yang punya jurnal atau siswa di semester ini
-            $kelasIdsJurnal = JurnalHarian::where('semester_id', $semesterId)
-                ->distinct('kelas_id')
-                ->pluck('kelas_id')
-                ->toArray();
-
-            $kelasIdsSiswa = \App\Models\SemesterSiswa::where('semester_id', $semesterId)
-                ->distinct('kelas_id')
-                ->pluck('kelas_id')
-                ->toArray();
-
-            $kelasIds = array_unique(array_merge($kelasIdsJurnal, $kelasIdsSiswa));
-
-            // Ambil guru yang mengajar kelas-kelas tersebut
-            $gurus = Guru::whereHas('kelas', fn($q) => $q->whereIn('id', $kelasIds))
-                ->with(['kelas' => fn($q) => $q->whereIn('id', $kelasIds)])
+            // Tampilkan semua kelas aktif beserta guru pengampunya untuk semester ini,
+            // bukan hanya kelas yang sudah punya jurnal/siswa. Ini memastikan kelas baru
+            // atau kelas yang belum mengisi jurnal tetap muncul di monitoring.
+            $gurus = Guru::whereHas('kelas', fn($q) => $q->where('status', 'aktif'))
+                ->with(['kelas' => fn($q) => $q->where('status', 'aktif')->orderBy('nama')])
                 ->get();
 
-            // Hitung progress jurnal: distinct tanggal / target 20
+            // Hitung progress jurnal: distinct tanggal / target hari efektif
             foreach ($gurus as $guru) {
                 foreach ($guru->kelas as $kelas) {
                     $kelas->progressJurnal = $this->hitungProgressJurnal($kelas->id, [$semesterId]);
@@ -189,20 +178,10 @@ class ProgressJurnalController extends Controller
 
         // Step 3: Pilih Guru
         if ($step === 'guru' || ($semesterId && !$guruId && $step !== 'kelas')) {
-            $kelasIdsJurnal = JurnalHarian::where('semester_id', $semesterId)
-                ->distinct('kelas_id')
-                ->pluck('kelas_id')
-                ->toArray();
-
-            $kelasIdsSiswa = \App\Models\SemesterSiswa::where('semester_id', $semesterId)
-                ->distinct('kelas_id')
-                ->pluck('kelas_id')
-                ->toArray();
-
-            $kelasIds = array_unique(array_merge($kelasIdsJurnal, $kelasIdsSiswa));
-
-            $gurus = Guru::whereHas('kelas', fn($q) => $q->whereIn('id', $kelasIds))
-                ->with(['kelas' => fn($q) => $q->whereIn('id', $kelasIds)])
+            // Tampilkan semua kelas aktif beserta guru pengampunya untuk semester ini,
+            // bukan hanya kelas yang sudah punya jurnal/siswa.
+            $gurus = Guru::whereHas('kelas', fn($q) => $q->where('status', 'aktif'))
+                ->with(['kelas' => fn($q) => $q->where('status', 'aktif')->orderBy('nama')])
                 ->get();
 
             // Hitung progress absensi: entry dengan penilaian / total entry
