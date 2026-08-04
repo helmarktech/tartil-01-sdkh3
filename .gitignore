@@ -28,3 +28,5 @@ Thumbs.db
 ~$*.xlsx
 ~$*.xls
 ~$*.docx
+template-import-jk.xlsx
+update_jenis_kelamin.sql
