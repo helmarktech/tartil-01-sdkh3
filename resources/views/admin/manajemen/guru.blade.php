@@ -206,4 +206,4 @@ function toggleHapus(id) {
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 </script>
-@endsection
+@endpush
