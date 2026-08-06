@@ -323,6 +323,10 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     Route::get('/penilaian-rapor/{penilaian}/kelas/{kelasId}/nilai', [PenilaianRaporInternalController::class, 'guruIsiNilai'])->name('penilaian-rapor.isi-nilai');
     Route::post('/penilaian-rapor/{penilaian}/kelas/{kelasId}/nilai', [PenilaianRaporInternalController::class, 'guruSimpanNilai'])->name('penilaian-rapor.simpan-nilai');
     Route::get('/rekap-nilai-rapor', [PenilaianRaporInternalController::class, 'guruRekapNilai'])->name('penilaian-rapor.rekap');
+
+    // Ganti Password
+    Route::get('/password/edit', [GuruController::class, 'editPassword'])->name('password.edit');
+    Route::put('/password/update', [GuruController::class, 'updatePassword'])->name('password.update');
 });
 
 // ==================== SISWA ====================

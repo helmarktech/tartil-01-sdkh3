@@ -354,6 +354,9 @@
                     <a href="{{ route('guru.rapor.pilih') }}" class="nav-item {{ str_contains($p, 'guru/rapor') ? 'active' : '' }}">
                         <span>Rapor</span>
                     </a>
+                    <a href="{{ route('guru.password.edit') }}" class="nav-item {{ str_contains($p, 'guru/password') ? 'active' : '' }}">
+                        <span>Ganti Password</span>
+                    </a>
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ str_contains($p, 'guru/perpindahan') ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
                             <span>Pindah Kelas</span>

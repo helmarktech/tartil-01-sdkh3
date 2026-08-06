@@ -10,6 +10,7 @@ use App\Models\JurnalDetail;
 use App\Models\Semester;
 use App\Models\PerpindahanKelas;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class GuruController extends Controller
 {
@@ -194,5 +195,29 @@ class GuruController extends Controller
 
         PerpindahanKelas::create($request->all());
         return redirect()->route('guru.dashboard')->with('success', 'Pengajuan perpindahan kelas dikirim. Menunggu persetujuan admin.');
+    }
+
+    // ============ GANTI PASSWORD ============
+    public function editPassword()
+    {
+        return view('guru.password.edit');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'password_lama' => 'required',
+            'password_baru' => 'required|min:6|confirmed',
+        ]);
+
+        $user = auth()->user();
+
+        if (! Hash::check($request->password_lama, $user->password)) {
+            return back()->with('error', 'Password lama tidak sesuai.');
+        }
+
+        $user->update(['password' => Hash::make($request->password_baru)]);
+
+        return redirect()->route('guru.password.edit')->with('success', 'Password berhasil diperbarui.');
     }
 }
