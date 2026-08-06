@@ -249,4 +249,31 @@ class SiswaDashboardController extends Controller
             'juzDistinct', 'hafalanList', 'juzAktif', 'isTahfidz'
         ));
     }
+
+    /**
+     * Tampilkan form edit nomor HP untuk siswa.
+     */
+    public function editNoHp()
+    {
+        $siswa = auth('siswa')->user();
+
+        return view('siswa.edit-no-hp', compact('siswa'));
+    }
+
+    /**
+     * Simpan perubahan nomor HP siswa.
+     */
+    public function updateNoHp(Request $request)
+    {
+        $siswa = auth('siswa')->user();
+
+        $validated = $request->validate([
+            'no_hp' => 'required|string|max:15',
+        ]);
+
+        $siswa->update($validated);
+
+        return redirect()->route('siswa.no-hp.edit')
+            ->with('success', 'Nomor HP berhasil diperbarui.');
+    }
 }

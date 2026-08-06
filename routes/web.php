@@ -335,6 +335,8 @@ Route::middleware(['auth:siswa'])->prefix('siswa')->name('siswa.')->group(functi
     Route::get('/munaqosyah', [MunaqosyahController::class, 'siswaIndex'])->name('munaqosyah');
     Route::get('/rapor', [RaporController::class, 'pdfRaporSiswaSendiri'])->name('rapor');
     Route::get('/hafalan', [SiswaDashboardController::class, 'hafalan'])->name('hafalan');
+    Route::get('/no-hp/edit', [SiswaDashboardController::class, 'editNoHp'])->name('no-hp.edit');
+    Route::put('/no-hp/update', [SiswaDashboardController::class, 'updateNoHp'])->name('no-hp.update');
 });
 
 // ════════════════════════════════════════════

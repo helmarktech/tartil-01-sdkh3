@@ -214,6 +214,10 @@
                         <span class="sd-info-value sd-info-mono">{{ $siswa->nis }}</span>
                     </div>
                     <div class="sd-info-item">
+                        <span class="sd-info-label">No. HP</span>
+                        <span class="sd-info-value">{{ $siswa->no_hp ?? '-' }}</span>
+                    </div>
+                    <div class="sd-info-item">
                         <span class="sd-info-label">Status</span>
                         <span class="sd-info-badge {{ $siswa->status == 'aktif' ? 'active' : '' }}">{{ ucfirst($siswa->status) }}</span>
                     </div>

@@ -346,6 +346,7 @@
                     @endif
                     <a href="{{ route('siswa.perpindahan') }}" class="{{ request()->routeIs('siswa.perpindahan') ? 'active' : '' }}">Riwayat Kelas</a>
                     <a href="{{ route('siswa.track-record') }}" class="{{ request()->routeIs('siswa.track-record') ? 'active' : '' }}">Track Record</a>
+                    <a href="{{ route('siswa.no-hp.edit') }}" class="{{ request()->routeIs('siswa.no-hp.*') ? 'active' : '' }}">Profil</a>
                 </nav>
 
                 @if(session('success'))
