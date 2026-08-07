@@ -197,6 +197,63 @@ class GuruController extends Controller
         return redirect()->route('guru.dashboard')->with('success', 'Pengajuan perpindahan kelas dikirim. Menunggu persetujuan admin.');
     }
 
+    // ============ DATA SISWA KELAS TARTIL (edit no hp oleh guru) ============
+    public function siswaIndex(Request $request)
+    {
+        $guru = auth()->user()?->guru;
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        }
+
+        $kelasIds = Kelas::where('guru_id', $guru->id)->where('status', 'aktif')->pluck('id');
+
+        if ($kelasIds->isEmpty()) {
+            return view('guru.siswa.index', [
+                'siswaList' => collect(),
+                'kelasList' => collect(),
+                'kelasFilter' => null,
+            ])->with('warning', 'Anda belum ditugaskan ke kelas tartil aktif.');
+        }
+
+        $kelasFilter = $request->filled('kelas_id') ? (int) $request->get('kelas_id') : null;
+
+        $query = Siswa::whereIn('kelas_tartil_id', $kelasIds)
+            ->where('status', 'aktif')
+            ->with('kelasTartil')
+            ->orderBy('kelas_tartil_id')
+            ->orderBy('nama');
+
+        if ($kelasFilter && $kelasIds->contains($kelasFilter)) {
+            $query->where('kelas_tartil_id', $kelasFilter);
+        }
+
+        $siswaList = $query->get();
+        $kelasList = Kelas::whereIn('id', $kelasIds)->orderBy('nama')->get();
+
+        return view('guru.siswa.index', compact('siswaList', 'kelasList', 'kelasFilter'));
+    }
+
+    public function siswaUpdateNoHp(Request $request, Siswa $siswa)
+    {
+        $guru = auth()->user()?->guru;
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan.');
+        }
+
+        $kelasIds = Kelas::where('guru_id', $guru->id)->where('status', 'aktif')->pluck('id');
+        if (! $kelasIds->contains($siswa->kelas_tartil_id)) {
+            return back()->with('error', 'Siswa ini bukan di kelas Anda.');
+        }
+
+        $validated = $request->validate([
+            'no_hp' => 'required|string|max:15',
+        ]);
+
+        $siswa->update($validated);
+
+        return back()->with('success', "Nomor HP {$siswa->nama} berhasil diperbarui.");
+    }
+
     // ============ GANTI PASSWORD ============
     public function editPassword()
     {

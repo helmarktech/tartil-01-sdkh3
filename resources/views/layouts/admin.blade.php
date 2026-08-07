@@ -357,6 +357,9 @@
                     <a href="{{ route('guru.pendampingan-ortu.index') }}" class="nav-item {{ str_contains($p, 'guru/pendampingan-ortu') ? 'active' : '' }}">
                         <span>&#128106; Konfirmasi Pendampingan Ortu</span>
                     </a>
+                    <a href="{{ route('guru.siswa.index') }}" class="nav-item {{ str_contains($p, 'guru/siswa') ? 'active' : '' }}">
+                        <span>&#128101; Data Siswa</span>
+                    </a>
                     <a href="{{ route('guru.rapor.pilih') }}" class="nav-item {{ str_contains($p, 'guru/rapor') ? 'active' : '' }}">
                         <span>Rapor</span>
                     </a>
