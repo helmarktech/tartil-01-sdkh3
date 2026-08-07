@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Konfirmasi Pendampingan Ortu - Guru')
+@section('title', 'Konfirmasi Ortu - Guru')
 
 @section('content')
 <style>
@@ -68,7 +68,7 @@
 
 <div class="page-header" style="margin-bottom: 24px;">
     <div>
-        <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0;">&#128106; Konfirmasi Pendampingan Ortu</h1>
+        <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0;">&#128106; Konfirmasi Ortu</h1>
         <p style="color: #666; font-size: 14px; margin: 4px 0 0;">Laporan tadarus & murajaah dari orang tua siswa kelas Anda</p>
     </div>
 </div>

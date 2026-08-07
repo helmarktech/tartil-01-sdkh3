@@ -355,7 +355,7 @@
                         <span>&#128218; Tahfidz & Hafalan</span>
                     </a>
                     <a href="{{ route('guru.pendampingan-ortu.index') }}" class="nav-item {{ str_contains($p, 'guru/pendampingan-ortu') ? 'active' : '' }}">
-                        <span>&#128106; Konfirmasi Pendampingan Ortu</span>
+                        <span>&#128106; Konfirmasi Ortu</span>
                     </a>
                     <a href="{{ route('guru.siswa.index') }}" class="nav-item {{ str_contains($p, 'guru/siswa') ? 'active' : '' }}">
                         <span>&#128101; Data Siswa</span>
