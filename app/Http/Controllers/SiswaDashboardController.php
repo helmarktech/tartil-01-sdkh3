@@ -158,12 +158,23 @@ class SiswaDashboardController extends Controller
             }
         }
 
+        // Hafalan yang menunggu konfirmasi orang tua (untuk popup saat login)
+        $hafalanBelumDikonfirmasi = collect();
+        if ($siswa->kelas_tartil_id) {
+            $hafalanBelumDikonfirmasi = HafalanTahfidz::where('siswa_id', $siswa->id)
+                ->whereNull('dikonfirmasi_orang_tua_at')
+                ->with(['surat', 'guru'])
+                ->orderBy('tanggal_hafalan', 'desc')
+                ->get();
+        }
+
         return view('siswa.dashboard', compact(
             'siswa', 'semester', 'semesterList',
             'jurnals', 'totalJurnal', 'hariMengaji', 'bCount', 'cCount', 'kCount',
             'r2Harian', 'r2Penilaian', 'r2Akhir',
             'munaqosyah', 'bulanData',
-            'tahfidzProgress', 'tahfidzTotalJuz', 'tahfidzJuzAktif'
+            'tahfidzProgress', 'tahfidzTotalJuz', 'tahfidzJuzAktif',
+            'hafalanBelumDikonfirmasi'
         ));
     }
 
@@ -236,6 +247,8 @@ class SiswaDashboardController extends Controller
             ->orderBy('tanggal_hafalan', 'desc')
             ->get();
 
+        $hafalanBelumDikonfirmasi = $hafalanList->whereNull('dikonfirmasi_orang_tua_at')->values();
+
         $juzAktif = HafalanTahfidz::where('siswa_id', $siswa->id)
             ->where('semester_id', $semester?->id)
             ->where('status', '!=', 'hafal')
@@ -244,8 +257,34 @@ class SiswaDashboardController extends Controller
 
         return view('siswa.hafalan', compact(
             'siswa', 'semester', 'progressJuz', 'totalJuzHafal',
-            'juzDistinct', 'hafalanList', 'juzAktif'
+            'juzDistinct', 'hafalanList', 'juzAktif', 'hafalanBelumDikonfirmasi'
         ));
+    }
+
+    /**
+     * Konfirmasi setoran hafalan oleh orang tua (bulk).
+     */
+    public function konfirmasiHafalan(Request $request)
+    {
+        $siswa = auth('siswa')->user();
+
+        $validated = $request->validate([
+            'hafalan_ids' => 'required|array|min:1',
+            'hafalan_ids.*' => 'integer|exists:hafalan_tahfidzs,id',
+            'redirect' => 'nullable|in:dashboard,hafalan',
+        ]);
+
+        $updated = HafalanTahfidz::where('siswa_id', $siswa->id)
+            ->whereNull('dikonfirmasi_orang_tua_at')
+            ->whereIn('id', $validated['hafalan_ids'])
+            ->update(['dikonfirmasi_orang_tua_at' => now()]);
+
+        $redirectRoute = $validated['redirect'] === 'hafalan'
+            ? 'siswa.hafalan'
+            : 'siswa.dashboard';
+
+        return redirect()->route($redirectRoute)
+            ->with('success', "{$updated} setoran hafalan berhasil dikonfirmasi.");
     }
 
     /**

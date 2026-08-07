@@ -157,7 +157,8 @@
                         <th>Ayat</th>
                         <th>Status</th>
                         <th>Kualitas</th>
-                        <th>Tanggal</th>
+                        <th>Tanggal Setoran</th>
+                        <th>Konfirmasi Ortu</th>
                         <th>Guru</th>
                         <th>Catatan</th>
                         <th style="width: 40px;"></th>
@@ -172,6 +173,13 @@
                         <td><span class="status-badge status-{{ $h->status }}">{{ \App\Models\HafalanTahfidz::labelStatus($h->status) }}</span></td>
                         <td><span class="kualitas-badge kualitas-{{ $h->kualitas }}">{{ \App\Models\HafalanTahfidz::labelKualitas($h->kualitas) }}</span></td>
                         <td style="color: #888; font-size: 12px;">{{ $h->tanggal_hafalan?->format('d/m/Y') }}</td>
+                        <td style="font-size: 12px;">
+                            @if($h->dikonfirmasi_orang_tua_at)
+                                <span style="color: #0c8a5f; font-weight: 600;">{{ $h->dikonfirmasi_orang_tua_at->format('d/m/Y H:i') }}</span>
+                            @else
+                                <span style="color: #c62828; background: #ffebee; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;">Belum dikonfirmasi</span>
+                            @endif
+                        </td>
                         <td style="color: #888; font-size: 12px;">{{ $h->guru?->nama ?? '-' }}</td>
                         <td style="color: #888; font-size: 12px;">{{ $h->catatan ?? '-' }}</td>
                         <td>

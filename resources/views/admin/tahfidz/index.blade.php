@@ -476,6 +476,11 @@
                     </div>
                     <div style="font-size: 12px; color: #666;">
                         {{ $s['setoranSemester'] !== '-' ? $s['setoranSemester'] : '-' }}
+                        @if($s['belumKonfirmasi'] > 0)
+                            <span style="display: inline-block; margin-top: 4px; color: #c62828; background: #ffebee; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;">
+                                {{ $s['belumKonfirmasi'] }} belum dikonfirmasi ortu
+                            </span>
+                        @endif
                     </div>
                     <div style="font-size: 12px;">
                         @if($s['lastJuz'] !== '-')

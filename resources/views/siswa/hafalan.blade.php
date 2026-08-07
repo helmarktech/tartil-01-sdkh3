@@ -66,6 +66,14 @@
 .haf-badge-setengah_hafal { background: #e3f2fd; color: #1565c0; }
 .haf-badge-baru { background: #fff3cd; color: #856404; }
 
+.haf-btn-konfirmasi {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 18px; background: #0c8a5f; color: #fff;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; width: 100%;
+}
+.haf-btn-konfirmasi:hover { background: #0a6b4a; }
+
 @media (max-width: 640px) {
     .haf-juz-grid { grid-template-columns: repeat(10, 1fr); }
 }
@@ -126,7 +134,8 @@
                         <th>Ayat</th>
                         <th>Status</th>
                         <th>Kualitas</th>
-                        <th>Tanggal</th>
+                        <th>Tanggal Setoran</th>
+                        <th>Tanggal Konfirmasi Ortu</th>
                         <th>Guru</th>
                     </tr>
                 </thead>
@@ -139,12 +148,60 @@
                         <td><span class="haf-badge haf-badge-{{ $h->status }}">{{ \App\Models\HafalanTahfidz::labelStatus($h->status) }}</span></td>
                         <td>{{ \App\Models\HafalanTahfidz::labelKualitas($h->kualitas) }}</td>
                         <td style="color: #888; font-size: 12px;">{{ $h->tanggal_hafalan?->format('d/m/Y') }}</td>
+                        <td style="font-size: 12px;">
+                            @if($h->dikonfirmasi_orang_tua_at)
+                                <span style="color: #0c8a5f; font-weight: 600;">{{ $h->dikonfirmasi_orang_tua_at->format('d/m/Y H:i') }}</span>
+                            @else
+                                <span style="color: #c62828; background: #ffebee; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;">Belum dikonfirmasi</span>
+                            @endif
+                        </td>
                         <td style="color: #888; font-size: 12px;">{{ $h->guru?->nama ?? '-' }}</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
+
+        {{-- Form Konfirmasi Orang Tua --}}
+        @if($hafalanBelumDikonfirmasi->isNotEmpty())
+        <div style="margin-top: 20px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;">
+            <form method="POST" action="{{ route('siswa.hafalan.konfirmasi') }}" id="formKonfirmasiHafalan">
+                @csrf
+                <input type="hidden" name="redirect" value="hafalan">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 13px; font-weight: 700; color: #92400e;">
+                        &#128100; Konfirmasi Monitoring Orang Tua
+                    </div>
+                    <label style="font-size: 12px; color: #92400e; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <input type="checkbox" id="pilihSemuaHafalan" style="cursor: pointer;">
+                        Pilih semua
+                    </label>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                    @foreach($hafalanBelumDikonfirmasi as $h)
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fff; border: 1px solid #fde68a; border-radius: 8px; cursor: pointer; font-size: 13px;">
+                        <input type="checkbox" name="hafalan_ids[]" value="{{ $h->id }}" class="checkbox-hafalan">
+                        <div style="flex: 1;">
+                            <strong>Juz {{ $h->juz }}</strong>
+                            @if($h->surat) · {{ $h->surat->nama_latin }}@endif
+                            · {{ $h->ayat_mulai }}{{ $h->ayat_selesai ? '-'.$h->ayat_selesai : '' }}
+                            <span style="color: #78716c; font-size: 11px;">(setoran {{ $h->tanggal_hafalan?->format('d/m/Y') }})</span>
+                        </div>
+                    </label>
+                    @endforeach
+                </div>
+                <button type="submit" class="haf-btn-konfirmasi" onclick="return confirm('Konfirmasi setoran yang dipilih?')">
+                    Konfirmasi Setoran Terpilih
+                </button>
+            </form>
+        </div>
+
+        <script>
+        document.getElementById('pilihSemuaHafalan').addEventListener('change', function() {
+            document.querySelectorAll('.checkbox-hafalan').forEach(cb => cb.checked = this.checked);
+        });
+        </script>
+        @endif
     @endif
 </div>
 

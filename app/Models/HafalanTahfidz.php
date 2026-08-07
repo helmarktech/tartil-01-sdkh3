@@ -13,11 +13,12 @@ class HafalanTahfidz extends Model
         'siswa_id', 'semester_id', 'kelas_id', 'surat_id',
         'juz', 'ayat_mulai', 'ayat_selesai',
         'status', 'kualitas', 'catatan',
-        'tanggal_hafalan', 'created_by',
+        'tanggal_hafalan', 'dikonfirmasi_orang_tua_at', 'created_by',
     ];
 
     protected $casts = [
         'tanggal_hafalan' => 'date',
+        'dikonfirmasi_orang_tua_at' => 'datetime',
         'juz' => 'integer',
         'ayat_mulai' => 'integer',
         'ayat_selesai' => 'integer',
@@ -73,6 +74,16 @@ class HafalanTahfidz extends Model
     public function scopePerKelas($query, int $kelasId)
     {
         return $query->where('kelas_id', $kelasId);
+    }
+
+    public function scopeBelumDikonfirmasiOrangTua($query)
+    {
+        return $query->whereNull('dikonfirmasi_orang_tua_at');
+    }
+
+    public function scopeSudahDikonfirmasiOrangTua($query)
+    {
+        return $query->whereNotNull('dikonfirmasi_orang_tua_at');
     }
 
     // ─── HELPERS ───
@@ -345,11 +356,19 @@ class HafalanTahfidz extends Model
             ->pluck('total', 'juz')
             ->toArray();
 
+        // Jumlah hafalan per siswa yang belum dikonfirmasi orang tua
+        $belumKonfirmasiCounts = (clone $query)
+            ->whereNull('dikonfirmasi_orang_tua_at')
+            ->selectRaw('siswa_id, COUNT(*) as total')
+            ->groupBy('siswa_id')
+            ->pluck('total', 'siswa_id')
+            ->toArray();
+
         // Per siswa
         $perSiswa = Siswa::where('kelas_tartil_id', $kelasId)
             ->where('status', 'aktif')
             ->get()
-            ->map(function ($s) use ($semesterId) {
+            ->map(function ($s) use ($semesterId, $belumKonfirmasiCounts) {
                 $filter = $semesterId !== null
                     ? fn ($q) => $q->where('semester_id', $semesterId)
                     : null;
@@ -363,6 +382,7 @@ class HafalanTahfidz extends Model
                 return [
                     'siswa' => $s,
                     'juzHafal' => $juzCount,
+                    'belumKonfirmasi' => $belumKonfirmasiCounts[$s->id] ?? 0,
                     'lastJuz' => $lastHafalan?->juz ?? '-',
                     'lastSurat' => $lastHafalan?->surat?->nama_latin ?? '-',
                     'lastTanggal' => $lastHafalan?->tanggal_hafalan?->format('d/m/Y') ?? '-',
@@ -543,7 +563,15 @@ class HafalanTahfidz extends Model
         }
         $siswaList = $query->orderBy('nama')->get();
 
-        $perSiswa = $siswaList->map(function ($s) use ($semester) {
+        $belumKonfirmasiCounts = self::where('kelas_id', $kelasId)
+            ->where('tanggal_hafalan', '<=', $semester->tanggal_selesai)
+            ->whereNull('dikonfirmasi_orang_tua_at')
+            ->selectRaw('siswa_id, COUNT(*) as total')
+            ->groupBy('siswa_id')
+            ->pluck('total', 'siswa_id')
+            ->toArray();
+
+        $perSiswa = $siswaList->map(function ($s) use ($semester, $belumKonfirmasiCounts) {
             $juzCount = self::totalJuzHafalSampaiSemester($s->id, $semester);
             $lastHafalan = self::hafalanTerakhirSampaiSemester($s->id, $semester);
             $setoranSemester = self::setoranTerakhirDiSemester($s->id, $semester);
@@ -552,6 +580,7 @@ class HafalanTahfidz extends Model
             return [
                 'siswa' => $s,
                 'juzHafal' => $juzCount,
+                'belumKonfirmasi' => $belumKonfirmasiCounts[$s->id] ?? 0,
                 'lastJuz' => $lastHafalan?->juz ?? '-',
                 'lastSurat' => $lastHafalan?->surat?->nama_latin ?? '-',
                 'lastTanggal' => $lastHafalan?->tanggal_hafalan?->format('d/m/Y') ?? '-',

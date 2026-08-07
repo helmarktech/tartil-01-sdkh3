@@ -245,6 +245,13 @@
                             <span style="color: #888;">({{ \App\Models\HafalanTahfidz::labelStatus($s['lastStatus']) }})</span>
                         @endif
                         <div style="font-size: 11px; color: #aaa;">{{ $s['lastTanggal'] }}</div>
+                        @if($s['belumKonfirmasi'] > 0)
+                            <div style="margin-top: 4px;">
+                                <span style="color: #c62828; background: #ffebee; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;">
+                                    {{ $s['belumKonfirmasi'] }} belum dikonfirmasi ortu
+                                </span>
+                            </div>
+                        @endif
                     @else
                         <span style="color: #aaa;">-</span>
                     @endif

@@ -406,6 +406,63 @@
     @endif
     @endif
 
+    {{-- Popup Konfirmasi Monitoring Orang Tua --}}
+    @if($hafalanBelumDikonfirmasi->isNotEmpty())
+    <div id="konfirmasiOrtuModal" class="sd-modal" style="display: flex;" onclick="closeKonfirmasiOrtu(event)">
+        <div class="sd-modal-content" style="max-width: 520px;" onclick="event.stopPropagation()">
+            <div class="sd-modal-header">
+                <h3 class="sd-modal-title">&#128100; Konfirmasi Monitoring Orang Tua</h3>
+                <button type="button" class="sd-modal-close" onclick="document.getElementById('konfirmasiOrtuModal').style.display='none'" title="Tutup">&times;</button>
+            </div>
+            <div class="sd-modal-body">
+                <p style="font-size: 12px; color: #78716c; margin-bottom: 16px;">
+                    Berikut setoran hafalan yang belum dikonfirmasi. Silakan centang setoran yang sudah dipantau, lalu klik tombol konfirmasi.
+                </p>
+                <form method="POST" action="{{ route('siswa.hafalan.konfirmasi') }}" id="formKonfirmasiOrtu">
+                    @csrf
+                    <input type="hidden" name="redirect" value="dashboard">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 12px; color: #92400e; font-weight: 600;">{{ $hafalanBelumDikonfirmasi->count() }} setoran belum dikonfirmasi</span>
+                        <label style="font-size: 12px; color: #78716c; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="pilihSemuaOrtu" style="cursor: pointer;">
+                            Pilih semua
+                        </label>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 300px; overflow-y: auto; padding-right: 4px;">
+                        @foreach($hafalanBelumDikonfirmasi as $h)
+                        <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; cursor: pointer; font-size: 13px;">
+                            <input type="checkbox" name="hafalan_ids[]" value="{{ $h->id }}" class="checkbox-ortu">
+                            <div style="flex: 1;">
+                                <strong>Juz {{ $h->juz }}</strong>
+                                @if($h->surat) · {{ $h->surat->nama_latin }}@endif
+                                · {{ $h->ayat_mulai }}{{ $h->ayat_selesai ? '-'.$h->ayat_selesai : '' }}
+                                <div style="font-size: 11px; color: #78716c; margin-top: 2px;">
+                                    Setoran: {{ $h->tanggal_hafalan?->format('d/m/Y') }} · Guru: {{ $h->guru?->nama ?? '-' }}
+                                </div>
+                            </div>
+                        </label>
+                        @endforeach
+                    </div>
+                    <button type="submit" class="sd-btn-cetak" style="width: 100%; justify-content: center; border: none; cursor: pointer;" onclick="return confirm('Konfirmasi setoran yang dipilih?')">
+                        Konfirmasi Setoran Terpilih
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function closeKonfirmasiOrtu(e) {
+        if (!e || e.target === document.getElementById('konfirmasiOrtuModal')) {
+            document.getElementById('konfirmasiOrtuModal').style.display = 'none';
+        }
+    }
+    document.getElementById('pilihSemuaOrtu').addEventListener('change', function() {
+        document.querySelectorAll('.checkbox-ortu').forEach(cb => cb.checked = this.checked);
+    });
+    </script>
+    @endif
+
 </div>
 
 <style>
