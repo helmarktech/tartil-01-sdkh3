@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Tahfidz - Guru')
+@section('title', 'Tahfidz & Hafalan - Guru')
 
 @section('content')
 <style>
@@ -136,7 +136,7 @@
 
 <div class="page-header" style="margin-bottom: 20px;">
     <div>
-        <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 26px; margin: 0;">&#128218; Tahfidz</h1>
+        <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 26px; margin: 0;">&#128218; Tahfidz & Hafalan</h1>
         <p style="color: #666; font-size: 14px; margin: 4px 0 0;">Input setoran hafalan siswa kelas Anda</p>
     </div>
 </div>
@@ -210,7 +210,7 @@
 @if(!$kelas)
     <div class="empty-tf">
         <div style="font-size: 48px; margin-bottom: 16px;">&#128218;</div>
-        <h3>Anda belum ditugaskan ke kelas Tahfidz</h3>
+        <h3>Anda belum ditugaskan ke kelas tartil</h3>
         <p>Hubungi admin untuk penugasan kelas.</p>
     </div>
 @else

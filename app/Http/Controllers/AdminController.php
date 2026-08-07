@@ -2,40 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Guru;
-use App\Models\GuruTartil;
 use App\Models\GuruReguler;
-use App\Models\Siswa;
+use App\Models\JurnalHarian;
 use App\Models\Kelas;
 use App\Models\KelasReguler;
-use App\Models\Semester;
-use App\Models\PerpindahanKelas;
-use App\Models\MunaqosyahPendaftaran;
-use App\Models\MunaqosyahApproval;
-use App\Models\User;
-use App\Models\KenaikanKelasReguler;
-use App\Models\TahunAjaran;
-use App\Models\SemesterSiswa;
-use App\Models\SemesterKelas;
-use App\Models\RiwayatMutasi;
-use App\Models\UjianMunaqosyah;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Models\KopSuratRapor;
-use App\Models\SemesterAuditLog;
+use App\Models\MunaqosyahApproval;
+use App\Models\MunaqosyahPendaftaran;
+use App\Models\PenilaianRaporInternal;
+use App\Models\PerpindahanKelas;
 use App\Models\RekapJurnalSemester;
 use App\Models\RekapMunaqosyahSemester;
+use App\Models\RekapR2Akhir;
 use App\Models\RekapRiwayatSemester;
 use App\Models\RekapTahfidzSemester;
-use App\Models\RekapR2Akhir;
-use App\Models\IndikatorPenilaian;
-use App\Models\PenilaianRaporInternal;
-use App\Models\PenilaianRaporNilai;
-use App\Models\JurnalHarian;
+use App\Models\RiwayatMutasi;
+use App\Models\Semester;
+use App\Models\SemesterAuditLog;
+use App\Models\SemesterKelas;
+use App\Models\SemesterSiswa;
+use App\Models\Siswa;
+use App\Models\TahunAjaran;
+use App\Models\UjianMunaqosyah;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AdminController extends Controller
 {
@@ -52,12 +51,12 @@ class AdminController extends Controller
         // Rekap siswa per jenis kelas (BQ 1, BQ 2, BQ 3, BQ 4, Tartil, Tahfidz)
         // Fix: only_full_group_by — pisah query count siswa dari groupBy jenis
         $kelasAktif = Kelas::where('status', 'aktif')
-            ->withCount(['siswas' => fn($q) => $q->where('status', 'aktif')])
+            ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
             ->get();
 
         $rekapBQ = $kelasAktif->groupBy('jenis')
-            ->sortBy(fn($group, $jenis) => array_search($jenis, ['BQ 1', 'BQ 2', 'BQ 3', 'BQ 4', 'Tartil', 'Tahfidz']) ?: 99)
-            ->mapWithKeys(fn($group, $jenis) => [$jenis => [
+            ->sortBy(fn ($group, $jenis) => array_search($jenis, ['BQ 1', 'BQ 2', 'BQ 3', 'BQ 4', 'Tartil', 'Tahfidz']) ?: 99)
+            ->mapWithKeys(fn ($group, $jenis) => [$jenis => [
                 'kelas' => $group->count(),
                 'siswa' => $group->sum('siswas_count'),
             ]]);
@@ -65,7 +64,7 @@ class AdminController extends Controller
         // Penyebaran siswa per kelas tartil (detail)
         $penyebaranKelas = Kelas::where('status', 'aktif')
             ->with(['guru'])
-            ->withCount(['siswas' => fn($q) => $q->where('status', 'aktif')])
+            ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
             ->orderByRaw("FIELD(jenis, 'BQ 1', 'BQ 2', 'BQ 3', 'BQ 4', 'Tartil', 'Tahfidz')")
             ->orderBy('nama')
             ->get();
@@ -80,6 +79,7 @@ class AdminController extends Controller
     public function guruIndex()
     {
         $gurus = Guru::orderBy('nama')->paginate(20);
+
         return view('admin.guru.index', compact('gurus'));
     }
 
@@ -122,8 +122,8 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|max:100',
-            'nip' => 'nullable|unique:guru_tartils,nip,' . $guru->id,
-            'email' => 'required|email|unique:guru_tartils,email,' . $guru->id,
+            'nip' => 'nullable|unique:guru_tartils,nip,'.$guru->id,
+            'email' => 'required|email|unique:guru_tartils,email,'.$guru->id,
             'no_hp' => 'required|max:15',
             'jenis_kelamin' => 'required|in:L,P',
             'alamat' => 'nullable',
@@ -142,9 +142,9 @@ class AdminController extends Controller
                 $guru->user->update(['email' => $validated['email']]);
             }
 
-            return redirect()->route('admin.guru.index')->with('success', 'Data guru tartil "' . $validated['nama'] . '" berhasil diperbarui.');
+            return redirect()->route('admin.guru.index')->with('success', 'Data guru tartil "'.$validated['nama'].'" berhasil diperbarui.');
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal menyimpan: '.$e->getMessage());
         }
     }
 
@@ -154,9 +154,9 @@ class AdminController extends Controller
         $query = Siswa::with(['kelasReguler', 'kelasTartil']);
 
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('nama', 'like', "%{$request->search}%")
-                  ->orWhere('nis', 'like', "%{$request->search}%");
+                    ->orWhere('nis', 'like', "%{$request->search}%");
             });
         }
         if ($request->filled('kelas_reguler')) {
@@ -176,6 +176,7 @@ class AdminController extends Controller
     {
         $kelasRegulars = KelasReguler::where('is_aktif', true)->get();
         $kelasTartils = Kelas::where('status', 'aktif')->get();
+
         return view('admin.siswa.create', compact('kelasRegulars', 'kelasTartils'));
     }
 
@@ -206,6 +207,7 @@ class AdminController extends Controller
     public function siswaShow(Siswa $siswa)
     {
         $siswa->load(['kelasReguler', 'kelasTartil', 'perpindahanKelas.kelasLama', 'perpindahanKelas.kelasBaru', 'perpindahanKelas.semester']);
+
         return view('admin.siswa.show', compact('siswa'));
     }
 
@@ -214,13 +216,14 @@ class AdminController extends Controller
         $siswa->load(['kelasReguler', 'kelasTartil']);
         $kelasRegulars = KelasReguler::where('is_aktif', true)->orderBy('nama')->get();
         $kelasTartils = Kelas::where('status', 'aktif')->orderBy('nama')->get();
+
         return view('admin.siswa.edit', compact('siswa', 'kelasRegulars', 'kelasTartils'));
     }
 
     public function siswaUpdate(Request $request, Siswa $siswa)
     {
         $validated = $request->validate([
-            'nis' => 'required|unique:siswas,nis,' . $siswa->id,
+            'nis' => 'required|unique:siswas,nis,'.$siswa->id,
             'nama' => 'required|max:100',
             'no_hp' => 'required|max:15',
             'jenis_kelamin' => 'required|in:L,P',
@@ -238,7 +241,7 @@ class AdminController extends Controller
         ]);
 
         // Update password hanya jika diisi
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
@@ -253,23 +256,26 @@ class AdminController extends Controller
     public function kelasIndex()
     {
         $kelas = Kelas::with('guru')
-            ->withCount(['siswas' => fn($q) => $q->where('status', 'aktif')])
+            ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
             ->orderBy('nama')
             ->paginate(20);
+
         return view('admin.kelas.index', compact('kelas'));
     }
 
     public function kelasTartilIndex()
     {
-        $kelas = Kelas::with(['guru'])->withCount(['siswas' => function($q) {
+        $kelas = Kelas::with(['guru'])->withCount(['siswas' => function ($q) {
             $q->where('status', 'aktif');
         }])->orderBy('nama')->paginate(20);
+
         return view('admin.kelas-tartil.index', compact('kelas'));
     }
 
     public function kelasCreate()
     {
         $gurus = Guru::where('is_aktif', true)->orderBy('nama')->get();
+
         return view('admin.kelas.create', compact('gurus'));
     }
 
@@ -286,12 +292,14 @@ class AdminController extends Controller
         $validated['mata_pelajaran'] = $validated['jenis'];
 
         Kelas::create($validated);
-        return redirect()->route('admin.kelas.index')->with('success', 'Kelas ' . $validated['nama'] . ' (' . $validated['jenis'] . ') berhasil dibuat.');
+
+        return redirect()->route('admin.kelas.index')->with('success', 'Kelas '.$validated['nama'].' ('.$validated['jenis'].') berhasil dibuat.');
     }
 
     public function kelasEdit(Kelas $kelas)
     {
         $gurus = Guru::where('is_aktif', true)->orderBy('nama')->get();
+
         return view('admin.kelas.edit', compact('kelas', 'gurus'));
     }
 
@@ -307,7 +315,8 @@ class AdminController extends Controller
         ]);
 
         $kelas->update($validated);
-        return redirect()->route('admin.kelas.index')->with('success', 'Data kelas ' . $validated['nama'] . ' (' . $validated['jenis'] . ') diperbarui.');
+
+        return redirect()->route('admin.kelas.index')->with('success', 'Data kelas '.$validated['nama'].' ('.$validated['jenis'].') diperbarui.');
     }
 
     // ============ SEMESTER MANAGEMENT (COMPREHENSIVE) ============
@@ -317,19 +326,24 @@ class AdminController extends Controller
             ->orderBy('tanggal_mulai', 'desc')
             ->orderBy('jenis')
             ->paginate(20);
+
         return view('admin.semester.index', compact('semesters'));
     }
 
     private function semesterMigrasi(Semester $semesterBaru, bool $migrasi = false)
     {
-        if (!$migrasi) return;
+        if (! $migrasi) {
+            return;
+        }
 
         // Cari semester sebelumnya
         $semesterLama = Semester::where('id', '!=', $semesterBaru->id)
             ->orderBy('tanggal_mulai', 'desc')
             ->first();
 
-        if (!$semesterLama) return;
+        if (! $semesterLama) {
+            return;
+        }
 
         // Migrasi kelas tartil
         $kelasIds = $semesterLama->kelasTartils->pluck('id');
@@ -338,7 +352,7 @@ class AdminController extends Controller
             foreach ($semesterLama->kelasTartils as $k) {
                 $pivotData[$k->id] = [
                     'jumlah_siswa' => $k->pivot->jumlah_siswa,
-                    'keterangan' => 'Dimigrasi dari ' . $semesterLama->nama,
+                    'keterangan' => 'Dimigrasi dari '.$semesterLama->nama,
                 ];
             }
             $semesterBaru->kelasTartils()->sync($pivotData);
@@ -352,12 +366,12 @@ class AdminController extends Controller
             $pivotData = [];
             foreach ($siswaIds as $s) {
                 // Ambil kelas reguler & tartil terbaru dari tabel siswas
-                $siswaFresh = \App\Models\Siswa::find($s->id);
+                $siswaFresh = Siswa::find($s->id);
                 $pivotData[$s->id] = [
                     'kelas_id' => $siswaFresh->kelas_tartil_id,
                     'kelas_reguler_id' => $siswaFresh->kelas_reguler_id,
                     'status_siswa' => 'aktif',
-                    'keterangan' => 'Dimigrasi dari ' . $semesterLama->nama,
+                    'keterangan' => 'Dimigrasi dari '.$semesterLama->nama,
                 ];
             }
             $semesterBaru->siswas()->sync($pivotData);
@@ -419,14 +433,14 @@ class AdminController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Semester ' . $semester->nama . ' diaktifkan. Data rekap: ' . $kelasTartil->count() . ' kelas, ' . $siswaAktif->count() . ' siswa.');
+        return back()->with('success', 'Semester '.$semester->nama.' diaktifkan. Data rekap: '.$kelasTartil->count().' kelas, '.$siswaAktif->count().' siswa.');
     }
 
     // ============ MUNAQOSYAH: APPROVAL PENDAFTARAN ============
     public function munaqosyahApprovalIndex()
     {
         $pendaftarans = MunaqosyahPendaftaran::with(['siswa.kelasReguler', 'siswa.kelasTartil', 'munaqosyah.semester'])
-            ->whereHas('approval', fn($q) => $q->where('status', 'pending'))
+            ->whereHas('approval', fn ($q) => $q->where('status', 'pending'))
             ->orderBy('created_at', 'desc')
             ->paginate(30);
 
@@ -463,12 +477,12 @@ class AdminController extends Controller
                 'mutasi_type' => Siswa::class,
                 'mutasi_id' => $siswa->id,
                 'jenis' => 'munaqosyah_approved',
-                'keterangan' => "Pendaftaran ujian {$ujian->nama} ({$ujian->tingkat}) disetujui. Diajukan oleh " . ($pendaftaran->pengaju_type ?? '?') . ".",
+                'keterangan' => "Pendaftaran ujian {$ujian->nama} ({$ujian->tingkat}) disetujui. Diajukan oleh ".($pendaftaran->pengaju_type ?? '?').'.',
                 'dilakukan_oleh' => auth()->id(),
                 'tanggal_mutasi' => now(),
             ]);
 
-            return back()->with('success', 'Pendaftaran siswa ' . $siswa->nama . ' untuk ujian ' . $ujian->nama . ' disetujui.');
+            return back()->with('success', 'Pendaftaran siswa '.$siswa->nama.' untuk ujian '.$ujian->nama.' disetujui.');
         });
     }
 
@@ -480,6 +494,7 @@ class AdminController extends Controller
             'approved_at' => now(),
             'catatan' => $request->catatan,
         ]);
+
         return back()->with('success', 'Pendaftaran siswa ditolak.');
     }
 
@@ -494,7 +509,9 @@ class AdminController extends Controller
         $count = 0;
         foreach ($request->ids as $id) {
             $approval = MunaqosyahApproval::find($id);
-            if (!$approval || $approval->status !== 'pending') continue;
+            if (! $approval || $approval->status !== 'pending') {
+                continue;
+            }
 
             DB::transaction(function () use ($approval) {
                 $approval->update([
@@ -520,7 +537,9 @@ class AdminController extends Controller
         $count = 0;
         foreach ($request->ids as $id) {
             $approval = MunaqosyahApproval::find($id);
-            if (!$approval || $approval->status !== 'pending') continue;
+            if (! $approval || $approval->status !== 'pending') {
+                continue;
+            }
 
             $approval->update([
                 'status' => 'ditolak',
@@ -538,6 +557,7 @@ class AdminController extends Controller
     {
         $perpindahans = PerpindahanKelas::with(['siswa', 'kelasLama', 'kelasBaru', 'semester'])
             ->orderBy('created_at', 'desc')->paginate(20);
+
         return view('admin.perpindahan.index', compact('perpindahans'));
     }
 
@@ -563,6 +583,7 @@ class AdminController extends Controller
             'approved_at' => now(),
             'catatan' => $request->catatan,
         ]);
+
         return back()->with('success', 'Perpindahan kelas ditolak.');
     }
 
@@ -575,6 +596,7 @@ class AdminController extends Controller
             ->orderBy('nama')
             ->paginate(20);
         $gurus = GuruReguler::where('is_aktif', true)->orderBy('nama')->get();
+
         return view('admin.kelas-reguler.daftar', compact('kelasRegulers', 'gurus'));
     }
 
@@ -592,13 +614,14 @@ class AdminController extends Controller
         $validated['is_aktif'] = true;
 
         KelasReguler::create($validated);
-        return redirect()->route('admin.kelas-reguler.daftar')->with('success', 'Kelas reguler "' . $validated['nama'] . '" berhasil ditambahkan.');
+
+        return redirect()->route('admin.kelas-reguler.daftar')->with('success', 'Kelas reguler "'.$validated['nama'].'" berhasil ditambahkan.');
     }
 
     public function kelasRegulerUpdate(Request $request, KelasReguler $kelasReguler)
     {
         $validated = $request->validate([
-            'nama' => 'required|max:50|unique:kelas_regulers,nama,' . $kelasReguler->id,
+            'nama' => 'required|max:50|unique:kelas_regulers,nama,'.$kelasReguler->id,
             'jenjang' => 'required|integer|min:1|max:6',
             'tingkat' => 'required|string|max:20',
             'guru_pengampu_id' => 'nullable|exists:guru_regulers,id',
@@ -609,17 +632,18 @@ class AdminController extends Controller
         $validated['is_aktif'] = $request->has('is_aktif');
 
         $kelasReguler->update($validated);
-        return redirect()->route('admin.kelas-reguler.daftar')->with('success', 'Kelas reguler "' . $validated['nama'] . '" diperbarui.');
+
+        return redirect()->route('admin.kelas-reguler.daftar')->with('success', 'Kelas reguler "'.$validated['nama'].'" diperbarui.');
     }
 
     // Keterangan Kelas = lihat siswa per kelas reguler beserta kelas tartil & guru mereka
     public function kelasRegulerSiswa(Request $request)
     {
         $kelasRegulers = KelasReguler::with('guruPengampu')
-            ->withCount(['siswas as total_siswa' => function($q) {
+            ->withCount(['siswas as total_siswa' => function ($q) {
                 $q->where('status', 'aktif');
             }])
-            ->with(['siswas' => function($q) {
+            ->with(['siswas' => function ($q) {
                 $q->where('status', 'aktif')->with(['kelasTartil.guru', 'kelasTartil']);
             }])
             ->where('is_aktif', true)
@@ -641,7 +665,7 @@ class AdminController extends Controller
     public function kelasRegulerExport()
     {
         $kelasRegulers = KelasReguler::with('guruPengampu')
-            ->with(['siswas' => function($q) {
+            ->with(['siswas' => function ($q) {
                 $q->where('status', 'aktif')->with(['kelasTartil.guru', 'kelasTartil']);
             }])
             ->where('is_aktif', true)
@@ -691,6 +715,7 @@ class AdminController extends Controller
                 $sheet->mergeCells("A{$row}:H{$row}");
                 $sheet->getStyle("A{$row}:H{$row}")->applyFromArray($dataStyle);
                 $row += 2;
+
                 continue;
             }
 
@@ -733,7 +758,7 @@ class AdminController extends Controller
         $sheet->getColumnDimension('G')->setWidth(20);
         $sheet->getColumnDimension('H')->setWidth(12);
 
-        $filename = 'keterangan_kelas_' . date('Ymd_His') . '.xlsx';
+        $filename = 'keterangan_kelas_'.date('Ymd_His').'.xlsx';
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header("Content-Disposition: attachment; filename=\"{$filename}\"");
@@ -758,7 +783,7 @@ class AdminController extends Controller
     // ==================== DAFTARKAN SISWA KE KELAS REGULER ====================
     public function kelasRegulerDaftarkanSiswa(Request $request, KelasReguler $kelasReguler)
     {
-        if (!$kelasReguler->is_aktif) {
+        if (! $kelasReguler->is_aktif) {
             return back()->with('error', 'Kelas reguler tidak aktif, tidak bisa mendaftarkan siswa.');
         }
 
@@ -770,7 +795,9 @@ class AdminController extends Controller
         $count = 0;
         foreach ($request->siswa_ids as $siswaId) {
             $siswa = Siswa::find($siswaId);
-            if ($siswa->status !== 'aktif') continue;
+            if ($siswa->status !== 'aktif') {
+                continue;
+            }
 
             $kelasLama = $siswa->kelas_reguler_id;
             $siswa->update(['kelas_reguler_id' => $kelasReguler->id]);
@@ -780,7 +807,7 @@ class AdminController extends Controller
                 'mutasi_type' => Siswa::class,
                 'mutasi_id' => $siswa->id,
                 'jenis' => 'pindah_kelas_reguler',
-                'keterangan' => "Daftar ke kelas {$kelasReguler->nama} ({$kelasReguler->jenjang}{$kelasReguler->tingkat})" . ($kelasLama ? ", dari kelas lama" : ", sebelumnya belum punya kelas"),
+                'keterangan' => "Daftar ke kelas {$kelasReguler->nama} ({$kelasReguler->jenjang}{$kelasReguler->tingkat})".($kelasLama ? ', dari kelas lama' : ', sebelumnya belum punya kelas'),
                 'dilakukan_oleh' => auth()->id(),
                 'tanggal_mutasi' => now(),
             ]);
@@ -799,14 +826,16 @@ class AdminController extends Controller
         ]);
 
         $kelasBaru = KelasReguler::findOrFail($request->kelas_reguler_baru_id);
-        if (!$kelasBaru->is_aktif) {
+        if (! $kelasBaru->is_aktif) {
             return back()->with('error', 'Kelas reguler tujuan tidak aktif.');
         }
 
         $count = 0;
         foreach ($request->siswa_ids as $siswaId) {
             $siswa = Siswa::find($siswaId);
-            if ($siswa->status !== 'aktif') continue;
+            if ($siswa->status !== 'aktif') {
+                continue;
+            }
 
             $kelasLamaNama = $siswa->kelasReguler?->nama ?? 'Tanpa Kelas';
             $siswa->update(['kelas_reguler_id' => $kelasBaru->id]);
@@ -830,7 +859,7 @@ class AdminController extends Controller
     public function kelasRegulerPindahIndex(Request $request)
     {
         $kelasRegulers = KelasReguler::where('is_aktif', true)
-            ->withCount(['siswas as total_siswa' => fn($q) => $q->where('status', 'aktif')])
+            ->withCount(['siswas as total_siswa' => fn ($q) => $q->where('status', 'aktif')])
             ->orderBy('jenjang')
             ->orderBy('tingkat')
             ->get();
@@ -870,7 +899,7 @@ class AdminController extends Controller
     {
         $semesterAktif = Semester::aktif()->first();
 
-        if (!$semesterAktif) {
+        if (! $semesterAktif) {
             return view('admin.kelas.rekap', [
                 'semesterAktif' => null,
                 'kelasList' => collect(),
@@ -882,8 +911,8 @@ class AdminController extends Controller
         // Ambil kelas tartil aktif dengan siswa detail
         $kelasList = Kelas::where('status', 'aktif')
             ->with('guru')
-            ->with(['siswas' => fn($q) => $q->where('status', 'aktif')->with(['kelasReguler'])->orderBy('nama')])
-            ->withCount(['siswas' => fn($q) => $q->where('status', 'aktif')])
+            ->with(['siswas' => fn ($q) => $q->where('status', 'aktif')->with(['kelasReguler'])->orderBy('nama')])
+            ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
             ->orderByRaw("FIELD(jenis, 'BQ 1', 'BQ 2', 'BQ 3', 'BQ 4', 'Tartil', 'Tahfidz')")
             ->orderBy('nama')
             ->get();
@@ -892,7 +921,7 @@ class AdminController extends Controller
         $totalSiswa = Siswa::where('status', 'aktif')->whereNotNull('kelas_tartil_id')->count();
 
         // Jumlah siswa per jenis kelas
-        $jumlahPerJenis = $kelasList->groupBy('jenis')->map(function($kelasGroup) {
+        $jumlahPerJenis = $kelasList->groupBy('jenis')->map(function ($kelasGroup) {
             return $kelasGroup->sum('siswas_count');
         });
 
@@ -904,8 +933,8 @@ class AdminController extends Controller
     {
         $kelasList = Kelas::where('status', 'aktif')
             ->with('guru')
-            ->with(['siswas' => fn($q) => $q->where('status', 'aktif')->with(['kelasReguler'])->orderBy('nama')])
-            ->withCount(['siswas' => fn($q) => $q->where('status', 'aktif')])
+            ->with(['siswas' => fn ($q) => $q->where('status', 'aktif')->with(['kelasReguler'])->orderBy('nama')])
+            ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
             ->orderByRaw("FIELD(jenis, 'BQ 1', 'BQ 2', 'BQ 3', 'BQ 4', 'Tartil', 'Tahfidz')")
             ->orderBy('nama')
             ->get();
@@ -951,6 +980,7 @@ class AdminController extends Controller
                 $sheet->mergeCells("A{$row}:I{$row}");
                 $sheet->getStyle("A{$row}:I{$row}")->applyFromArray($dataStyle);
                 $row += 2;
+
                 continue;
             }
 
@@ -993,7 +1023,7 @@ class AdminController extends Controller
         $sheet->getColumnDimension('H')->setWidth(15);
         $sheet->getColumnDimension('I')->setWidth(15);
 
-        $filename = 'keterangan_kelas_tartil_' . date('Ymd_His') . '.xlsx';
+        $filename = 'keterangan_kelas_tartil_'.date('Ymd_His').'.xlsx';
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header("Content-Disposition: attachment; filename=\"{$filename}\"");
@@ -1013,7 +1043,7 @@ class AdminController extends Controller
             $q = $request->search;
             $query->where(function ($sq) use ($q) {
                 $sq->where('nama', 'like', "%{$q}%")
-                   ->orWhere('nis', 'like', "%{$q}%");
+                    ->orWhere('nis', 'like', "%{$q}%");
             });
         }
 
@@ -1033,7 +1063,7 @@ class AdminController extends Controller
             $q->orderBy('tanggal_mulai', 'desc');
         }]);
 
-        $records = \App\Models\SemesterSiswa::where('siswa_id', $siswa->id)
+        $records = SemesterSiswa::where('siswa_id', $siswa->id)
             ->with(['semester', 'kelasTartil', 'kelasReguler'])
             ->orderByDesc('created_at')
             ->get();
@@ -1045,6 +1075,7 @@ class AdminController extends Controller
     public function guruRegulerIndex()
     {
         $gurus = GuruReguler::orderBy('nama')->paginate(20);
+
         return view('admin.guru-reguler.index', compact('gurus'));
     }
 
@@ -1072,7 +1103,8 @@ class AdminController extends Controller
         ]);
         $validated['is_aktif'] = true;
         GuruReguler::create($validated);
-        return redirect()->route('admin.guru-reguler.index')->with('success', 'Guru reguler "' . $validated['nama'] . '" berhasil ditambahkan.');
+
+        return redirect()->route('admin.guru-reguler.index')->with('success', 'Guru reguler "'.$validated['nama'].'" berhasil ditambahkan.');
     }
 
     public function guruRegulerEdit(GuruReguler $guruReguler)
@@ -1084,8 +1116,8 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|max:100',
-            'nip' => 'nullable|max:30|unique:guru_regulers,nip,' . $guruReguler->id,
-            'email' => 'required|email|unique:guru_regulers,email,' . $guruReguler->id,
+            'nip' => 'nullable|max:30|unique:guru_regulers,nip,'.$guruReguler->id,
+            'email' => 'required|email|unique:guru_regulers,email,'.$guruReguler->id,
             'no_hp' => 'required|max:15',
             'jenis_kelamin' => 'required|in:L,P',
             'alamat' => 'nullable',
@@ -1106,7 +1138,8 @@ class AdminController extends Controller
 
         $validated['is_aktif'] = $request->has('is_aktif');
         $guruReguler->update($validated);
-        return redirect()->route('admin.guru-reguler.index')->with('success', 'Data guru reguler "' . $validated['nama'] . '" berhasil diperbarui.');
+
+        return redirect()->route('admin.guru-reguler.index')->with('success', 'Data guru reguler "'.$validated['nama'].'" berhasil diperbarui.');
     }
 
     // ============ TAHUN AJARAN BARU (AUTO SEMUA) ============
@@ -1115,6 +1148,7 @@ class AdminController extends Controller
         $tahunAjarans = TahunAjaran::withCount('semesters')->orderBy('nama', 'desc')->paginate(20);
         $semesters = Semester::with('tahunAjaran')->withCount(['kelasTartils', 'siswas'])->orderBy('tanggal_mulai', 'desc')->paginate(20);
         $taAktif = TahunAjaran::aktif()->first();
+
         return view('admin.tahun-ajaran.index', compact('tahunAjarans', 'semesters', 'taAktif'));
     }
 
@@ -1129,13 +1163,13 @@ class AdminController extends Controller
         // 1. Cek apakah sudah ada semester untuk TA ini
         $semesterSudahAda = Semester::where('tahun_ajaran', $validated['nama'])->exists();
         if ($semesterSudahAda) {
-            return back()->with('error', 'TA "' . $validated['nama'] . '" sudah pernah dibuat. Pembuatan TA hanya boleh dilakukan sekali.');
+            return back()->with('error', 'TA "'.$validated['nama'].'" sudah pernah dibuat. Pembuatan TA hanya boleh dilakukan sekali.');
         }
 
         // 2. Cek apakah ada TA yang benar-benar aktif (masih punya semester aktif)
         $taAktif = TahunAjaran::aktif()->first();
         if ($taAktif && $taAktif->isBenarAktif()) {
-            return back()->with('error', 'TA "' . $taAktif->nama . '" masih aktif. Tutup semesternya terlebih dahulu sebelum membuat TA baru.');
+            return back()->with('error', 'TA "'.$taAktif->nama.'" masih aktif. Tutup semesternya terlebih dahulu sebelum membuat TA baru.');
         }
         // Jika TA "aktif" tapi semua semesternya sudah ditutup, otomatis tutup TA-nya
         if ($taAktif && $taAktif->isSemuaSemesterDitutup()) {
@@ -1145,7 +1179,7 @@ class AdminController extends Controller
         // 3. Cek apakah ada semester aktif
         $semesterAktif = Semester::aktif()->first();
         if ($semesterAktif) {
-            return back()->with('error', 'Semester "' . $semesterAktif->nama . '" masih aktif. Nonaktifkan semester lama terlebih dahulu.');
+            return back()->with('error', 'Semester "'.$semesterAktif->nama.'" masih aktif. Nonaktifkan semester lama terlebih dahulu.');
         }
 
         // 4. VALIDASI: Kelas aktif jenjang 1-5 yang punya siswa harus punya kelas tujuan (jenjang+1, rombel sama)
@@ -1155,20 +1189,23 @@ class AdminController extends Controller
             foreach ($kelasLamaList as $kl) {
                 // Hanya validasi kelas yang punya siswa aktif
                 $jumlahSiswa = Siswa::where('kelas_reguler_id', $kl->id)->where('status', 'aktif')->count();
-                if ($jumlahSiswa === 0) continue; // kelas kosong, skip validasi
+                if ($jumlahSiswa === 0) {
+                    continue;
+                } // kelas kosong, skip validasi
 
                 $kb = KelasReguler::where('jenjang', $jenjang + 1)
                     ->where('tingkat', $kl->tingkat)
                     ->where('is_aktif', true)
                     ->first();
-                if (!$kb) {
-                    $kelasTanpaTujuan[] = "{$kl->nama} (jenjang {$jenjang} → " . ($jenjang + 1) . ", rombel {$kl->tingkat}, {$jumlahSiswa} siswa)";
+                if (! $kb) {
+                    $kelasTanpaTujuan[] = "{$kl->nama} (jenjang {$jenjang} → ".($jenjang + 1).", rombel {$kl->tingkat}, {$jumlahSiswa} siswa)";
                 }
             }
         }
-        if (!empty($kelasTanpaTujuan)) {
+        if (! empty($kelasTanpaTujuan)) {
             $daftar = implode(', ', $kelasTanpaTujuan);
-            return back()->with('error', 'Pembuatan TA dibatalkan. Kelas tujuan tidak ditemukan untuk: ' . $daftar . '. Silakan buat kelas tujuan terlebih dahulu di menu Kelas Reguler.');
+
+            return back()->with('error', 'Pembuatan TA dibatalkan. Kelas tujuan tidak ditemukan untuk: '.$daftar.'. Silakan buat kelas tujuan terlebih dahulu di menu Kelas Reguler.');
         }
 
         return \DB::transaction(function () use ($validated) {
@@ -1216,7 +1253,9 @@ class AdminController extends Controller
                         ->where('tingkat', $kl->tingkat)
                         ->where('is_aktif', true)
                         ->first();
-                    if (!$kb) continue; // skip kalau tidak ada kelas tujuan (kelas kosong)
+                    if (! $kb) {
+                        continue;
+                    } // skip kalau tidak ada kelas tujuan (kelas kosong)
 
                     $siswaList = Siswa::where('kelas_reguler_id', $kl->id)->where('status', 'aktif')->get();
                     foreach ($siswaList as $s) {
@@ -1232,7 +1271,7 @@ class AdminController extends Controller
             $log[] = "Kenaikan: {$countLulus} lulus, {$countNaik} naik";
 
             // === STEP 3: Buat TA baru ===
-            $tglMulai = \Carbon\Carbon::parse($validated['tanggal_mulai']);
+            $tglMulai = Carbon::parse($validated['tanggal_mulai']);
             $tglSelesai = $tglMulai->copy()->addYear()->subDay();
 
             $taBaru = TahunAjaran::create([
@@ -1292,7 +1331,7 @@ class AdminController extends Controller
             $log[] = "Snapshot: {$kelasTartil->count()} kelas, {$siswaAktif->count()} siswa ke semester ganjil";
 
             return redirect()->route('admin.tahun-ajaran.index')
-                ->with('success', "TA {$taBaru->nama} berhasil dibuat. " . implode('. ', $log) . '.');
+                ->with('success', "TA {$taBaru->nama} berhasil dibuat. ".implode('. ', $log).'.');
         });
     }
 
@@ -1343,11 +1382,17 @@ class AdminController extends Controller
         $rekapCount = 0;
         foreach ($semesterSiswaRecords as $ss) {
             $siswa = $ss->siswa;
-            if (!$siswa) continue;
+            if (! $siswa) {
+                continue;
+            }
             $kelasId = $ss->kelas_id ?? $siswa->kelas_tartil_id;
-            if (!$kelasId) continue;
+            if (! $kelasId) {
+                continue;
+            }
             $kelas = Kelas::find($kelasId);
-            if (!$kelas) continue;
+            if (! $kelas) {
+                continue;
+            }
 
             try {
                 RekapR2Akhir::calculateAndSave($siswa, $semester, $kelas);
@@ -1365,11 +1410,17 @@ class AdminController extends Controller
         $jurnalCount = 0;
         foreach ($semesterSiswaRecords as $ss) {
             $siswa = $ss->siswa;
-            if (!$siswa) continue;
+            if (! $siswa) {
+                continue;
+            }
             $kelasId = $ss->kelas_id ?? $siswa->kelas_tartil_id;
-            if (!$kelasId) continue;
+            if (! $kelasId) {
+                continue;
+            }
             $kelas = Kelas::find($kelasId);
-            if (!$kelas) continue;
+            if (! $kelas) {
+                continue;
+            }
 
             try {
                 RekapJurnalSemester::snapshot($siswa, $semester, $kelas);
@@ -1387,7 +1438,9 @@ class AdminController extends Controller
         $munaqosyahCount = 0;
         foreach ($semesterSiswaRecords as $ss) {
             $siswa = $ss->siswa;
-            if (!$siswa) continue;
+            if (! $siswa) {
+                continue;
+            }
 
             try {
                 RekapMunaqosyahSemester::snapshot($siswa, $semester);
@@ -1405,7 +1458,9 @@ class AdminController extends Controller
         $riwayatCount = 0;
         foreach ($semesterSiswaRecords as $ss) {
             $siswa = $ss->siswa;
-            if (!$siswa) continue;
+            if (! $siswa) {
+                continue;
+            }
 
             try {
                 RekapRiwayatSemester::snapshot($siswa, $semester);
@@ -1418,17 +1473,23 @@ class AdminController extends Controller
         $logDetails[] = "Riwayat {$riwayatCount} siswa di-lock";
 
         // ════════════════════════════════════════════
-        // STEP 7: SNAPSHOT TAHFIDZ — lock hafalan siswa kelas Tahfidz
+        // STEP 7: SNAPSHOT HAFALAN — lock hafalan siswa kelas tartil
         // ════════════════════════════════════════════
         $tahfidzCount = 0;
         foreach ($semesterSiswaRecords as $ss) {
             $siswa = $ss->siswa;
-            if (!$siswa) continue;
-            // Hanya snapshot kalau siswa di kelas Tahfidz
+            if (! $siswa) {
+                continue;
+            }
+            // Snapshot untuk semua siswa yang tercatat di kelas tartil
             $kelasId = $ss->kelas_id ?? $siswa->kelas_tartil_id;
-            if (!$kelasId) continue;
+            if (! $kelasId) {
+                continue;
+            }
             $kelas = Kelas::find($kelasId);
-            if (!$kelas || $kelas->jenis !== 'Tahfidz') continue;
+            if (! $kelas) {
+                continue;
+            }
 
             try {
                 RekapTahfidzSemester::snapshot($siswa, $semester);
@@ -1438,7 +1499,7 @@ class AdminController extends Controller
             }
         }
         SemesterAuditLog::log($semester, 'tahfidz', 'snapshot', $tahfidzCount, [], $userId);
-        $logDetails[] = "Tahfidz {$tahfidzCount} siswa di-lock";
+        $logDetails[] = "Hafalan {$tahfidzCount} siswa di-lock";
 
         // ════════════════════════════════════════════
         // STEP 8: TUTUP SEMESTER
@@ -1455,7 +1516,8 @@ class AdminController extends Controller
             }
         }
 
-        $msg = "Semester {$semester->nama} ditutup. " . implode('. ', $logDetails) . '.';
+        $msg = "Semester {$semester->nama} ditutup. ".implode('. ', $logDetails).'.';
+
         return back()->with('success', $msg);
     }
 
@@ -1466,25 +1528,26 @@ class AdminController extends Controller
     public function semesterDestroy(Semester $semester)
     {
         // Cek apakah semester punya data jurnal
-        $jurnalCount = \App\Models\JurnalHarian::where('semester_id', $semester->id)->count();
+        $jurnalCount = JurnalHarian::where('semester_id', $semester->id)->count();
         if ($jurnalCount > 0) {
             return back()->with('error', "Semester tidak bisa dihapus karena memiliki {$jurnalCount} data jurnal. Gunakan 'Tutup' untuk menutup semester.");
         }
 
         // Cek munaqosyah
-        $munaqosyahCount = \App\Models\UjianMunaqosyah::where('semester_id', $semester->id)->count();
+        $munaqosyahCount = UjianMunaqosyah::where('semester_id', $semester->id)->count();
         if ($munaqosyahCount > 0) {
             return back()->with('error', "Semester tidak bisa dihapus karena memiliki {$munaqosyahCount} data munaqosyah.");
         }
 
         // Cek penilaian rapor
-        $raporCount = \App\Models\PenilaianRaporInternal::where('semester_id', $semester->id)->count();
+        $raporCount = PenilaianRaporInternal::where('semester_id', $semester->id)->count();
         if ($raporCount > 0) {
             return back()->with('error', "Semester tidak bisa dihapus karena memiliki {$raporCount} data penilaian rapor.");
         }
 
         // Hanya hapus kalau benar-benar kosong
         $semester->delete();
+
         return back()->with('success', 'Semester berhasil dihapus.');
     }
 
@@ -1500,7 +1563,7 @@ class AdminController extends Controller
         // Tutup TA
         $tahunAjaran->update(['status' => 'ditutup']);
 
-        return back()->with('success', 'TA ' . $tahunAjaran->nama . ' berhasil ditutup.');
+        return back()->with('success', 'TA '.$tahunAjaran->nama.' berhasil ditutup.');
     }
 
     // ============ PENGATURAN KOP SURAT RAPOR ============
@@ -1511,7 +1574,7 @@ class AdminController extends Controller
         // Debug: Log semua record untuk identifikasi duplikat
         $all = KopSuratRapor::whereNull('semester_id')->orderBy('updated_at', 'desc')->get(['id', 'sub_judul', 'updated_at']);
         if ($all->count() > 1) {
-            \Log::warning('KopSuratRapor duplikat: ' . $all->count() . ' record default ditemukan', $all->toArray());
+            \Log::warning('KopSuratRapor duplikat: '.$all->count().' record default ditemukan', $all->toArray());
         }
 
         return view('admin.kop-surat-rapor.index', compact('kop'));
@@ -1569,22 +1632,22 @@ class AdminController extends Controller
         // Debug: Log sebelum update
         $idBefore = $kop->id;
         $subJudulBefore = $kop->sub_judul;
-        \Log::info("KopSuratRapor UPDATE: id={$kop->id}, sub_judul_before='{$kop->sub_judul}', sub_judul_input='" . ($validated['sub_judul'] ?? 'NULL') . "'");
+        \Log::info("KopSuratRapor UPDATE: id={$kop->id}, sub_judul_before='{$kop->sub_judul}', sub_judul_input='".($validated['sub_judul'] ?? 'NULL')."'");
 
         // Update record
         $updated = $kop->update($validated);
 
         // Debug: Log setelah update
         $kopAfter = KopSuratRapor::find($kop->id);
-        \Log::info("KopSuratRapor AFTER: id={$kop->id}, updated=" . ($updated ? 'true' : 'false') . ", sub_judul_after='" . ($kopAfter?->sub_judul ?? 'NULL') . "'");
+        \Log::info("KopSuratRapor AFTER: id={$kop->id}, updated=".($updated ? 'true' : 'false').", sub_judul_after='".($kopAfter?->sub_judul ?? 'NULL')."'");
 
-        if (!$updated) {
+        if (! $updated) {
             return redirect()->route('admin.kop-surat-rapor.index')
                 ->with('error', 'Gagal menyimpan ke database. Cek log.');
         }
 
         return redirect()->route('admin.kop-surat-rapor.index')
-            ->with('success', 'Pengaturan kop surat rapor berhasil diperbarui. [ID:' . $kop->id . ']');
+            ->with('success', 'Pengaturan kop surat rapor berhasil diperbarui. [ID:'.$kop->id.']');
     }
 
     // ═══════════════════════════════════════════════════════
@@ -1619,6 +1682,7 @@ class AdminController extends Controller
                 $ta->total_penilaian = $stat->total_penilaian;
                 $ta->rata_r2_akhir = $stat->rata_r2_akhir;
                 $ta->periode = $stat->periode;
+
                 return $ta;
             });
         }
@@ -1651,7 +1715,7 @@ class AdminController extends Controller
         // Periode
         $tglMulai = $semesters->min('tanggal_mulai');
         $tglSelesai = $semesters->max('tanggal_selesai');
-        $periode = ($tglMulai ? $tglMulai->format('d/m/Y') : '-') . ' - ' . ($tglSelesai ? $tglSelesai->format('d/m/Y') : '-');
+        $periode = ($tglMulai ? $tglMulai->format('d/m/Y') : '-').' - '.($tglSelesai ? $tglSelesai->format('d/m/Y') : '-');
 
         $obj = (object) [
             'nama' => $nama,
@@ -1693,6 +1757,7 @@ class AdminController extends Controller
             $semester->total_siswa = SemesterSiswa::where('semester_id', $semester->id)->count();
             $semester->total_munaqosyah = UjianMunaqosyah::where('semester_id', $semester->id)->count();
             $semester->total_penilaian = PenilaianRaporInternal::where('semester_id', $semester->id)->count();
+
             return $semester;
         });
 
@@ -1702,7 +1767,7 @@ class AdminController extends Controller
         $semesterId = $request->get('semester_id');
 
         if ($semesterId) {
-            $selectedSemester = $semesterList->firstWhere('id', (int)$semesterId);
+            $selectedSemester = $semesterList->firstWhere('id', (int) $semesterId);
             if ($selectedSemester) {
                 $rekapData = $this->buildAuditRekap($selectedSemester);
             }
@@ -1719,7 +1784,7 @@ class AdminController extends Controller
     public function auditSemesterDetail(Request $request, Semester $semester)
     {
         $siswaId = $request->get('siswa_id');
-        if (!$siswaId) {
+        if (! $siswaId) {
             return back()->with('error', 'Pilih siswa terlebih dahulu.');
         }
 
@@ -1757,10 +1822,11 @@ class AdminController extends Controller
         $rekapData = $this->buildAuditRekap($semester);
         $kop = KopSuratRapor::untukSemester($semester->id);
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.audit-semester', compact('semester', 'rekapData', 'kop'))
+        $pdf = Pdf::loadView('pdf.audit-semester', compact('semester', 'rekapData', 'kop'))
             ->setPaper('A4', 'landscape');
         $taSafe = str_replace('/', '-', $semester->tahun_ajaran);
         $filename = "Audit_{$taSafe}_{$semester->jenis}_{$semester->id}.pdf";
+
         return $pdf->download($filename);
     }
 
@@ -1772,9 +1838,9 @@ class AdminController extends Controller
     {
         $rekapData = $this->buildAuditRekap($semester);
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $styleBold = ['font' => ['bold' => true]];
-        $styleHeader = ['font' => ['bold' => true, 'size' => 10], 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8F5E9']]];
+        $styleHeader = ['font' => ['bold' => true, 'size' => 10], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8F5E9']]];
         $styleGreen = ['font' => ['bold' => true, 'color' => ['rgb' => '0c8a5f']]];
 
         // ══════ SHEET 1: RINGKASAN ══════
@@ -1785,16 +1851,28 @@ class AdminController extends Controller
         $sheet1->getStyle('A1')->applyFromArray(['font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '0c8a5f']]]);
         $sheet1->setCellValue('A2', "TA: {$semester->tahun_ajaran} | Periode: {$semester->tanggal_mulai?->format('d/m/Y')} - {$semester->tanggal_selesai?->format('d/m/Y')}");
         $sheet1->mergeCells('A2:D2');
-        $sheet1->setCellValue('A3', 'Status Data: ' . ($semester->status === 'ditutup' ? 'TERKUNCI (Snapshot)' : 'REAL-TIME (Aktif)'));
+        $sheet1->setCellValue('A3', 'Status Data: '.($semester->status === 'ditutup' ? 'TERKUNCI (Snapshot)' : 'REAL-TIME (Aktif)'));
         $sheet1->mergeCells('A3:D3');
 
         $r = 5;
-        $sheet1->setCellValue("A{$r}", 'RINGKASAN UTAMA'); $sheet1->getStyle("A{$r}")->applyFromArray($styleGreen); $r++;
-        $sheet1->setCellValue("A{$r}", 'Total Siswa'); $sheet1->setCellValue("B{$r}", $rekapData['totalSiswa'] ?? 0); $r++;
-        $sheet1->setCellValue("A{$r}", 'R2 Akhir Rata-rata'); $sheet1->setCellValue("B{$r}", $rekapData['rataR2Akhir'] ?? 0); $r++;
-        $sheet1->setCellValue("A{$r}", 'Mengaji Rata-rata (hari)'); $sheet1->setCellValue("B{$r}", $rekapData['rataMengaji'] ?? 0); $r++;
-        $sheet1->setCellValue("A{$r}", 'Total Munaqosyah'); $sheet1->setCellValue("B{$r}", count($rekapData['munaqosyahList'] ?? [])); $r++;
-        $sheet1->setCellValue("A{$r}", 'Total Penilaian Rapor'); $sheet1->setCellValue("B{$r}", count($rekapData['penilaianList'] ?? [])); $r++;
+        $sheet1->setCellValue("A{$r}", 'RINGKASAN UTAMA');
+        $sheet1->getStyle("A{$r}")->applyFromArray($styleGreen);
+        $r++;
+        $sheet1->setCellValue("A{$r}", 'Total Siswa');
+        $sheet1->setCellValue("B{$r}", $rekapData['totalSiswa'] ?? 0);
+        $r++;
+        $sheet1->setCellValue("A{$r}", 'R2 Akhir Rata-rata');
+        $sheet1->setCellValue("B{$r}", $rekapData['rataR2Akhir'] ?? 0);
+        $r++;
+        $sheet1->setCellValue("A{$r}", 'Mengaji Rata-rata (hari)');
+        $sheet1->setCellValue("B{$r}", $rekapData['rataMengaji'] ?? 0);
+        $r++;
+        $sheet1->setCellValue("A{$r}", 'Total Munaqosyah');
+        $sheet1->setCellValue("B{$r}", count($rekapData['munaqosyahList'] ?? []));
+        $r++;
+        $sheet1->setCellValue("A{$r}", 'Total Penilaian Rapor');
+        $sheet1->setCellValue("B{$r}", count($rekapData['penilaianList'] ?? []));
+        $r++;
 
         foreach (['A', 'B'] as $col) {
             $sheet1->getColumnDimension($col)->setAutoSize(true);
@@ -1808,15 +1886,15 @@ class AdminController extends Controller
 
         $r = 3;
         foreach ($rekapData['munaqosyahList'] ?? [] as $mq) {
-            $sheet2->setCellValue("A{$r}", $mq['ujian']->nama . ' (' . $mq['ujian']->tingkat . ')');
+            $sheet2->setCellValue("A{$r}", $mq['ujian']->nama.' ('.$mq['ujian']->tingkat.')');
             $sheet2->getStyle("A{$r}")->applyFromArray($styleBold);
-            $sheet2->setCellValue("B{$r}", 'Tanggal: ' . ($mq['ujian']->tanggal_ujian?->format('d/m/Y') ?? '-'));
+            $sheet2->setCellValue("B{$r}", 'Tanggal: '.($mq['ujian']->tanggal_ujian?->format('d/m/Y') ?? '-'));
             $r++;
             $sheet2->setCellValue("A{$r}", "Peserta: {$mq['total']} | Lulus: {$mq['lulus']} | Tidak Lulus: {$mq['tidakLulus']} | Rata-rata: {$mq['rataNilai']}");
             $sheet2->mergeCells("A{$r}:F{$r}");
             $r++;
 
-            if (!empty($mq['peserta'])) {
+            if (! empty($mq['peserta'])) {
                 $headers = ['No', 'NIS', 'Nama', 'Nilai', 'Status', 'Catatan'];
                 foreach ($headers as $i => $h) {
                     $col = chr(65 + $i);
@@ -1850,33 +1928,37 @@ class AdminController extends Controller
         foreach ($rekapData['penilaianList'] ?? [] as $pn) {
             $sheet3->setCellValue("A{$r}", $pn['penilaian']->nama);
             $sheet3->getStyle("A{$r}")->applyFromArray($styleBold);
-            $sheet3->setCellValue("B{$r}", $pn['totalSiswa'] . ' siswa total | Status: ' . $pn['penilaian']->status);
+            $sheet3->setCellValue("B{$r}", $pn['totalSiswa'].' siswa total | Status: '.$pn['penilaian']->status);
             $sheet3->mergeCells("B{$r}:F{$r}");
             $r++;
 
             // Loop per kelas tartil
             foreach ($pn['perKelasTartil'] ?? [] as $pkt) {
                 // Header kelas tartil
-                $sheet3->setCellValue("A{$r}", 'KELAS ' . $pkt['jenisKelas']);
+                $sheet3->setCellValue("A{$r}", 'KELAS '.$pkt['jenisKelas']);
                 $sheet3->getStyle("A{$r}")->applyFromArray(['font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '0c8a5f']]]);
-                $sheet3->setCellValue("B{$r}", $pkt['totalSiswa'] . ' siswa');
+                $sheet3->setCellValue("B{$r}", $pkt['totalSiswa'].' siswa');
                 $r++;
 
                 // Indikator
-                if (!empty($pkt['indikatorNames'])) {
-                    $sheet3->setCellValue("A{$r}", 'Indikator: ' . implode(', ', $pkt['indikatorNames']));
+                if (! empty($pkt['indikatorNames'])) {
+                    $sheet3->setCellValue("A{$r}", 'Indikator: '.implode(', ', $pkt['indikatorNames']));
                     $sheet3->mergeCells("A{$r}:F{$r}");
                     $r++;
                 }
 
                 // Tabel header
-                if (!empty($pkt['nilaiPerSiswa'])) {
-                    $sheet3->setCellValue("A{$r}", 'No'); $sheet3->getStyle("A{$r}")->applyFromArray($styleHeader);
-                    $sheet3->setCellValue("B{$r}", 'NIS'); $sheet3->getStyle("B{$r}")->applyFromArray($styleHeader);
-                    $sheet3->setCellValue("C{$r}", 'Nama'); $sheet3->getStyle("C{$r}")->applyFromArray($styleHeader);
-                    $sheet3->setCellValue("D{$r}", 'Rata-rata'); $sheet3->getStyle("D{$r}")->applyFromArray($styleHeader);
+                if (! empty($pkt['nilaiPerSiswa'])) {
+                    $sheet3->setCellValue("A{$r}", 'No');
+                    $sheet3->getStyle("A{$r}")->applyFromArray($styleHeader);
+                    $sheet3->setCellValue("B{$r}", 'NIS');
+                    $sheet3->getStyle("B{$r}")->applyFromArray($styleHeader);
+                    $sheet3->setCellValue("C{$r}", 'Nama');
+                    $sheet3->getStyle("C{$r}")->applyFromArray($styleHeader);
+                    $sheet3->setCellValue("D{$r}", 'Rata-rata');
+                    $sheet3->getStyle("D{$r}")->applyFromArray($styleHeader);
                     $colIdx = 4;
-                    if (!empty($pkt['nilaiPerSiswa'][0]['detail'])) {
+                    if (! empty($pkt['nilaiPerSiswa'][0]['detail'])) {
                         foreach ($pkt['nilaiPerSiswa'][0]['detail'] as $d) {
                             $col = chr(65 + $colIdx);
                             $sheet3->setCellValue("{$col}{$r}", $d['indikator']);
@@ -1917,7 +1999,7 @@ class AdminController extends Controller
 
         $r = 3;
         foreach ($rekapData['siswaPerKelasReguler'] ?? [] as $kelasRegulerNama => $siswaKelas) {
-            $sheet4->setCellValue("A{$r}", $kelasRegulerNama . ' - ' . count($siswaKelas) . ' siswa');
+            $sheet4->setCellValue("A{$r}", $kelasRegulerNama.' - '.count($siswaKelas).' siswa');
             $sheet4->getStyle("A{$r}")->applyFromArray(['font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '1565C0']]]);
             $sheet4->mergeCells("A{$r}:J{$r}");
             $r++;
@@ -1979,7 +2061,9 @@ class AdminController extends Controller
 
         foreach ($semesterSiswaRecords as $ss) {
             $siswa = $ss->siswa;
-            if (!$siswa) continue;
+            if (! $siswa) {
+                continue;
+            }
 
             $snapR2 = RekapR2Akhir::where('semester_id', $semester->id)
                 ->where('siswa_id', $siswa->id)->first();
@@ -2013,7 +2097,7 @@ class AdminController extends Controller
             $siswaList[] = $item;
 
             // Kelompokkan per kelas reguler
-            if (!isset($siswaPerKelasReguler[$kelasRegulerNama])) {
+            if (! isset($siswaPerKelasReguler[$kelasRegulerNama])) {
                 $siswaPerKelasReguler[$kelasRegulerNama] = [];
             }
             $siswaPerKelasReguler[$kelasRegulerNama][] = $item;
@@ -2044,7 +2128,7 @@ class AdminController extends Controller
                     'tidakLulus' => $tidakLulus,
                     'terdaftar' => $terdaftar,
                     'rataNilai' => $rataNilai ? round($rataNilai, 2) : '-',
-                    'peserta' => $u->pendaftarans->map(fn($p) => [
+                    'peserta' => $u->pendaftarans->map(fn ($p) => [
                         'siswa' => $p->siswa,
                         'nilai' => $p->nilai,
                         'status' => $p->status,
@@ -2069,11 +2153,12 @@ class AdminController extends Controller
                     $first = $nilais->first();
                     // Ambil jenis kelas tartil siswa
                     $jenisKelas = $first->siswa?->kelasTartil?->jenis ?? 'Lainnya';
+
                     return [
                         'siswa' => $first->siswa,
                         'jenisKelas' => $jenisKelas,
                         'nilaiRata' => round($nilais->avg('nilai'), 2),
-                        'detail' => $nilais->map(fn($n) => [
+                        'detail' => $nilais->map(fn ($n) => [
                             'indikator' => $n->indikator?->nama_indikator ?? '-',
                             'nilai' => $n->nilai,
                         ])->values()->toArray(),
@@ -2123,7 +2208,10 @@ class AdminController extends Controller
 
     private function formatMunaqosyahStatus(?RekapMunaqosyahSemester $snap): string
     {
-        if (!$snap || $snap->total_ujian == 0) return 'Tidak mengikuti';
+        if (! $snap || $snap->total_ujian == 0) {
+            return 'Tidak mengikuti';
+        }
+
         return "{$snap->total_lulus}/{$snap->total_ujian} Lulus";
     }
 
@@ -2137,6 +2225,7 @@ class AdminController extends Controller
     public function statistikDashboard(Request $request)
     {
         $chartData = $this->buildStatistikData();
+
         return view('admin.statistik.index', compact('chartData'));
     }
 
@@ -2157,12 +2246,12 @@ class AdminController extends Controller
     {
         // Ambil TA terbaru
         $taTerbaru = TahunAjaran::orderBy('nama', 'desc')->first();
-        if (!$taTerbaru) {
+        if (! $taTerbaru) {
             $taTerbaru = Semester::select('tahun_ajaran')->distinct()->orderBy('tahun_ajaran', 'desc')->first();
         }
         $taNama = $taTerbaru ? ($taTerbaru->nama ?? $taTerbaru->tahun_ajaran) : null;
 
-        if (!$taNama) {
+        if (! $taNama) {
             return ['taLabels' => [], 'semesterLabels' => [], 'siswa' => [], 'r2Akhir' => [], 'r2Harian' => [], 'r2Penilaian' => [], 'jurnalHari' => [], 'perTA' => [], 'munaqosyah' => [], 'tahfidz' => []];
         }
 
@@ -2241,15 +2330,16 @@ class AdminController extends Controller
                     ->get();
 
                 $ujianIds = $ujianList->pluck('id')->toArray();
-                $totalPeserta = !empty($ujianIds) ? MunaqosyahPendaftaran::whereIn('munaqosyah_id', $ujianIds)->count() : 0;
-                $totalLulus = !empty($ujianIds) ? MunaqosyahPendaftaran::whereIn('munaqosyah_id', $ujianIds)->where('status', 'L')->count() : 0;
-                $totalTidakLulus = !empty($ujianIds) ? MunaqosyahPendaftaran::whereIn('munaqosyah_id', $ujianIds)->where('status', 'TL')->count() : 0;
+                $totalPeserta = ! empty($ujianIds) ? MunaqosyahPendaftaran::whereIn('munaqosyah_id', $ujianIds)->count() : 0;
+                $totalLulus = ! empty($ujianIds) ? MunaqosyahPendaftaran::whereIn('munaqosyah_id', $ujianIds)->where('status', 'L')->count() : 0;
+                $totalTidakLulus = ! empty($ujianIds) ? MunaqosyahPendaftaran::whereIn('munaqosyah_id', $ujianIds)->where('status', 'TL')->count() : 0;
 
                 // Detail per ujian individual
                 $detailUjian = $ujianList->map(function ($u) {
                     $lulus = $u->pendaftarans()->where('status', 'L')->count();
                     $tidakLulus = $u->pendaftarans()->where('status', 'TL')->count();
                     $total = $u->pendaftarans_count;
+
                     return [
                         'id' => $u->id,
                         'nama' => $u->nama,
@@ -2262,11 +2352,11 @@ class AdminController extends Controller
                     ];
                 })->values()->toArray();
 
-                if (!isset($data['munaqosyah'][$ta])) {
+                if (! isset($data['munaqosyah'][$ta])) {
                     $data['munaqosyah'][$ta] = [];
                 }
                 $data['munaqosyah'][$ta][$tingkat] = [
-                    'label' => match($tingkat) {
+                    'label' => match ($tingkat) {
                         'unit' => 'Munaqosyah Unit',
                         'yayasan' => 'Munaqosyah Yayasan',
                         'pesantren' => 'Munaqosyah Pesantren',
@@ -2283,7 +2373,7 @@ class AdminController extends Controller
         }
 
         // ══════ DATA TAHFIDZ ══════
-        $data['tahfidz'] = \App\Http\Controllers\TahfidzController::buildTahfidzData();
+        $data['tahfidz'] = TahfidzController::buildTahfidzData();
 
         return $data;
     }

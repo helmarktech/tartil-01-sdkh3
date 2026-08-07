@@ -263,9 +263,9 @@
                         </div>
                     </div>
 
-                    {{-- Tahfidz --}}
+                    {{-- Tahfidz & Hafalan --}}
                     <a href="{{ route('admin.tahfidz.index') }}" class="nav-item {{ str_contains($p, 'admin/tahfidz') ? 'active' : '' }}">
-                        <span>&#128218; Tahfidz</span>
+                        <span>&#128218; Tahfidz & Hafalan</span>
                     </a>
 
                     {{-- Penilaian Rapor (submenu) --}}
@@ -349,7 +349,7 @@
                         <span>Track Record Siswa</span>
                     </a>
                     <a href="{{ route('guru.tahfidz.index') }}" class="nav-item {{ str_contains($p, 'guru/tahfidz') ? 'active' : '' }}">
-                        <span>&#128218; Tahfidz</span>
+                        <span>&#128218; Tahfidz & Hafalan</span>
                     </a>
                     <a href="{{ route('guru.rapor.pilih') }}" class="nav-item {{ str_contains($p, 'guru/rapor') ? 'active' : '' }}">
                         <span>Rapor</span>

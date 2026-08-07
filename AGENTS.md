@@ -407,17 +407,19 @@ Saat semester ditutup, sistem dapat membuat snapshot di tabel berikut (data asli
 - `SessionFallbackServiceProvider` otomatis mengalihkan `SESSION_DRIVER=database` ke `file` jika tabel `sessions` belum ada.
 - Command `session:fix` tersedia untuk diagnosa manual.
 
-### 8.8 Tahfidz
+### 8.8 Tahfidz & Hafalan
 
 - Tracking hafalan per siswa per juz (1–30), tidak harus berurutan (misal: Juz 30 bisa didahulukan).
+- Tersedia untuk **semua jenis kelas tartil** (BQ 1, BQ 2, BQ 3, BQ 4, Tartil, Tahfidz), bukan hanya kelas berjenis Tahfidz.
 - Persentase hafalan dihitung berdasarkan mapping `juz_surats` (total ayat per juz).
 - Hafalan dengan status `hafal` atau `murajaah` dihitung sebagai ayat yang sudah dikuasai.
 - Perhitungan kumulatif menggunakan `tanggal_hafalan <= tanggal_selesai semester`, sehingga hafalan semester/TA lalu tetap masuk di semester berikutnya.
 - Rekap admin per semester membedakan:
-  - Total siswa di kelas jenis Tahfidz.
+  - Total siswa di kelas tartil.
   - Siswa yang sudah hafal juz tertentu (punya setoran `hafal`).
   - Siswa yang tuntas (persentase ≥ 100%).
 - Halaman rekap semester berada di `/admin/tahfidz/rekap-semester` (`TahfidzController::adminRekapSemester`).
+- Guru dari kelas tartil manapun dapat mencatat setoran hafalan siswa di kelasnya masing-masing.
 
 ---
 

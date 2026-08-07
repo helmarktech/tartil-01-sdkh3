@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 
 class TahfidzController extends Controller
 {
-    // ==================== ADMIN: INDEX (REKAP KELAS TAHFIDZ) ====================
+    // ==================== ADMIN: INDEX (REKAP KELAS TARTIL) ====================
     public function adminIndex(Request $request)
     {
         $semesterAktif = Semester::aktif()->first();
@@ -28,12 +28,11 @@ class TahfidzController extends Controller
             $juzSelected = 0;
         }
 
-        $kelasTahfidz = Kelas::where('jenis', 'Tahfidz')
-            ->where('status', 'aktif')
+        $kelasList = Kelas::where('status', 'aktif')
             ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
             ->get();
 
-        $kelasTahfidz = $kelasTahfidz->map(function ($k) use ($semester, $semesterAktif) {
+        $kelasList = $kelasList->map(function ($k) use ($semester, $semesterAktif) {
             $siswaIds = null;
             if ($semester && $semester->id !== $semesterAktif?->id) {
                 $siswaIds = SemesterSiswa::where('semester_id', $semester->id)
@@ -56,7 +55,7 @@ class TahfidzController extends Controller
             : collect();
 
         $persentaseJuz = $juzSelected
-            ? $this->buildPersentaseJuz($kelasTahfidz, $juzSelected, $semester)
+            ? $this->buildPersentaseJuz($kelasList, $juzSelected, $semester)
             : [];
 
         $tahunAjaranList = TahunAjaran::orderBy('nama', 'desc')->get();
@@ -67,22 +66,22 @@ class TahfidzController extends Controller
             ->toArray();
 
         return view('admin.tahfidz.index', compact(
-            'kelasTahfidz', 'semester', 'semesterAktif', 'juzSelected', 'juzSurat', 'persentaseJuz',
+            'kelasList', 'semester', 'semesterAktif', 'juzSelected', 'juzSurat', 'persentaseJuz',
             'tahunAjaranList', 'semesterMap'
         ));
     }
 
     /**
-     * Build persentase hafalan per juz untuk semua siswa aktif di kelas Tahfidz.
+     * Build persentase hafalan per juz untuk semua siswa aktif di kelas tartil.
      */
-    private function buildPersentaseJuz($kelasTahfidz, int $juz, ?Semester $semester): array
+    private function buildPersentaseJuz($kelasList, int $juz, ?Semester $semester): array
     {
         if (! $semester) {
             return [];
         }
 
         $result = [];
-        foreach ($kelasTahfidz as $kelas) {
+        foreach ($kelasList as $kelas) {
             foreach ($kelas->rekap['perSiswa'] ?? [] as $s) {
                 $result[] = [
                     'siswa' => $s['siswa'],
@@ -109,13 +108,12 @@ class TahfidzController extends Controller
             $juzSelected = 1;
         }
 
-        $kelasTahfidz = Kelas::where('jenis', 'Tahfidz')
-            ->where('status', 'aktif')
+        $kelasList = Kelas::where('status', 'aktif')
             ->orderBy('nama')
             ->get();
 
         $rekapPerKelas = [];
-        foreach ($kelasTahfidz as $kelas) {
+        foreach ($kelasList as $kelas) {
             $siswaIds = null;
             if ($semester && $semester->id !== $semesterAktif?->id) {
                 $siswaIds = SemesterSiswa::where('semester_id', $semester->id)
@@ -248,7 +246,6 @@ class TahfidzController extends Controller
         }
 
         $kelas = Kelas::where('guru_id', $guru->id)
-            ->where('jenis', 'Tahfidz')
             ->where('status', 'aktif')
             ->first();
 
@@ -335,16 +332,15 @@ class TahfidzController extends Controller
         return back()->with('success', 'Hafalan berhasil dicatat.');
     }
 
-    // ==================== STATISTIK: DATA TAHFIDZ ====================
+    // ==================== STATISTIK: DATA TAHFIDZ & HAFALAN ====================
     public static function buildTahfidzData(): array
     {
-        $kelasTahfidz = Kelas::where('jenis', 'Tahfidz')
-            ->where('status', 'aktif')
+        $kelasList = Kelas::where('status', 'aktif')
             ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
             ->get();
 
-        $totalSiswaTahfidz = $kelasTahfidz->sum('siswas_count');
-        $totalKelasTahfidz = $kelasTahfidz->count();
+        $totalSiswaTahfidz = $kelasList->sum('siswas_count');
+        $totalKelasTahfidz = $kelasList->count();
 
         // Total juz hafal keseluruhan
         $totalJuzEntries = HafalanTahfidz::where('status', 'hafal')->count();
@@ -362,7 +358,7 @@ class TahfidzController extends Controller
             ->toArray();
 
         // Per kelas
-        $perKelas = $kelasTahfidz->map(function ($k) {
+        $perKelas = $kelasList->map(function ($k) {
             $rekap = HafalanTahfidz::rekapPerKelas($k->id);
 
             return [

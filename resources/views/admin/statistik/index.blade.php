@@ -174,18 +174,18 @@
         </div>
     </div>
 
-    {{-- ══════ TAHFIDZ RINGKASAN ══════ --}}
+    {{-- ══════ TAHFIDZ & HAFALAN RINGKASAN ══════ --}}
     @if(!empty($chartData['tahfidz']) && ($chartData['tahfidz']['totalKelasTahfidz'] ?? 0) > 0)
     <div class="stat-card" style="margin-bottom: 24px;">
-        <div class="stat-card-title">&#128218; Tahfidz — Ringkasan Kumulatif</div>
+        <div class="stat-card-title">&#128218; Tahfidz & Hafalan — Ringkasan Kumulatif</div>
         <div class="summary-grid">
             <div class="summary-box">
                 <div class="val">{{ $chartData['tahfidz']['totalKelasTahfidz'] ?? 0 }}</div>
-                <div class="lbl">Kelas Tahfidz</div>
+                <div class="lbl">Kelas</div>
             </div>
             <div class="summary-box">
                 <div class="val">{{ $chartData['tahfidz']['totalSiswaTahfidz'] ?? 0 }}</div>
-                <div class="lbl">Siswa Tahfidz</div>
+                <div class="lbl">Siswa</div>
             </div>
             <div class="summary-box">
                 <div class="val">{{ $chartData['tahfidz']['totalJuzEntries'] ?? 0 }}</div>

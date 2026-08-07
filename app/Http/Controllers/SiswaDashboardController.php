@@ -220,7 +220,7 @@ class SiswaDashboardController extends Controller
     }
 
     /**
-     * Halaman detail hafalan tahfidz untuk siswa.
+     * Halaman detail hafalan untuk siswa.
      */
     public function hafalan()
     {
@@ -242,11 +242,9 @@ class SiswaDashboardController extends Controller
             ->orderBy('tanggal_hafalan', 'desc')
             ->first();
 
-        $isTahfidz = $siswa->kelasTartil?->jenis === 'Tahfidz';
-
         return view('siswa.hafalan', compact(
             'siswa', 'semester', 'progressJuz', 'totalJuzHafal',
-            'juzDistinct', 'hafalanList', 'juzAktif', 'isTahfidz'
+            'juzDistinct', 'hafalanList', 'juzAktif'
         ));
     }
 

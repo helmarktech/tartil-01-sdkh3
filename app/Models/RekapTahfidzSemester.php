@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class RekapTahfidzSemester extends Model
 {
     protected $table = 'rekap_tahfidz_semesters';
+
     protected $fillable = [
         'semester_id', 'kelas_id', 'siswa_id', 'guru_id',
         'total_juz_dihafal', 'total_entry', 'juz_terakhir', 'surat_terakhir',
@@ -18,10 +19,25 @@ class RekapTahfidzSemester extends Model
         'locked_at' => 'datetime',
     ];
 
-    public function semester() { return $this->belongsTo(Semester::class); }
-    public function kelas() { return $this->belongsTo(Kelas::class); }
-    public function siswa() { return $this->belongsTo(Siswa::class); }
-    public function guru() { return $this->belongsTo(GuruTartil::class, 'guru_id'); }
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class);
+    }
+
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class);
+    }
+
+    public function siswa()
+    {
+        return $this->belongsTo(Siswa::class);
+    }
+
+    public function guru()
+    {
+        return $this->belongsTo(GuruTartil::class, 'guru_id');
+    }
 
     /**
      * Snapshot hafalan tahfidz untuk 1 siswa di 1 semester.
@@ -51,14 +67,14 @@ class RekapTahfidzSemester extends Model
 
         // Rata-rata kualitas (convert ke angka)
         $nilaiMap = ['mumtaz' => 4, 'jayyid_jiddan' => 3, 'jayyid' => 2, 'naqis' => 1];
-        $avgNilai = $hafalanList->avg(fn($h) => $nilaiMap[$h->kualitas] ?? 2);
+        $avgNilai = $hafalanList->avg(fn ($h) => $nilaiMap[$h->kualitas] ?? 2);
         $kualitasRata = array_search(round($avgNilai), $nilaiMap) ?: 'jayyid';
 
         // Detail juz JSON
-        $detailJuz = $hafalanList->map(fn($h) => [
+        $detailJuz = $hafalanList->map(fn ($h) => [
             'juz' => $h->juz,
             'surat' => $h->surat?->nama_latin ?? '-',
-            'ayat' => $h->ayat_mulai . ($h->ayat_selesai ? '-' . $h->ayat_selesai : ''),
+            'ayat' => $h->ayat_mulai.($h->ayat_selesai ? '-'.$h->ayat_selesai : ''),
             'status' => $h->status,
             'kualitas' => $h->kualitas,
             'tanggal' => $h->tanggal_hafalan?->format('Y-m-d'),

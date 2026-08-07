@@ -341,7 +341,7 @@
                 <nav class="siswa-nav">
                     <a href="{{ route('siswa.dashboard') }}" class="{{ request()->routeIs('siswa.dashboard') ? 'active' : '' }}">Dashboard</a>
                     <a href="{{ route('siswa.nilai') }}" class="{{ request()->routeIs('siswa.nilai') ? 'active' : '' }}">Rapor</a>
-                    @if(auth('siswa')->user()?->kelasTartil?->jenis === 'Tahfidz')
+                    @if(auth('siswa')->user()?->kelas_tartil_id)
                     <a href="{{ route('siswa.hafalan') }}" class="{{ request()->routeIs('siswa.hafalan') ? 'active' : '' }}">&#128218; Hafalan</a>
                     @endif
                     <a href="{{ route('siswa.perpindahan') }}" class="{{ request()->routeIs('siswa.perpindahan') ? 'active' : '' }}">Riwayat Kelas</a>

@@ -59,7 +59,7 @@
     </div>
 
     {{-- Tahfidz Progress --}}
-    @if($siswa->kelasTartil?->jenis === 'Tahfidz' && !empty($tahfidzProgress))
+    @if($siswa->kelas_tartil_id && !empty($tahfidzProgress))
     <div class="sd-section" style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h2 class="sd-section-title" style="margin: 0;">&#128218; Progress Hafalan Al-Quran</h2>

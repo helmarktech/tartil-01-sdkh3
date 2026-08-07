@@ -78,54 +78,6 @@ class HafalanTahfidz extends Model
     // ─── HELPERS ───
 
     /**
-     * Total juz yang sudah dihafal (status = hafal) per siswa.
-     */
-    public static function totalJuzHafal(int $siswaId): int
-    {
-        return self::where('siswa_id', $siswaId)
-            ->where('status', 'hafal')
-            ->distinct('juz')
-            ->count('juz');
-    }
-
-    /**
-     * Progress semua 30 juz untuk 1 siswa.
-     * Return: [{juz: 1, status: 'hafal'|'proses'|'baru'|null, kualitas, surat, tanggal}, ...]
-     */
-    public static function progressJuz(int $siswaId, ?int $semesterId = null): array
-    {
-        $hafalan = self::where('siswa_id', $siswaId);
-        if ($semesterId) {
-            $hafalan->where('semester_id', $semesterId);
-        }
-        $hafalan = $hafalan->with('surat')
-            ->orderBy('tanggal_hafalan', 'desc')
-            ->get()
-            ->groupBy('juz');
-
-        $progress = [];
-        for ($j = 1; $j <= 30; $j++) {
-            $entries = $hafalan->get($j);
-            if (! $entries || $entries->isEmpty()) {
-                $progress[] = ['juz' => $j, 'status' => null, 'kualitas' => null, 'surat' => null, 'tanggal' => null];
-
-                continue;
-            }
-            // Ambil entry terbaru untuk juz ini
-            $latest = $entries->first();
-            $progress[] = [
-                'juz' => $j,
-                'status' => $latest->status,
-                'kualitas' => $latest->kualitas,
-                'surat' => $latest->surat?->nama_latin ?? '-',
-                'tanggal' => $latest->tanggal_hafalan?->format('d/m/Y'),
-            ];
-        }
-
-        return $progress;
-    }
-
-    /**
      * Daftar juz yang sudah dihafal dengan detail surat.
      */
     public static function daftarJuzHafal(int $siswaId, ?int $semesterId = null): array
@@ -149,78 +101,6 @@ class HafalanTahfidz extends Model
         ])->toArray();
     }
 
-    /**
-     * Rekap per kelas Tahfidz untuk statistik.
-     */
-    public static function rekapPerKelas(int $kelasId, ?int $semesterId = null): array
-    {
-        $query = self::where('kelas_id', $kelasId);
-        if ($semesterId) {
-            $query->where('semester_id', $semesterId);
-        }
-
-        $totalEntry = $query->count();
-        $totalHafal = (clone $query)->where('status', 'hafal')->count();
-        $totalMurajaah = (clone $query)->where('status', 'murajaah')->count();
-
-        // Distribusi juz
-        $distribusiJuz = (clone $query)
-            ->selectRaw('juz, COUNT(*) as total')
-            ->groupBy('juz')
-            ->orderBy('juz')
-            ->pluck('total', 'juz')
-            ->toArray();
-
-        // Per siswa
-        $perSiswa = Siswa::where('kelas_tartil_id', $kelasId)
-            ->where('status', 'aktif')
-            ->get()
-            ->map(function ($s) use ($semesterId) {
-                $juzHafal = self::where('siswa_id', $s->id)
-                    ->where('status', 'hafal');
-                if ($semesterId) {
-                    $juzHafal->where('semester_id', $semesterId);
-                }
-                $juzCount = $juzHafal->distinct('juz')->count('juz');
-
-                $lastHafalan = self::where('siswa_id', $s->id)
-                    ->orderBy('tanggal_hafalan', 'desc')
-                    ->first();
-
-                return [
-                    'siswa' => $s,
-                    'juzHafal' => $juzCount,
-                    'lastJuz' => $lastHafalan?->juz ?? '-',
-                    'lastSurat' => $lastHafalan?->surat?->nama_latin ?? '-',
-                    'lastTanggal' => $lastHafalan?->tanggal_hafalan?->format('d/m/Y') ?? '-',
-                    'lastStatus' => $lastHafalan?->status ?? null,
-                    'kualitas' => $lastHafalan?->kualitas ?? '-',
-                ];
-            })
-            ->sortByDesc('juzHafal')
-            ->values()
-            ->toArray();
-
-        return [
-            'totalEntry' => $totalEntry,
-            'totalHafal' => $totalHafal,
-            'totalMurajaah' => $totalMurajaah,
-            'distribusiJuz' => $distribusiJuz,
-            'perSiswa' => $perSiswa,
-        ];
-    }
-
-    public static function labelStatus(string $status): string
-    {
-        return match ($status) {
-            'baru' => 'Baru',
-            'setengah_hafal' => 'Setengah Hafal',
-            'hafal' => 'Hafal',
-            'murajaah' => 'Murojaah',
-            default => $status,
-        };
-    }
-
     public static function labelKualitas(string $kualitas): string
     {
         return match ($kualitas) {
@@ -233,22 +113,63 @@ class HafalanTahfidz extends Model
     }
 
     /**
-     * Daftar surat beserta jumlah ayat dalam satu juz.
+     * Hitung persentase ayat yang sudah dihafal untuk semua 30 juz sekaligus.
+     * Optional callback untuk memfilter hafalan yang ikut dihitung (semester/tanggal).
+     * Return: [juz => persentase, ...].
      */
-    public static function suratDalamJuz(int $juz): Collection
+    private static function hitungPersentaseSemuaJuz(int $siswaId, ?callable $filter = null): array
     {
-        return JuzSurat::where('juz', $juz)
-            ->with('surat')
-            ->orderBy('ayat_mulai')
-            ->get();
-    }
+        $mapping = JuzSurat::with('surat')->get()->groupBy('juz');
 
-    /**
-     * Total ayat dalam satu juz berdasarkan mapping JuzSurat.
-     */
-    public static function totalAyatJuz(int $juz): int
-    {
-        return JuzSurat::where('juz', $juz)->sum('total_ayat');
+        $hafalanQuery = self::where('siswa_id', $siswaId)
+            ->whereIn('status', ['hafal', 'murajaah'])
+            ->whereNotNull('surat_id');
+
+        if ($filter !== null) {
+            $filter($hafalanQuery);
+        }
+
+        $hafalanByJuz = $hafalanQuery->get()->groupBy('juz');
+
+        $result = [];
+        for ($juz = 1; $juz <= 30; $juz++) {
+            $juzMapping = $mapping->get($juz, collect());
+            $totalAyat = $juzMapping->sum('total_ayat');
+
+            if ($totalAyat === 0) {
+                $result[$juz] = 0.0;
+
+                continue;
+            }
+
+            $hafalanJuz = $hafalanByJuz->get($juz, collect());
+            $hafalSet = [];
+
+            foreach ($hafalanJuz as $h) {
+                foreach ($juzMapping as $m) {
+                    if ($m->surat_id !== $h->surat_id) {
+                        continue;
+                    }
+
+                    $start = max($h->ayat_mulai, $m->ayat_mulai);
+                    $end = $h->ayat_selesai
+                        ? min($h->ayat_selesai, $m->ayat_selesai)
+                        : min($h->ayat_mulai, $m->ayat_selesai);
+
+                    if ($start > $end) {
+                        continue;
+                    }
+
+                    for ($a = $start; $a <= $end; $a++) {
+                        $hafalSet["{$m->surat_id}:{$a}"] = true;
+                    }
+                }
+            }
+
+            $result[$juz] = round((count($hafalSet) / $totalAyat) * 100, 1);
+        }
+
+        return $result;
     }
 
     /**
@@ -328,6 +249,151 @@ class HafalanTahfidz extends Model
         return $ringkasan;
     }
 
+    /**
+     * Total juz yang sudah benar-benar dihafal (persentase ayat = 100%) per siswa.
+     */
+    public static function totalJuzHafal(int $siswaId): int
+    {
+        return collect(self::hitungPersentaseSemuaJuz($siswaId))
+            ->filter(fn ($p) => $p >= 100)
+            ->count();
+    }
+
+    /**
+     * Progress semua 30 juz untuk 1 siswa.
+     * Status per juz mengikuti persentase ayat yang sudah dihafal:
+     * - 100% => hafal
+     * - >0% => setengah_hafal (atau status terbaru jika baru/setengah)
+     * - 0% => null
+     * Return: [{juz: 1, status: 'hafal'|'setengah_hafal'|'baru'|null, kualitas, surat, tanggal}, ...]
+     */
+    public static function progressJuz(int $siswaId, ?int $semesterId = null): array
+    {
+        $filter = $semesterId !== null
+            ? fn ($q) => $q->where('semester_id', $semesterId)
+            : null;
+
+        $persentaseMap = self::hitungPersentaseSemuaJuz($siswaId, $filter);
+
+        $hafalanQuery = self::where('siswa_id', $siswaId);
+        if ($semesterId) {
+            $hafalanQuery->where('semester_id', $semesterId);
+        }
+        $hafalanByJuz = $hafalanQuery->with('surat')
+            ->orderBy('tanggal_hafalan', 'desc')
+            ->get()
+            ->groupBy('juz');
+
+        $progress = [];
+        for ($j = 1; $j <= 30; $j++) {
+            $persentase = $persentaseMap[$j] ?? 0.0;
+            $entries = $hafalanByJuz->get($j);
+            $latest = $entries && ! $entries->isEmpty() ? $entries->first() : null;
+
+            if ($persentase >= 100) {
+                $progress[] = [
+                    'juz' => $j,
+                    'status' => 'hafal',
+                    'kualitas' => $latest?->kualitas,
+                    'surat' => $latest?->surat?->nama_latin ?? '-',
+                    'tanggal' => $latest?->tanggal_hafalan?->format('d/m/Y'),
+                ];
+            } elseif ($persentase > 0) {
+                $status = in_array($latest?->status, ['baru', 'setengah_hafal'])
+                    ? $latest->status
+                    : 'setengah_hafal';
+                $progress[] = [
+                    'juz' => $j,
+                    'status' => $status,
+                    'kualitas' => $latest?->kualitas,
+                    'surat' => $latest?->surat?->nama_latin ?? '-',
+                    'tanggal' => $latest?->tanggal_hafalan?->format('d/m/Y'),
+                ];
+            } else {
+                $progress[] = [
+                    'juz' => $j,
+                    'status' => null,
+                    'kualitas' => null,
+                    'surat' => null,
+                    'tanggal' => null,
+                ];
+            }
+        }
+
+        return $progress;
+    }
+
+    /**
+     * Rekap per kelas tartil untuk statistik.
+     */
+    public static function rekapPerKelas(int $kelasId, ?int $semesterId = null): array
+    {
+        $query = self::where('kelas_id', $kelasId);
+        if ($semesterId) {
+            $query->where('semester_id', $semesterId);
+        }
+
+        $totalEntry = $query->count();
+        $totalHafal = (clone $query)->where('status', 'hafal')->count();
+        $totalMurajaah = (clone $query)->where('status', 'murajaah')->count();
+
+        // Distribusi juz
+        $distribusiJuz = (clone $query)
+            ->selectRaw('juz, COUNT(*) as total')
+            ->groupBy('juz')
+            ->orderBy('juz')
+            ->pluck('total', 'juz')
+            ->toArray();
+
+        // Per siswa
+        $perSiswa = Siswa::where('kelas_tartil_id', $kelasId)
+            ->where('status', 'aktif')
+            ->get()
+            ->map(function ($s) use ($semesterId) {
+                $filter = $semesterId !== null
+                    ? fn ($q) => $q->where('semester_id', $semesterId)
+                    : null;
+                $persentaseMap = self::hitungPersentaseSemuaJuz($s->id, $filter);
+                $juzCount = collect($persentaseMap)->filter(fn ($p) => $p >= 100)->count();
+
+                $lastHafalan = self::where('siswa_id', $s->id)
+                    ->orderBy('tanggal_hafalan', 'desc')
+                    ->first();
+
+                return [
+                    'siswa' => $s,
+                    'juzHafal' => $juzCount,
+                    'lastJuz' => $lastHafalan?->juz ?? '-',
+                    'lastSurat' => $lastHafalan?->surat?->nama_latin ?? '-',
+                    'lastTanggal' => $lastHafalan?->tanggal_hafalan?->format('d/m/Y') ?? '-',
+                    'lastStatus' => $lastHafalan?->status ?? null,
+                    'kualitas' => $lastHafalan?->kualitas ?? '-',
+                ];
+            })
+            ->sortByDesc('juzHafal')
+            ->values()
+            ->toArray();
+
+        return [
+            'totalEntry' => $totalEntry,
+            'totalHafal' => $totalHafal,
+            'totalMurajaah' => $totalMurajaah,
+            'distribusiJuz' => $distribusiJuz,
+            'perSiswa' => $perSiswa,
+        ];
+    }
+
+    public static function labelStatus(string $status): string
+    {
+        return match ($status) {
+            'baru' => 'Baru',
+            'setengah_hafal' => 'Setengah Hafal',
+            'hafal' => 'Hafal',
+            'murajaah' => 'Murojaah',
+            default => $status,
+        };
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // KUMULATIF HAFALAN PER SEMESTER (hafalan tidak reset antar semester/TA)
     // ═══════════════════════════════════════════════════════════════════════
@@ -341,15 +407,17 @@ class HafalanTahfidz extends Model
     }
 
     /**
-     * Total juz yang sudah dihafal (status hafal) secara kumulatif sampai semester tertentu.
+     * Total juz yang sudah benar-benar dihafal (persentase ayat = 100%)
+     * secara kumulatif sampai semester tertentu.
      */
     public static function totalJuzHafalSampaiSemester(int $siswaId, Semester $semester): int
     {
-        return self::where('siswa_id', $siswaId)
-            ->where('status', 'hafal')
-            ->where('tanggal_hafalan', '<=', $semester->tanggal_selesai)
-            ->distinct('juz')
-            ->count('juz');
+        $persentaseMap = self::hitungPersentaseSemuaJuz(
+            $siswaId,
+            fn ($q) => $q->where('tanggal_hafalan', '<=', $semester->tanggal_selesai)
+        );
+
+        return collect($persentaseMap)->filter(fn ($p) => $p >= 100)->count();
     }
 
     /**
@@ -460,7 +528,7 @@ class HafalanTahfidz extends Model
     }
 
     /**
-     * Rekap per kelas Tahfidz sampai semester batas.
+     * Rekap per kelas tartil sampai semester batas.
      * Parameter $siswaIds opsional untuk membatasi siswa (misal dari snapshot semester).
      */
     public static function rekapPerKelasSampaiSemester(int $kelasId, Semester $semester, ?array $siswaIds = null): array
@@ -518,7 +586,7 @@ class HafalanTahfidz extends Model
     }
 
     /**
-     * Rekap per juz untuk satu kelas Tahfidz pada semester batas.
+     * Rekap per juz untuk satu kelas tartil pada semester batas.
      * Return per juz: [totalSiswa, sudahHafal, tuntas, daftarSiswaTuntas].
      */
     public static function rekapJuzPerKelas(int $kelasId, Semester $semester, ?array $siswaIds = null): array

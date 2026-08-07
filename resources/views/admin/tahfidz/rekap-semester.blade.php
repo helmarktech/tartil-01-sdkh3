@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Rekap Tahfidz per Semester')
+@section('title', 'Rekap Hafalan per Semester')
 
 @section('content')
 <style>
@@ -194,7 +194,7 @@
 
 <div class="page-header" style="margin-bottom: 24px;">
     <div>
-        <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0; color: #1a1a2e;">&#128218; Rekap Tahfidz per Semester</h1>
+        <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0; color: #1a1a2e;">&#128218; Rekap Hafalan per Semester</h1>
         <p style="color: #666; font-size: 14px; margin: 4px 0 0;">Perbandingan jumlah siswa, siswa hafal juz, dan siswa tuntas per juz</p>
     </div>
 </div>
@@ -248,7 +248,7 @@
 <div class="summary-tf">
     <div class="summary-box-tf">
         <div class="val">{{ $totalSummary['totalSiswa'] }}</div>
-        <div class="lbl">Total Siswa Tahfidz</div>
+        <div class="lbl">Total Siswa</div>
     </div>
     <div class="summary-box-tf">
         <div class="val">{{ $totalSummary['sudahHafal'] }}</div>
@@ -270,7 +270,7 @@
 @if(empty($rekapPerKelas))
     <div style="text-align: center; padding: 48px; color: #888;">
         <div style="font-size: 48px; margin-bottom: 16px;">&#128218;</div>
-        <h3>Belum ada kelas Tahfidz</h3>
+        <h3>Belum ada kelas tartil</h3>
     </div>
 @else
     @foreach($rekapPerKelas as $r)

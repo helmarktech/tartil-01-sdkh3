@@ -67,7 +67,7 @@
 
 {{-- Breadcrumb --}}
 <div style="font-size: 13px; color: #666; margin-bottom: 20px;">
-    <a href="{{ route('admin.tahfidz.index') }}" style="color: #0c8a5f; text-decoration: none; font-weight: 500;">Tahfidz</a>
+    <a href="{{ route('admin.tahfidz.index') }}" style="color: #0c8a5f; text-decoration: none; font-weight: 500;">Tahfidz & Hafalan</a>
     <span style="margin: 0 8px;">&rsaquo;</span>
     <strong>{{ $siswa->nama }}</strong>
 </div>

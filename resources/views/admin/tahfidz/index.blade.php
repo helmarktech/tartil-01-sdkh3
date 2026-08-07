@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Tahfidz')
+@section('title', 'Tahfidz & Hafalan')
 
 @section('content')
 <style>
@@ -291,8 +291,8 @@
 
 <div class="page-header" style="margin-bottom: 24px;">
     <div>
-        <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0; color: #1a1a2e;">&#128218; Tahfidz</h1>
-        <p style="color: #666; font-size: 14px; margin: 4px 0 0;">Tracking hafalan Al-Quran siswa kelas Tahfidz</p>
+        <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0; color: #1a1a2e;">&#128218; Tahfidz & Hafalan</h1>
+        <p style="color: #666; font-size: 14px; margin: 4px 0 0;">Tracking hafalan Al-Quran siswa kelas Tartil</p>
     </div>
 </div>
 
@@ -399,31 +399,31 @@
 {{-- Ringkasan --}}
 <div class="summary-tahfidz">
     <div class="summary-box-tf">
-        <div class="val">{{ $kelasTahfidz->count() }}</div>
-        <div class="lbl">Kelas Tahfidz</div>
+        <div class="val">{{ $kelasList->count() }}</div>
+        <div class="lbl">Kelas</div>
     </div>
     <div class="summary-box-tf">
-        <div class="val">{{ $kelasTahfidz->sum(fn($k) => count($k->rekap['perSiswa'] ?? [])) }}</div>
+        <div class="val">{{ $kelasList->sum(fn($k) => count($k->rekap['perSiswa'] ?? [])) }}</div>
         <div class="lbl">Total Siswa</div>
     </div>
     <div class="summary-box-tf">
-        <div class="val">{{ $kelasTahfidz->sum(fn($k) => $k->rekap['totalHafal'] ?? 0) }}</div>
+        <div class="val">{{ $kelasList->sum(fn($k) => $k->rekap['totalHafal'] ?? 0) }}</div>
         <div class="lbl">Total Hafalan Kumulatif</div>
     </div>
     <div class="summary-box-tf">
-        <div class="val">{{ $kelasTahfidz->avg('avgJuz') ? round($kelasTahfidz->avg('avgJuz'), 1) : 0 }}</div>
+        <div class="val">{{ $kelasList->avg('avgJuz') ? round($kelasList->avg('avgJuz'), 1) : 0 }}</div>
         <div class="lbl">Rata-rata Juz</div>
     </div>
 </div>
 
-@if($kelasTahfidz->isEmpty())
+@if($kelasList->isEmpty())
     <div class="empty-tahfidz">
         <div style="font-size: 48px; margin-bottom: 16px;">&#128218;</div>
-        <h3>Belum ada kelas Tahfidz</h3>
-        <p>Buat kelas dengan jenis "Tahfidz" di menu Kelas Tartil.</p>
+        <h3>Belum ada kelas tartil</h3>
+        <p>Buat kelas di menu Kelas Tartil.</p>
     </div>
 @else
-    @foreach($kelasTahfidz as $kelas)
+    @foreach($kelasList as $kelas)
     <div class="tahfidz-card">
         <div class="tahfidz-header">
             <div>
@@ -439,7 +439,7 @@
 
         @if(empty($kelas->rekap['perSiswa']))
             <div style="text-align: center; padding: 24px; color: #888; font-size: 13px;">
-                Tidak ada siswa di kelas Tahfidz ini untuk semester yang dipilih.
+                Tidak ada siswa di kelas ini untuk semester yang dipilih.
             </div>
         @else
             <div style="font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding: 0 12px;">
