@@ -267,6 +267,9 @@
                     <a href="{{ route('admin.tahfidz.index') }}" class="nav-item {{ str_contains($p, 'admin/tahfidz') ? 'active' : '' }}">
                         <span>&#128218; Tahfidz & Hafalan</span>
                     </a>
+                    <a href="{{ route('admin.pendampingan-ortu.index') }}" class="nav-item {{ str_contains($p, 'admin/pendampingan-ortu') ? 'active' : '' }}">
+                        <span>&#128106; Pendampingan Ortu</span>
+                    </a>
 
                     {{-- Penilaian Rapor (submenu) --}}
                     @php
@@ -350,6 +353,9 @@
                     </a>
                     <a href="{{ route('guru.tahfidz.index') }}" class="nav-item {{ str_contains($p, 'guru/tahfidz') ? 'active' : '' }}">
                         <span>&#128218; Tahfidz & Hafalan</span>
+                    </a>
+                    <a href="{{ route('guru.pendampingan-ortu.index') }}" class="nav-item {{ str_contains($p, 'guru/pendampingan-ortu') ? 'active' : '' }}">
+                        <span>&#128106; Konfirmasi Pendampingan Ortu</span>
                     </a>
                     <a href="{{ route('guru.rapor.pilih') }}" class="nav-item {{ str_contains($p, 'guru/rapor') ? 'active' : '' }}">
                         <span>Rapor</span>

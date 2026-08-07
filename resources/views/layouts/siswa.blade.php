@@ -343,6 +343,7 @@
                     <a href="{{ route('siswa.nilai') }}" class="{{ request()->routeIs('siswa.nilai') ? 'active' : '' }}">Rapor</a>
                     @if(auth('siswa')->user()?->kelas_tartil_id)
                     <a href="{{ route('siswa.hafalan') }}" class="{{ request()->routeIs('siswa.hafalan') ? 'active' : '' }}">&#128218; Hafalan</a>
+                    <a href="{{ route('siswa.pendampingan-ortu.index') }}" class="{{ request()->routeIs('siswa.pendampingan-ortu.*') ? 'active' : '' }}">&#128106; Pendampingan Ortu</a>
                     @endif
                     <a href="{{ route('siswa.perpindahan') }}" class="{{ request()->routeIs('siswa.perpindahan') ? 'active' : '' }}">Riwayat Kelas</a>
                     <a href="{{ route('siswa.track-record') }}" class="{{ request()->routeIs('siswa.track-record') ? 'active' : '' }}">Track Record</a>

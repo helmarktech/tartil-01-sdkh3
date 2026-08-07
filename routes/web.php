@@ -9,6 +9,7 @@ use App\Http\Controllers\JurnalController;
 use App\Http\Controllers\KenaikanKelasController;
 use App\Http\Controllers\ManajemenController;
 use App\Http\Controllers\MunaqosyahController;
+use App\Http\Controllers\PendampinganOrtuController;
 use App\Http\Controllers\PenempatanTartilController;
 use App\Http\Controllers\PengaturanKelasController;
 use App\Http\Controllers\PenilaianRaporInternalController;
@@ -237,6 +238,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/tahfidz/hafalan', [TahfidzController::class, 'adminStore'])->name('tahfidz.hafalan.store');
     Route::delete('/tahfidz/hafalan/{hafalan}', [TahfidzController::class, 'adminDestroy'])->name('tahfidz.hafalan.destroy');
 
+    // ===== LAPORAN PENDAMPINGAN ORTU =====
+    Route::get('/pendampingan-ortu', [PendampinganOrtuController::class, 'adminIndex'])->name('pendampingan-ortu.index');
+    Route::post('/pendampingan-ortu/{laporan}/konfirmasi', [PendampinganOrtuController::class, 'adminConfirm'])->name('pendampingan-ortu.konfirmasi');
+    Route::post('/pendampingan-ortu/konfirmasi-bulk', [PendampinganOrtuController::class, 'adminConfirmBulk'])->name('pendampingan-ortu.konfirmasi-bulk');
+
     // ===== KOP SURAT RAPOR (pengaturan cetak) =====
     Route::get('/kop-surat-rapor', [AdminController::class, 'kopSuratRaporIndex'])->name('kop-surat-rapor.index');
     Route::post('/kop-surat-rapor/update', [AdminController::class, 'kopSuratRaporUpdate'])->name('kop-surat-rapor.update');
@@ -317,6 +323,11 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
         Route::post('/tahfidz/hafalan', [TahfidzController::class, 'guruStore'])->name('tahfidz.hafalan.store');
     });
 
+    // ===== LAPORAN PENDAMPINGAN ORTU =====
+    Route::get('/pendampingan-ortu', [PendampinganOrtuController::class, 'guruIndex'])->name('pendampingan-ortu.index');
+    Route::post('/pendampingan-ortu/{laporan}/konfirmasi', [PendampinganOrtuController::class, 'guruConfirm'])->name('pendampingan-ortu.konfirmasi');
+    Route::post('/pendampingan-ortu/konfirmasi-bulk', [PendampinganOrtuController::class, 'guruConfirmBulk'])->name('pendampingan-ortu.konfirmasi-bulk');
+
     // ===== PENILAIAN RAPOR INTERNAL (guru: pilih penilaian → pilih kelas → isi nilai per indikator) =====
     Route::get('/penilaian-rapor', [PenilaianRaporInternalController::class, 'guruIndex'])->name('penilaian-rapor.index');
     Route::get('/penilaian-rapor/{penilaian}/kelas', [PenilaianRaporInternalController::class, 'guruPilihKelas'])->name('penilaian-rapor.pilih-kelas');
@@ -340,6 +351,10 @@ Route::middleware(['auth:siswa'])->prefix('siswa')->name('siswa.')->group(functi
     Route::get('/rapor', [RaporController::class, 'pdfRaporSiswaSendiri'])->name('rapor');
     Route::get('/hafalan', [SiswaDashboardController::class, 'hafalan'])->name('hafalan');
     Route::post('/hafalan/konfirmasi', [SiswaDashboardController::class, 'konfirmasiHafalan'])->name('hafalan.konfirmasi');
+
+    // ===== LAPORAN PENDAMPINGAN ORTU =====
+    Route::get('/pendampingan-ortu', [PendampinganOrtuController::class, 'siswaIndex'])->name('pendampingan-ortu.index');
+    Route::post('/pendampingan-ortu', [PendampinganOrtuController::class, 'siswaStore'])->name('pendampingan-ortu.store');
     Route::get('/no-hp/edit', [SiswaDashboardController::class, 'editNoHp'])->name('no-hp.edit');
     Route::put('/no-hp/update', [SiswaDashboardController::class, 'updateNoHp'])->name('no-hp.update');
 });
