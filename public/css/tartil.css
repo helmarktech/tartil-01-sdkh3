@@ -64,6 +64,25 @@ body {
 
 .brand-text { font-family: 'DM Serif Display', serif; font-size: 20px; }
 
+.brand-text-stack {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.brand-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+}
+
+.brand-subtitle {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
 .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; overflow-x: hidden; }
 
 .nav-item {

@@ -6,8 +6,8 @@
     <div class="login-card">
         <div style="text-align: center; margin-bottom: 24px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            <h1 style="font-family: 'DM Serif Display', serif; font-size: 24px; margin: 8px 0 4px;">Tartil</h1>
-            <p style="color: var(--text-muted); font-size: 13px;">Login Admin / Guru</p>
+            <h1 style="font-family: 'DM Serif Display', serif; font-size: 24px; margin: 8px 0 4px;">TartilPro</h1>
+            <p style="color: var(--text-muted); font-size: 13px;">SD Khadijah 3</p>
         </div>
 
         @if(session('error'))

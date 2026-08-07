@@ -120,8 +120,11 @@
         <aside class="tartil-sidebar" id="sidebar">
             <div class="sidebar-header">
                 <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('guru.dashboard') }}" class="sidebar-brand">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent)"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    <span class="brand-text">Tartil</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); flex-shrink: 0;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    <div class="brand-text-stack">
+                        <span class="brand-title">TartilPro</span>
+                        <span class="brand-subtitle">SD Khadijah 3</span>
+                    </div>
                     <button type="button" class="sidebar-close" id="sidebarClose" style="margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; display: none;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>

@@ -72,9 +72,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Instrument Serif', serif;
-            font-size: 16px;
-            font-weight: 400;
             color: var(--ink);
         }
         .tartil-topbar .brand svg {
@@ -83,11 +80,23 @@
             color: var(--accent);
             flex-shrink: 0;
         }
-        .tartil-topbar .brand-sub {
+        .tartil-topbar .brand-text-stack {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.15;
+        }
+        .tartil-topbar .brand-title {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.2px;
+        }
+        .tartil-topbar .brand-subtitle {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 10px;
             color: var(--ink-muted);
-            font-weight: 400;
+            font-weight: 500;
         }
         .tartil-topbar .btn-logout {
             background: none;
@@ -320,8 +329,10 @@
             <header class="tartil-topbar">
                 <div class="brand">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    <span>Tartil<em style="font-family:'Instrument Serif',serif;font-style:italic;color:var(--accent);">Pro</em></span>
-                    <span class="brand-sub">| Siswa</span>
+                    <div class="brand-text-stack">
+                        <span class="brand-title">TartilPro</span>
+                        <span class="brand-subtitle">SD Khadijah 3</span>
+                    </div>
                 </div>
                 <form method="POST" action="{{ route('siswa.logout') }}" style="margin:0;">
                     @csrf
