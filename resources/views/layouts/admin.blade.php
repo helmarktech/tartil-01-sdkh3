@@ -360,9 +360,6 @@
                     <a href="{{ route('guru.siswa.index') }}" class="nav-item {{ str_contains($p, 'guru/siswa') ? 'active' : '' }}">
                         <span>&#128101; Data Siswa</span>
                     </a>
-                    <a href="{{ route('guru.rapor.pilih') }}" class="nav-item {{ str_contains($p, 'guru/rapor') ? 'active' : '' }}">
-                        <span>&#128196; Rapor</span>
-                    </a>
                     <a href="{{ route('guru.password.edit') }}" class="nav-item {{ str_contains($p, 'guru/password') ? 'active' : '' }}">
                         <span>&#128274; Ganti Password</span>
                     </a>

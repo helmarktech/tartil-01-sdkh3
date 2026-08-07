@@ -46,7 +46,6 @@
             Input Jurnal
         </a>
         <a href="{{ route('guru.jurnal.rekap') }}" class="btn-tartil-outline" style="text-decoration: none;">Lihat Rekap</a>
-        <a href="{{ route('guru.rapor.pilih') }}" class="btn-tartil-outline" style="text-decoration: none;">Cetak Rapor</a>
     </div>
 
     {{-- Kelas List --}}

@@ -301,12 +301,6 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     Route::get('/perpindahan/massal', [PerpindahanTartilController::class, 'guruMassalIndex'])->name('perpindahan.massal');
     Route::post('/perpindahan/massal', [PerpindahanTartilController::class, 'guruMassalStore'])->name('perpindahan.massal.store');
 
-    // Rapor
-    Route::get('/rapor', [RaporController::class, 'pilihKelas'])->name('rapor.pilih');
-    Route::post('/rapor/preview', [RaporController::class, 'previewRaporKelas'])->name('rapor.preview');
-    Route::get('/rapor/pdf/siswa', [RaporController::class, 'pdfRaporSiswa'])->name('rapor.pdf.siswa');
-    Route::get('/rapor/pdf/kelas', [RaporController::class, 'pdfRaporKelas'])->name('rapor.pdf.kelas');
-
     // ===== UJIAN MUNAQOSYAH (guru hanya daftarkan siswa kelas sendiri, semester aktif required) =====
     Route::middleware('semester')->group(function () {
         Route::get('/munaqosyah', [MunaqosyahController::class, 'guruIndex'])->name('munaqosyah.index');
