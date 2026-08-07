@@ -77,6 +77,10 @@
 @media (max-width: 640px) {
     .haf-juz-grid { grid-template-columns: repeat(10, 1fr); }
 }
+@media (max-width: 420px) {
+    .haf-juz-grid { grid-template-columns: repeat(6, 1fr); }
+    .haf-table th, .haf-table td { padding: 8px 6px; font-size: 12px; }
+}
 </style>
 
 <div class="sd-head" style="margin-bottom: 20px;">
@@ -179,9 +183,9 @@
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
                     @foreach($hafalanBelumDikonfirmasi as $h)
-                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fff; border: 1px solid #fde68a; border-radius: 8px; cursor: pointer; font-size: 13px;">
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fff; border: 1px solid #fde68a; border-radius: 8px; cursor: pointer; font-size: 13px; flex-wrap: wrap;">
                         <input type="checkbox" name="hafalan_ids[]" value="{{ $h->id }}" class="checkbox-hafalan">
-                        <div style="flex: 1;">
+                        <div style="flex: 1; min-width: 0; word-break: break-word;">
                             <strong>Juz {{ $h->juz }}</strong>
                             @if($h->surat) · {{ $h->surat->nama_latin }}@endif
                             · {{ $h->ayat_mulai }}{{ $h->ayat_selesai ? '-'.$h->ayat_selesai : '' }}

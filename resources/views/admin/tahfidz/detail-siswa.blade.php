@@ -63,6 +63,11 @@
 .status-setengah_hafal { background: #e3f2fd; color: #1565c0; }
 .status-hafal { background: #d4edda; color: #155724; }
 .status-murajaah { background: #f3e5f5; color: #6a1b9a; }
+@media (max-width: 640px) {
+    .juz-item { width: 40px; height: 40px; font-size: 12px; }
+    .hafalan-table th, .hafalan-table td { padding: 8px 6px; font-size: 12px; white-space: nowrap; }
+    .status-badge { font-size: 10px; padding: 2px 6px; }
+}
 </style>
 
 {{-- Breadcrumb --}}

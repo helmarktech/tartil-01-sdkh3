@@ -287,6 +287,15 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+@media (max-width: 640px) {
+    .siswa-row { grid-template-columns: 1fr; gap: 6px; padding: 12px; }
+    .siswa-row > div:nth-child(n) { display: block; width: 100%; text-align: left !important; }
+    .summary-tahfidz { grid-template-columns: 1fr; }
+    .semester-info { flex-direction: column; align-items: flex-start; }
+    .juz-panel form { flex-direction: column; align-items: stretch; }
+    .juz-select { width: 100%; }
+    .modal-box { width: 95%; padding: 16px; }
+}
 </style>
 
 <div class="page-header" style="margin-bottom: 24px;">

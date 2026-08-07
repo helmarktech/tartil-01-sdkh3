@@ -74,7 +74,7 @@
         </div>
 
         {{-- Juz 1-30 Grid --}}
-        <div style="display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; margin-bottom: 16px;">
+        <div class="sd-juz-grid">
             @foreach($tahfidzProgress as $pj)
                 @php
                     $bg = match($pj['status']) {
@@ -430,9 +430,9 @@
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 300px; overflow-y: auto; padding-right: 4px;">
                         @foreach($hafalanBelumDikonfirmasi as $h)
-                        <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; cursor: pointer; font-size: 13px;">
+                        <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; cursor: pointer; font-size: 13px; flex-wrap: wrap;">
                             <input type="checkbox" name="hafalan_ids[]" value="{{ $h->id }}" class="checkbox-ortu">
-                            <div style="flex: 1;">
+                            <div style="flex: 1; min-width: 0; word-break: break-word;">
                                 <strong>Juz {{ $h->juz }}</strong>
                                 @if($h->surat) · {{ $h->surat->nama_latin }}@endif
                                 · {{ $h->ayat_mulai }}{{ $h->ayat_selesai ? '-'.$h->ayat_selesai : '' }}
@@ -637,6 +637,18 @@
 .sd-badge-muted { background: #f5f5f4; color: #a8a29e; border: 1px solid #e7e5e4; }
 
 /* ════════════════════════════════════════════
+   JUZ GRID — Progress Hafalan
+   ════════════════════════════════════════════ */
+.sd-juz-grid { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; margin-bottom: 16px; }
+
+@media (max-width: 640px) {
+    .sd-juz-grid { grid-template-columns: repeat(10, 1fr); }
+}
+@media (max-width: 420px) {
+    .sd-juz-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* ════════════════════════════════════════════
    JURNAL TIMELINE — Compact + Detail Modal
    ════════════════════════════════════════════ */
 .sd-journal-list { display: flex; flex-direction: column; }
@@ -699,6 +711,10 @@
 @media (max-width: 640px) {
     .sd-journal-item { grid-template-columns: 70px 16px 40px 1fr auto; gap: 6px; padding: 8px; }
     .sd-journal-mini { display: none; }
+    .sd-r2grid { grid-template-columns: 1fr; }
+    .sd-modal-content { padding: 16px; width: 95%; }
+    .sd-modal-body { padding: 16px; }
+    .sd-modal-title { font-size: 14px; }
 }
 </style>
 @endsection

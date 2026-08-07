@@ -132,6 +132,16 @@
     border-radius: 6px;
     transition: width 0.3s;
 }
+@media (max-width: 640px) {
+    .siswa-row { grid-template-columns: 1fr; gap: 6px; padding: 12px; }
+    .siswa-row > div { width: 100%; text-align: left !important; }
+    .juz-panel form { flex-direction: column; align-items: stretch; }
+    .juz-select { width: 100%; }
+    .modal-box { padding: 16px; width: 95%; }
+    .modal-box form > div[style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}
 </style>
 
 <div class="page-header" style="margin-bottom: 20px;">
