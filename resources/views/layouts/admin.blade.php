@@ -166,13 +166,13 @@
                 @if($isAdmin)
                     {{-- Dashboard --}}
                     <a href="{{ route('admin.dashboard') }}" class="nav-item {{ str_contains($p, 'admin/dashboard') ? 'active' : '' }}">
-                        <span>Dashboard</span>
+                        <span>&#127968; Dashboard</span>
                     </a>
 
                     {{-- Data Siswa (submenu) --}}
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ str_contains($p, 'admin/manajemen/siswa') || str_contains($p, 'admin/siswa/import') || str_contains($p, 'admin/siswa/penempatan') ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Data Siswa</span>
+                            <span>&#128101; Data Siswa</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ str_contains($p, 'admin/manajemen/siswa') || str_contains($p, 'admin/siswa/import') || str_contains($p, 'admin/siswa/penempatan') ? 'open' : '' }}">
@@ -185,7 +185,7 @@
                     {{-- Data Guru (submenu) --}}
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $dataGuruOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Data Guru</span>
+                            <span>&#128104;&#8205;&#127979; Data Guru</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $dataGuruOpen ? 'open' : '' }}">
@@ -199,7 +199,7 @@
                     {{-- Kelas Reguler --}}
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $kelasRegulerOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Kelas Reguler</span>
+                            <span>&#127979; Kelas Reguler</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $kelasRegulerOpen ? 'open' : '' }}">
@@ -212,7 +212,7 @@
                     {{-- Kelas Tartil --}}
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $kelasTartilOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Kelas Tartil</span>
+                            <span>&#128218; Kelas Tartil</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $kelasTartilOpen ? 'open' : '' }}">
@@ -225,7 +225,7 @@
 
                     {{-- Tahun Ajaran --}}
                     <a href="{{ route('admin.tahun-ajaran.index') }}" class="nav-item {{ str_contains($p, 'admin/tahun-ajaran') || str_contains($p, 'admin/semester') ? 'active' : '' }}">
-                        <span>Tahun Ajaran</span>
+                        <span>&#128197; Tahun Ajaran</span>
                     </a>
 
                     {{-- Audit: Tahun Ajaran + Statistik --}}
@@ -240,7 +240,7 @@
                     {{-- Riwayat Siswa (gabungan) --}}
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $riwayatSiswaOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Riwayat Siswa</span>
+                            <span>&#128099; Riwayat Siswa</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $riwayatSiswaOpen ? 'open' : '' }}">
@@ -252,7 +252,7 @@
                     {{-- Munaqosyah --}}
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $munaqosyahOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Munaqosyah</span>
+                            <span>&#127891; Munaqosyah</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $munaqosyahOpen ? 'open' : '' }}">
@@ -277,7 +277,7 @@
                     @endphp
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $penilaianRaporOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Penilaian Rapor</span>
+                            <span>&#128203; Penilaian Rapor</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $penilaianRaporOpen ? 'open' : '' }}">
@@ -297,7 +297,7 @@
                     {{-- Monitoring & Rekap --}}
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $jurnalOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Monitoring & Rekap</span>
+                            <span>&#128200; Monitoring & Rekap</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $jurnalOpen ? 'open' : '' }}">
@@ -320,11 +320,11 @@
                 @else
                     {{-- GURU MENU --}}
                     <a href="{{ route('guru.dashboard') }}" class="nav-item {{ str_contains($p, 'guru/dashboard') ? 'active' : '' }}">
-                        <span>Dashboard</span>
+                        <span>&#127968; Dashboard</span>
                     </a>
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ str_contains($p, 'guru/jurnal') ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Jurnal & Absensi</span>
+                            <span>&#128221; Jurnal & Absensi</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ str_contains($p, 'guru/jurnal') ? 'open' : '' }}">
@@ -340,7 +340,7 @@
                     @endphp
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $isPenilaianRapor ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Penilaian Rapor</span>
+                            <span>&#128203; Penilaian Rapor</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ $isPenilaianRapor ? 'open' : '' }}">
@@ -349,7 +349,7 @@
                         </div>
                     </div>
                     <a href="{{ route('guru.track-record.index') }}" class="nav-item {{ str_contains($p, 'guru/track-record') ? 'active' : '' }}">
-                        <span>Track Record Siswa</span>
+                        <span>&#128099; Track Record Siswa</span>
                     </a>
                     <a href="{{ route('guru.tahfidz.index') }}" class="nav-item {{ str_contains($p, 'guru/tahfidz') ? 'active' : '' }}">
                         <span>&#128218; Tahfidz & Hafalan</span>
@@ -361,14 +361,14 @@
                         <span>&#128101; Data Siswa</span>
                     </a>
                     <a href="{{ route('guru.rapor.pilih') }}" class="nav-item {{ str_contains($p, 'guru/rapor') ? 'active' : '' }}">
-                        <span>Rapor</span>
+                        <span>&#128196; Rapor</span>
                     </a>
                     <a href="{{ route('guru.password.edit') }}" class="nav-item {{ str_contains($p, 'guru/password') ? 'active' : '' }}">
-                        <span>Ganti Password</span>
+                        <span>&#128274; Ganti Password</span>
                     </a>
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ str_contains($p, 'guru/perpindahan') ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Pindah Kelas</span>
+                            <span>&#128260; Pindah Kelas</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ str_contains($p, 'guru/perpindahan') ? 'open' : '' }}">
@@ -379,7 +379,7 @@
                     </div>
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ str_contains($p, 'guru/munaqosyah') ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
-                            <span>Munaqosyah</span>
+                            <span>&#127891; Munaqosyah</span>
                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <div class="nav-submenu {{ str_contains($p, 'guru/munaqosyah') ? 'open' : '' }}">
