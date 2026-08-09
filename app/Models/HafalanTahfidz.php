@@ -124,6 +124,17 @@ class HafalanTahfidz extends Model
     }
 
     /**
+     * Daftar surat dalam satu juz beserta rentang ayat dan total ayat.
+     */
+    public static function suratDalamJuz(int $juz): Collection
+    {
+        return JuzSurat::where('juz', $juz)
+            ->with('surat')
+            ->orderBy('ayat_mulai')
+            ->get();
+    }
+
+    /**
      * Hitung persentase ayat yang sudah dihafal untuk semua 30 juz sekaligus.
      * Optional callback untuk memfilter hafalan yang ikut dihitung (semester/tanggal).
      * Return: [juz => persentase, ...].
