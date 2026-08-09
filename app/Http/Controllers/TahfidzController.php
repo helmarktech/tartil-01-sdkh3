@@ -11,7 +11,6 @@ use App\Models\Siswa;
 use App\Models\Surat;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class TahfidzController extends Controller
 {
@@ -42,7 +41,7 @@ class TahfidzController extends Controller
                     ->toArray();
             }
 
-            $rekap = Cache::remember(
+            $rekap = HafalanTahfidz::cacheStore()->remember(
                 HafalanTahfidz::cacheKeyRekapKelas($k->id, $semester->id),
                 now()->addHours(6),
                 fn () => HafalanTahfidz::rekapPerKelasSampaiSemester($k->id, $semester, $siswaIds)
@@ -88,7 +87,7 @@ class TahfidzController extends Controller
         $result = [];
         foreach ($kelasList as $kelas) {
             foreach ($kelas->rekap['perSiswa'] ?? [] as $s) {
-                $persentase = Cache::remember(
+                $persentase = HafalanTahfidz::cacheStore()->remember(
                     HafalanTahfidz::cacheKeyPersentaseJuz($s['siswa']->id, $juz, $semester->id),
                     now()->addHours(6),
                     fn () => HafalanTahfidz::hitungPersentaseJuzSampaiSemester($s['siswa']->id, $juz, $semester)

@@ -709,19 +709,29 @@ class HafalanTahfidz extends Model
     }
 
     /**
+     * Cache store khusus untuk data Tahfidz.
+     * Data rekap per kelas bisa sangat besar, sehingga lebih aman disimpan
+     * di file cache agar tidak membebani tabel `cache` database.
+     */
+    public static function cacheStore()
+    {
+        return Cache::store('file');
+    }
+
+    /**
      * Hapus cache rekap kelas dan persentase juz terkait.
      * Jika semesterId null, hapus semua semester untuk kelas tersebut.
      */
     public static function forgetRekapKelasCache(int $kelasId, ?int $semesterId = null): void
     {
         if ($semesterId !== null) {
-            Cache::forget(self::cacheKeyRekapKelas($kelasId, $semesterId));
+            self::cacheStore()->forget(self::cacheKeyRekapKelas($kelasId, $semesterId));
 
             return;
         }
 
         foreach (Semester::pluck('id') as $id) {
-            Cache::forget(self::cacheKeyRekapKelas($kelasId, $id));
+            self::cacheStore()->forget(self::cacheKeyRekapKelas($kelasId, $id));
         }
     }
 }
