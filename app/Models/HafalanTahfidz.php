@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class HafalanTahfidz extends Model
 {
@@ -689,5 +690,38 @@ class HafalanTahfidz extends Model
         }
 
         return $result;
+    }
+
+    /**
+     * Cache key untuk rekap per kelas tartil pada semester tertentu.
+     */
+    public static function cacheKeyRekapKelas(int $kelasId, int $semesterId): string
+    {
+        return "tahfidz.rekap.kelas.{$kelasId}.semester.{$semesterId}";
+    }
+
+    /**
+     * Cache key untuk persentase hafalan satu juz per siswa per semester.
+     */
+    public static function cacheKeyPersentaseJuz(int $siswaId, int $juz, int $semesterId): string
+    {
+        return "tahfidz.persentase.siswa.{$siswaId}.juz.{$juz}.semester.{$semesterId}";
+    }
+
+    /**
+     * Hapus cache rekap kelas dan persentase juz terkait.
+     * Jika semesterId null, hapus semua semester untuk kelas tersebut.
+     */
+    public static function forgetRekapKelasCache(int $kelasId, ?int $semesterId = null): void
+    {
+        if ($semesterId !== null) {
+            Cache::forget(self::cacheKeyRekapKelas($kelasId, $semesterId));
+
+            return;
+        }
+
+        foreach (Semester::pluck('id') as $id) {
+            Cache::forget(self::cacheKeyRekapKelas($kelasId, $id));
+        }
     }
 }

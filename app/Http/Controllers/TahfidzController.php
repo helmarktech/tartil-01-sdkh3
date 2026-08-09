@@ -11,6 +11,7 @@ use App\Models\Siswa;
 use App\Models\Surat;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class TahfidzController extends Controller
 {
@@ -41,7 +42,11 @@ class TahfidzController extends Controller
                     ->toArray();
             }
 
-            $rekap = HafalanTahfidz::rekapPerKelasSampaiSemester($k->id, $semester, $siswaIds);
+            $rekap = Cache::remember(
+                HafalanTahfidz::cacheKeyRekapKelas($k->id, $semester->id),
+                now()->addHours(6),
+                fn () => HafalanTahfidz::rekapPerKelasSampaiSemester($k->id, $semester, $siswaIds)
+            );
             $k->rekap = $rekap;
             $k->avgJuz = count($rekap['perSiswa']) > 0
                 ? round(collect($rekap['perSiswa'])->avg('juzHafal'), 1)
@@ -83,10 +88,16 @@ class TahfidzController extends Controller
         $result = [];
         foreach ($kelasList as $kelas) {
             foreach ($kelas->rekap['perSiswa'] ?? [] as $s) {
+                $persentase = Cache::remember(
+                    HafalanTahfidz::cacheKeyPersentaseJuz($s['siswa']->id, $juz, $semester->id),
+                    now()->addHours(6),
+                    fn () => HafalanTahfidz::hitungPersentaseJuzSampaiSemester($s['siswa']->id, $juz, $semester)
+                );
+
                 $result[] = [
                     'siswa' => $s['siswa'],
                     'kelas' => $kelas->nama,
-                    'persentase' => HafalanTahfidz::hitungPersentaseJuzSampaiSemester($s['siswa']->id, $juz, $semester),
+                    'persentase' => $persentase,
                 ];
             }
         }
@@ -217,6 +228,8 @@ class TahfidzController extends Controller
             'created_by' => auth()->user()?->guru_id,
         ]);
 
+        HafalanTahfidz::forgetRekapKelasCache($hafalan->kelas_id, $hafalan->semester_id);
+
         return redirect()->route('admin.tahfidz.detail-siswa', $request->siswa_id)
             ->with('success', "Hafalan Juz {$hafalan->juz} berhasil dicatat.");
     }
@@ -226,7 +239,11 @@ class TahfidzController extends Controller
     {
         $siswaId = $hafalan->siswa_id;
         $juz = $hafalan->juz;
+        $kelasId = $hafalan->kelas_id;
+        $semesterId = $hafalan->semester_id;
         $hafalan->delete();
+
+        HafalanTahfidz::forgetRekapKelasCache($kelasId, $semesterId);
 
         return redirect()->route('admin.tahfidz.detail-siswa', $siswaId)
             ->with('success', "Hafalan Juz {$juz} dihapus.");
@@ -314,7 +331,7 @@ class TahfidzController extends Controller
             return back()->with('error', 'Siswa tidak ada di kelas Anda.');
         }
 
-        HafalanTahfidz::create([
+        $hafalan = HafalanTahfidz::create([
             'siswa_id' => $request->siswa_id,
             'semester_id' => $request->semester_id,
             'kelas_id' => $siswa->kelas_tartil_id,
@@ -328,6 +345,8 @@ class TahfidzController extends Controller
             'catatan' => $request->catatan,
             'created_by' => $guru->id,
         ]);
+
+        HafalanTahfidz::forgetRekapKelasCache($hafalan->kelas_id, $hafalan->semester_id);
 
         return back()->with('success', 'Hafalan berhasil dicatat.');
     }
