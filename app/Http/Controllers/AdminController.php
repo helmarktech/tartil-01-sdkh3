@@ -436,6 +436,48 @@ class AdminController extends Controller
         return back()->with('success', 'Semester '.$semester->nama.' diaktifkan. Data rekap: '.$kelasTartil->count().' kelas, '.$siswaAktif->count().' siswa.');
     }
 
+    /**
+     * Refresh snapshot semester_kelas dan semester_siswa berdasarkan data aktif saat ini.
+     * Hanya bisa dilakukan untuk semester yang belum ditutup.
+     */
+    public function semesterRefreshSnapshot(Semester $semester)
+    {
+        if ($semester->status == 'ditutup') {
+            return back()->with('error', 'Semester sudah ditutup. Snapshot tidak dapat diubah.');
+        }
+
+        // Hapus snapshot lama
+        SemesterKelas::where('semester_id', $semester->id)->delete();
+        SemesterSiswa::where('semester_id', $semester->id)->delete();
+
+        // Snapshot ulang kelas tartil aktif + jumlah siswa
+        $kelasTartil = Kelas::where('status', 'aktif')->get();
+        foreach ($kelasTartil as $k) {
+            $jumlah = Siswa::where('kelas_tartil_id', $k->id)->where('status', 'aktif')->count();
+            SemesterKelas::create([
+                'semester_id' => $semester->id,
+                'kelas_id' => $k->id,
+                'jumlah_siswa' => $jumlah,
+                'keterangan' => "Snapshot refresh {$semester->nama}",
+            ]);
+        }
+
+        // Snapshot ulang siswa aktif beserta kelas reguler & tartil mereka
+        $siswaAktif = Siswa::where('status', 'aktif')->get();
+        foreach ($siswaAktif as $s) {
+            SemesterSiswa::create([
+                'semester_id' => $semester->id,
+                'siswa_id' => $s->id,
+                'kelas_id' => $s->kelas_tartil_id,
+                'kelas_reguler_id' => $s->kelas_reguler_id,
+                'status_siswa' => 'aktif',
+                'keterangan' => "Snapshot refresh {$semester->nama}",
+            ]);
+        }
+
+        return back()->with('success', 'Snapshot '.$semester->nama.' di-refresh. Kelas: '.$kelasTartil->count().', Siswa: '.$siswaAktif->count().'.');
+    }
+
     // ============ MUNAQOSYAH: APPROVAL PENDAFTARAN ============
     public function munaqosyahApprovalIndex()
     {
@@ -1339,6 +1381,11 @@ class AdminController extends Controller
     {
         $userId = auth()->id();
         $logDetails = [];
+
+        // Refresh snapshot kelas & siswa agar data tutup semester selalu akurat
+        if ($semester->status !== 'ditutup') {
+            $this->semesterRefreshSnapshot($semester);
+        }
 
         // ════════════════════════════════════════════
         // STEP 1: SNAPSHOT KOP SURAT

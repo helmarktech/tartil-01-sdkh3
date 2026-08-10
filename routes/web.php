@@ -112,6 +112,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/semester/{semester}', [AdminController::class, 'semesterDetail'])->name('semester.detail');
     Route::post('/semester/{semester}/aktifkan', [AdminController::class, 'semesterAktifkan'])->name('semester.aktifkan');
     Route::post('/semester/{semester}/tutup', [AdminController::class, 'semesterTutup'])->name('semester.tutup');
+    Route::post('/semester/{semester}/refresh-snapshot', [AdminController::class, 'semesterRefreshSnapshot'])->name('semester.refresh-snapshot');
 
     // Audit & Rekap Semester (track record terkunci)
     // ===== AUDIT: TAHUN AJARAN (track record terkunci) =====

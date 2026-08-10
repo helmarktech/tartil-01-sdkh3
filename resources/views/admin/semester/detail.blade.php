@@ -16,6 +16,10 @@
                     <button type="submit" class="btn-tartil-success" style="padding: 8px 16px; font-size: 12px;">Aktifkan</button>
                 </form>
                 @endif
+                <form method="POST" action="{{ route('admin.semester.refresh-snapshot', $semester->id) }}" style="display:inline;">
+                    @csrf
+                    <button type="submit" class="btn-tartil" style="padding: 8px 16px; font-size: 12px;" onclick="return confirm('Refresh snapshot akan memperbarui daftar kelas dan siswa di semester ini sesuai data aktif saat ini. Lanjutkan?')">Refresh Snapshot</button>
+                </form>
                 <form method="POST" action="{{ route('admin.semester.tutup', $semester->id) }}" style="display:inline;">
                     @csrf
                     <button type="submit" class="btn-tartil-danger" style="padding: 8px 16px; font-size: 12px;" onclick="return confirm('Yakin tutup semester ini? Data akan bersifat permanen.')">Tutup Semester</button>
