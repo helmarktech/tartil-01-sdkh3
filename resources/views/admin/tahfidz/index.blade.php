@@ -383,7 +383,7 @@
                 @foreach($persentaseJuz as $i => $p)
                     <tr>
                         <td>{{ $i + 1 }}</td>
-                        <td style="font-weight: 600;">{{ $p['siswa']->nama }}</td>
+                        <td style="font-weight: 600;">{{ $p['siswa']['nama'] }}</td>
                         <td>{{ $p['kelas'] }}</td>
                         <td>{{ $p['persentase']['ayatHafal'] }} / {{ $p['persentase']['totalAyat'] }}</td>
                         <td>
@@ -463,10 +463,10 @@
                 </div>
             </div>
             @foreach($kelas->rekap['perSiswa'] as $i => $s)
-                <a href="{{ route('admin.tahfidz.detail-siswa', $s['siswa']->id) }}" class="siswa-row" style="text-decoration: none; color: inherit;">
+                <a href="{{ route('admin.tahfidz.detail-siswa', $s['siswa']['id']) }}" class="siswa-row" style="text-decoration: none; color: inherit;">
                     <div style="font-weight: 600; color: #888;">{{ $i + 1 }}</div>
                     <div style="font-weight: 600;">
-                        {{ $s['siswa']->nama }}
+                        {{ $s['siswa']['nama'] }}
                         @if($s['punyaHafalanLama'])
                             <span class="status-badge-tf status-lanjutan">Lanjutan</span>
                         @else

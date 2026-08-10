@@ -392,7 +392,11 @@ class HafalanTahfidz extends Model
                     ->first();
 
                 return [
-                    'siswa' => $s,
+                    'siswa' => [
+                        'id' => $s->id,
+                        'nama' => $s->nama,
+                        'nis' => $s->nis,
+                    ],
                     'juzHafal' => $juzCount,
                     'belumKonfirmasi' => $belumKonfirmasiCounts[$s->id] ?? 0,
                     'lastJuz' => $lastHafalan?->juz ?? '-',
@@ -590,7 +594,11 @@ class HafalanTahfidz extends Model
             $punyaHafalanLama = self::punyaHafalanSebelumSemester($s->id, $semester);
 
             return [
-                'siswa' => $s,
+                'siswa' => [
+                    'id' => $s->id,
+                    'nama' => $s->nama,
+                    'nis' => $s->nis,
+                ],
                 'juzHafal' => $juzCount,
                 'belumKonfirmasi' => $belumKonfirmasiCounts[$s->id] ?? 0,
                 'lastJuz' => $lastHafalan?->juz ?? '-',
@@ -685,7 +693,11 @@ class HafalanTahfidz extends Model
                 'totalSiswa' => $totalSiswa,
                 'sudahHafal' => count($sudahHafalIds),
                 'tuntas' => count($tuntasIds),
-                'siswaTuntas' => $siswaList->only($tuntasIds)->values()->toArray(),
+                'siswaTuntas' => $siswaList->only($tuntasIds)->values()->map(fn ($s) => [
+                    'id' => $s->id,
+                    'nama' => $s->nama,
+                    'nis' => $s->nis,
+                ])->toArray(),
             ];
         }
 
@@ -697,7 +709,7 @@ class HafalanTahfidz extends Model
      */
     public static function cacheKeyRekapKelas(int $kelasId, int $semesterId): string
     {
-        return "tahfidz.rekap.kelas.{$kelasId}.semester.{$semesterId}";
+        return "tahfidz.rekap.kelas.{$kelasId}.semester.{$semesterId}.v2";
     }
 
     /**
@@ -705,7 +717,7 @@ class HafalanTahfidz extends Model
      */
     public static function cacheKeyPersentaseJuz(int $siswaId, int $juz, int $semesterId): string
     {
-        return "tahfidz.persentase.siswa.{$siswaId}.juz.{$juz}.semester.{$semesterId}";
+        return "tahfidz.persentase.siswa.{$siswaId}.juz.{$juz}.semester.{$semesterId}.v2";
     }
 
     /**

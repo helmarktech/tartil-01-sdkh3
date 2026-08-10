@@ -308,7 +308,7 @@
                             @if(count($jd['siswaTuntas']) > 0)
                                 <div class="tuntas-list">
                                     @foreach($jd['siswaTuntas'] as $st)
-                                        <span class="tuntas-chip">{{ $st->nama }}</span>
+                                        <span class="tuntas-chip">{{ $st['nama'] }}</span>
                                     @endforeach
                                 </div>
                             @else

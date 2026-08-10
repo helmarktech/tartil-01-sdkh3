@@ -88,9 +88,9 @@ class TahfidzController extends Controller
         foreach ($kelasList as $kelas) {
             foreach ($kelas->rekap['perSiswa'] ?? [] as $s) {
                 $persentase = HafalanTahfidz::cacheStore()->remember(
-                    HafalanTahfidz::cacheKeyPersentaseJuz($s['siswa']->id, $juz, $semester->id),
+                    HafalanTahfidz::cacheKeyPersentaseJuz($s['siswa']['id'], $juz, $semester->id),
                     now()->addHours(6),
-                    fn () => HafalanTahfidz::hitungPersentaseJuzSampaiSemester($s['siswa']->id, $juz, $semester)
+                    fn () => HafalanTahfidz::hitungPersentaseJuzSampaiSemester($s['siswa']['id'], $juz, $semester)
                 );
 
                 $result[] = [
@@ -287,7 +287,7 @@ class TahfidzController extends Controller
             ? collect($rekap['perSiswa'] ?? [])
                 ->map(fn ($s) => [
                     'siswa' => $s['siswa'],
-                    'persentase' => HafalanTahfidz::hitungPersentaseJuz($s['siswa']->id, $juzSelected, $semester?->id),
+                    'persentase' => HafalanTahfidz::hitungPersentaseJuz($s['siswa']['id'], $juzSelected, $semester?->id),
                 ])
                 ->sortByDesc('persentase.persentase')
                 ->values()
