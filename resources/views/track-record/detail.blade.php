@@ -5,15 +5,25 @@
 <div class="tr-wrap">
 
     {{-- Header --}}
+    @if($role == 'siswa')
+    <div class="siswa-page-header">
+        <div class="siswa-page-icon" style="background: linear-gradient(135deg, #0c8a5f, #065f43);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+            <h1 class="siswa-page-title">Track Record Siswa</h1>
+            <p class="siswa-page-subtitle">Detail riwayat kelas dan performa akademik</p>
+        </div>
+    </div>
+    @else
     <div class="page-header">
         <div>
             <h1 class="page-title-display">Track Record Siswa</h1>
             <p class="page-subtitle">Detail riwayat kelas dan performa akademik</p>
         </div>
-        @if($role != 'siswa')
         <a href="{{ url()->previous() }}" class="btn-tartil-outline">Kembali</a>
-        @endif
     </div>
+    @endif
 
     {{-- Profile Card --}}
     <div class="card-tartil tr-profile">
