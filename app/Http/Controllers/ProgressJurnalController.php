@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Guru;
 use App\Models\JurnalHarian;
 use App\Models\Kelas;
+use App\Models\KelasLibur;
 use App\Models\Semester;
+use App\Models\SemesterSiswa;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ProgressJurnalController extends Controller
 {
@@ -25,31 +26,33 @@ class ProgressJurnalController extends Controller
         $kelasId = $request->get('kelas_id');
 
         // Safety: jika step 'guru'/'kelas' tapi semester_id tidak ada, redirect ke pilih semester
-        if (($step === 'guru' || $step === 'kelas') && !$semesterId && $ta) {
+        if (($step === 'guru' || $step === 'kelas') && ! $semesterId && $ta) {
             return redirect()->route('admin.progress.jurnal', ['step' => 'semester', 'ta' => $ta]);
         }
 
         // Step 1: Pilih Tahun Ajaran
-        if ($step === 'ta' || !$ta) {
+        if ($step === 'ta' || ! $ta) {
             $tahunAjarans = TahunAjaran::orderBy('nama', 'desc')->get();
+
             return view('admin.progress.jurnal', compact('step', 'tahunAjarans'));
         }
 
         // Step 2: Pilih Semester
-        if ($step === 'semester' || ($ta && !$semesterId)) {
+        if ($step === 'semester' || ($ta && ! $semesterId)) {
             $semesters = Semester::where('tahun_ajaran', $ta)
                 ->orderBy('tanggal_mulai')
                 ->get();
+
             return view('admin.progress.jurnal', compact('step', 'ta', 'semesters'));
         }
 
         // Step 3: Pilih Guru
-        if ($step === 'guru' || ($semesterId && !$guruId && $step !== 'kelas')) {
+        if ($step === 'guru' || ($semesterId && ! $guruId && $step !== 'kelas')) {
             // Tampilkan semua kelas aktif beserta guru pengampunya untuk semester ini,
             // bukan hanya kelas yang sudah punya jurnal/siswa. Ini memastikan kelas baru
             // atau kelas yang belum mengisi jurnal tetap muncul di monitoring.
-            $gurus = Guru::whereHas('kelas', fn($q) => $q->where('status', 'aktif'))
-                ->with(['kelas' => fn($q) => $q->where('status', 'aktif')->orderBy('nama')])
+            $gurus = Guru::whereHas('kelas', fn ($q) => $q->where('status', 'aktif'))
+                ->with(['kelas' => fn ($q) => $q->where('status', 'aktif')->orderBy('nama')])
                 ->get();
 
             // Hitung progress jurnal: distinct tanggal / target hari efektif
@@ -60,6 +63,7 @@ class ProgressJurnalController extends Controller
             }
 
             $semester = Semester::find($semesterId);
+
             return view('admin.progress.jurnal', compact('step', 'ta', 'semesterId', 'semester', 'gurus'));
         }
 
@@ -69,7 +73,7 @@ class ProgressJurnalController extends Controller
             $kelas = Kelas::with('guru')->findOrFail($kelasId);
 
             // Ambil siswa dari snapshot + jurnal
-            $siswaIdsSemester = \App\Models\SemesterSiswa::where('semester_id', $semesterId)
+            $siswaIdsSemester = SemesterSiswa::where('semester_id', $semesterId)
                 ->where('kelas_id', $kelasId)
                 ->pluck('siswa_id')
                 ->unique()
@@ -90,7 +94,7 @@ class ProgressJurnalController extends Controller
             $progressKelas = $this->hitungProgressJurnal($kelasId, [$semesterId]);
 
             // Detail jurnal per siswa (dengan penyesuaian siswa mutasi)
-            $semester = \App\Models\Semester::find($semesterId);
+            $semester = Semester::find($semesterId);
             $detailSiswa = [];
             foreach ($siswas as $siswa) {
                 $totalHari = JurnalHarian::where('siswa_id', $siswa->id)
@@ -158,30 +162,32 @@ class ProgressJurnalController extends Controller
         $kelasId = $request->get('kelas_id');
 
         // Safety: jika step 'guru'/'kelas' tapi semester_id tidak ada, redirect ke pilih semester
-        if (($step === 'guru' || $step === 'kelas') && !$semesterId && $ta) {
+        if (($step === 'guru' || $step === 'kelas') && ! $semesterId && $ta) {
             return redirect()->route('admin.progress.absensi', ['step' => 'semester', 'ta' => $ta]);
         }
 
         // Step 1: Pilih Tahun Ajaran
-        if ($step === 'ta' || !$ta) {
+        if ($step === 'ta' || ! $ta) {
             $tahunAjarans = TahunAjaran::orderBy('nama', 'desc')->get();
+
             return view('admin.progress.absensi', compact('step', 'tahunAjarans'));
         }
 
         // Step 2: Pilih Semester
-        if ($step === 'semester' || ($ta && !$semesterId)) {
+        if ($step === 'semester' || ($ta && ! $semesterId)) {
             $semesters = Semester::where('tahun_ajaran', $ta)
                 ->orderBy('tanggal_mulai')
                 ->get();
+
             return view('admin.progress.absensi', compact('step', 'ta', 'semesters'));
         }
 
         // Step 3: Pilih Guru
-        if ($step === 'guru' || ($semesterId && !$guruId && $step !== 'kelas')) {
+        if ($step === 'guru' || ($semesterId && ! $guruId && $step !== 'kelas')) {
             // Tampilkan semua kelas aktif beserta guru pengampunya untuk semester ini,
             // bukan hanya kelas yang sudah punya jurnal/siswa.
-            $gurus = Guru::whereHas('kelas', fn($q) => $q->where('status', 'aktif'))
-                ->with(['kelas' => fn($q) => $q->where('status', 'aktif')->orderBy('nama')])
+            $gurus = Guru::whereHas('kelas', fn ($q) => $q->where('status', 'aktif'))
+                ->with(['kelas' => fn ($q) => $q->where('status', 'aktif')->orderBy('nama')])
                 ->get();
 
             // Hitung progress absensi: entry dengan penilaian / total entry
@@ -192,6 +198,7 @@ class ProgressJurnalController extends Controller
             }
 
             $semester = Semester::find($semesterId);
+
             return view('admin.progress.absensi', compact('step', 'ta', 'semesterId', 'semester', 'gurus'));
         }
 
@@ -200,7 +207,7 @@ class ProgressJurnalController extends Controller
             $semester = Semester::find($semesterId);
             $kelas = Kelas::with('guru')->findOrFail($kelasId);
 
-            $siswaIdsSemester = \App\Models\SemesterSiswa::where('semester_id', $semesterId)
+            $siswaIdsSemester = SemesterSiswa::where('semester_id', $semesterId)
                 ->where('kelas_id', $kelasId)
                 ->pluck('siswa_id')
                 ->unique()
@@ -258,19 +265,49 @@ class ProgressJurnalController extends Controller
     // ═══════════════════════════════════════════════════
 
     /**
-     * Tandai hari libur untuk kelas tertentu.
+     * Tandai hari libur untuk kelas tertentu atau semua kelas aktif.
      */
     public function liburStore(Request $request)
     {
+        $isMassal = $request->boolean('semua_kelas');
+
         $validated = $request->validate([
-            'kelas_id' => 'required|exists:kelas,id',
+            'kelas_id' => $isMassal ? 'nullable' : 'required|exists:kelas,id',
             'tanggal' => 'required|date',
             'keterangan' => 'required|max:255',
         ]);
 
-        $validated['created_by'] = auth()->id();
+        $createdBy = auth()->id();
+        $tanggal = $validated['tanggal'];
+        $keterangan = $validated['keterangan'];
 
-        \App\Models\KelasLibur::firstOrCreate(
+        if ($isMassal) {
+            $kelasList = Kelas::where('status', 'aktif')->get();
+
+            if ($kelasList->isEmpty()) {
+                return back()->with('error', 'Tidak ada kelas aktif untuk ditandai libur.');
+            }
+
+            $count = 0;
+            foreach ($kelasList as $kelas) {
+                KelasLibur::firstOrCreate(
+                    ['kelas_id' => $kelas->id, 'tanggal' => $tanggal],
+                    [
+                        'kelas_id' => $kelas->id,
+                        'tanggal' => $tanggal,
+                        'keterangan' => $keterangan,
+                        'created_by' => $createdBy,
+                    ]
+                );
+                $count++;
+            }
+
+            return back()->with('success', "Hari libur {$tanggal} ditandai untuk {$count} kelas aktif.");
+        }
+
+        $validated['created_by'] = $createdBy;
+
+        KelasLibur::firstOrCreate(
             ['kelas_id' => $validated['kelas_id'], 'tanggal' => $validated['tanggal']],
             $validated
         );
@@ -281,9 +318,10 @@ class ProgressJurnalController extends Controller
     /**
      * Hapus tanda hari libur.
      */
-    public function liburDestroy(\App\Models\KelasLibur $libur)
+    public function liburDestroy(KelasLibur $libur)
     {
         $libur->delete();
+
         return back()->with('success', 'Tanda libur berhasil dihapus.');
     }
 
@@ -304,7 +342,7 @@ class ProgressJurnalController extends Controller
     public function monitoringGuru(Request $request)
     {
         $semesterAktif = Semester::aktif()->first();
-        if (!$semesterAktif) {
+        if (! $semesterAktif) {
             return view('admin.monitoring.guru', [
                 'semesterAktif' => null,
                 'dataGuru' => collect(),
@@ -319,8 +357,8 @@ class ProgressJurnalController extends Controller
 
         // Ambil semua kelas aktif dengan guru
         $kelasList = Kelas::where('status', 'aktif')
-            ->with(['guru', 'siswas' => fn($q) => $q->where('status', 'aktif')])
-            ->withCount(['siswas' => fn($q) => $q->where('status', 'aktif')])
+            ->with(['guru', 'siswas' => fn ($q) => $q->where('status', 'aktif')])
+            ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
             ->get();
 
         $dataGuru = [];
@@ -330,7 +368,9 @@ class ProgressJurnalController extends Controller
 
         foreach ($kelasList as $kelas) {
             $guru = $kelas->guru;
-            if (!$guru) continue;
+            if (! $guru) {
+                continue;
+            }
 
             // Hitung hari libur khusus kelas ini (dari tanggal_dibuat atau awal semester)
             // Referensi tanggal mulai dari semester yang terhubung ke tahun ajaran
@@ -376,9 +416,10 @@ class ProgressJurnalController extends Controller
         }
 
         // Urutkan: guru dengan kelas paling tertinggal di atas
-        uasort($dataGuru, function($a, $b) {
+        uasort($dataGuru, function ($a, $b) {
             $minA = min(array_column($a['kelas'], 'persen'));
             $minB = min(array_column($b['kelas'], 'persen'));
+
             return $minA <=> $minB;
         });
 
@@ -403,7 +444,9 @@ class ProgressJurnalController extends Controller
         $end = $selesai->copy();
 
         while ($current->lte($end)) {
-            if ($current->isWeekday()) $count++;
+            if ($current->isWeekday()) {
+                $count++;
+            }
             $current->addDay();
         }
 
@@ -469,7 +512,7 @@ class ProgressJurnalController extends Controller
         $kelas = Kelas::find($kelasId);
 
         // Ambil semua siswa yang terdaftar di kelas ini di semester ini
-        $siswaIds = \App\Models\SemesterSiswa::whereIn('semester_id', $semesterIds)
+        $siswaIds = SemesterSiswa::whereIn('semester_id', $semesterIds)
             ->where('kelas_id', $kelasId)
             ->distinct('siswa_id')
             ->pluck('siswa_id')

@@ -181,18 +181,24 @@
             <span style="font-size: 11px; color: var(--text-muted);">{{ $liburList->count() }} hari ditandai</span>
         </div>
 
-        <form method="POST" action="{{ route('admin.kelas-libur.store') }}" style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 10px;">
+        <form method="POST" action="{{ route('admin.kelas-libur.store') }}" style="margin-bottom: 10px;">
             @csrf
             <input type="hidden" name="kelas_id" value="{{ $kelas->id }}">
-            <div>
-                <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Tanggal</label>
-                <input type="date" name="tanggal" class="form-input" required style="font-size: 12px; padding: 5px 8px; width: 140px;">
+            <div style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 8px;">
+                <div>
+                    <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Tanggal</label>
+                    <input type="date" name="tanggal" class="form-input" required style="font-size: 12px; padding: 5px 8px; width: 140px;">
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Keterangan</label>
+                    <input type="text" name="keterangan" class="form-input" required placeholder="Contoh: Kegiatan OSIS" style="font-size: 12px; padding: 5px 8px; width: 100%;">
+                </div>
+                <button type="submit" class="btn-tartil" style="font-size: 11px; padding: 6px 12px; white-space: nowrap;">+ Tandai Libur</button>
             </div>
-            <div style="flex: 1; min-width: 150px;">
-                <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Keterangan</label>
-                <input type="text" name="keterangan" class="form-input" required placeholder="Contoh: Kegiatan OSIS" style="font-size: 12px; padding: 5px 8px; width: 100%;">
-            </div>
-            <button type="submit" class="btn-tartil" style="font-size: 11px; padding: 6px 12px; white-space: nowrap;">+ Tandai Libur</button>
+            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
+                <input type="checkbox" name="semua_kelas" value="1" style="cursor: pointer;">
+                <span>Terapkan untuk semua kelas aktif</span>
+            </label>
         </form>
 
         @if($liburList->count() > 0)
