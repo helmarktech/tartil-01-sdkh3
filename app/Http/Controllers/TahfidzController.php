@@ -175,7 +175,17 @@ class TahfidzController extends Controller
         $totalJuzHafal = HafalanTahfidz::totalJuzHafal($siswa->id);
         $juzDistinct = $hafalanList->where('status', 'hafal')->pluck('juz')->unique()->sort()->values();
 
-        return view('admin.tahfidz.detail-siswa', compact('siswa', 'hafalanList', 'totalJuzHafal', 'juzDistinct', 'semester'));
+        $suratHafalList = HafalanTahfidz::where('siswa_id', $siswa->id)
+            ->where('status', 'hafal')
+            ->whereNotNull('surat_id')
+            ->with('surat')
+            ->orderBy('tanggal_hafalan', 'desc')
+            ->get()
+            ->groupBy('surat_id')
+            ->map(fn ($items) => $items->first())
+            ->values();
+
+        return view('admin.tahfidz.detail-siswa', compact('siswa', 'hafalanList', 'totalJuzHafal', 'juzDistinct', 'semester', 'suratHafalList'));
     }
 
     // ==================== ADMIN: FORM TAMBAH HAFALAN ====================

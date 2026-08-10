@@ -63,6 +63,42 @@
 .status-setengah_hafal { background: #e3f2fd; color: #1565c0; }
 .status-hafal { background: #d4edda; color: #155724; }
 .status-murajaah { background: #f3e5f5; color: #6a1b9a; }
+.surat-hafal-card {
+    background: #f8faf8;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.surat-hafal-nomor {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #0c8a5f;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.surat-hafal-info {
+    flex: 1;
+    min-width: 0;
+}
+.surat-hafal-nama {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+.surat-hafal-meta {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+}
 @media (max-width: 640px) {
     .juz-item { width: 40px; height: 40px; font-size: 12px; }
     .hafalan-table th, .hafalan-table td { padding: 8px 6px; font-size: 12px; white-space: nowrap; }
@@ -140,6 +176,37 @@
         <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#1565c0;margin-right:4px;"></span>Baru</span>
         <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#f0f0f0;margin-right:4px;"></span>Belum</span>
     </div>
+</div>
+
+{{-- Surat yang Telah Dihafal --}}
+<div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+    <div style="font-size: 13px; font-weight: 700; color: #555; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">
+        Surat yang Telah Dihafal ({{ $suratHafalList->count() }} surat)
+    </div>
+
+    @if($suratHafalList->isEmpty())
+        <div style="text-align: center; padding: 32px; color: #888;">
+            Belum ada surat yang ditandai hafal oleh guru.
+        </div>
+    @else
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px;">
+            @foreach($suratHafalList as $sh)
+            <div class="surat-hafal-card">
+                <div class="surat-hafal-nomor">{{ $sh->surat->urutan ?? '-' }}</div>
+                <div class="surat-hafal-info">
+                    <div class="surat-hafal-nama">{{ $sh->surat?->nama_latin ?? '-' }}</div>
+                    <div class="surat-hafal-meta">
+                        Juz {{ $sh->juz }} &middot; Ayat {{ $sh->ayat_mulai }}{{ $sh->ayat_selesai ? '-'.$sh->ayat_selesai : '' }}
+                        &middot; {{ $sh->tanggal_hafalan?->format('d/m/Y') }}
+                        @if($sh->kualitas)
+                            &middot; {{ \App\Models\HafalanTahfidz::labelKualitas($sh->kualitas) }}
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    @endif
 </div>
 
 {{-- Daftar Hafalan --}}
