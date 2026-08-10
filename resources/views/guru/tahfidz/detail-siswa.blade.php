@@ -88,7 +88,7 @@
 
 {{-- Breadcrumb --}}
 <div style="font-size: 13px; color: #666; margin-bottom: 20px;">
-    <a href="{{ route('tahfidz.index') }}" style="color: #0c8a5f; text-decoration: none; font-weight: 500;">Tahfidz & Hafalan</a>
+    <a href="{{ route('guru.tahfidz.index') }}" style="color: #0c8a5f; text-decoration: none; font-weight: 500;">Tahfidz & Hafalan</a>
     <span style="margin: 0 8px;">&rsaquo;</span>
     <strong>{{ $siswa->nama }}</strong>
 </div>
