@@ -288,20 +288,28 @@
         <div class="sd-journal-list">
             @foreach($jurnals as $index => $j)
             <div class="sd-journal-item" onclick="openJournalDetail({{ $index }})" style="cursor:pointer;">
-                <div class="sd-journal-date">{{ $j->tanggal?->format('d M Y') }}</div>
-                <div class="sd-journal-dot {{ $j->penilaian == 'B' ? 'dot-b' : ($j->penilaian == 'C' ? 'dot-c' : 'dot-k') }}"></div>
-                <div class="sd-journal-badge">{!! \App\Models\JurnalHarian::penilaianBadge($j->penilaian) !!}</div>
-                <div class="sd-journal-mini">
-                    @if($j->surat?->nama)
-                    <span>{{ $j->surat->nama }}</span>
-                    @else
-                    <span style="color:#d4d4d4;">Surat tidak dicatat</span>
-                    @endif
+                <div class="sd-journal-main">
+                    <div class="sd-journal-date">{{ $j->tanggal?->format('d M Y') }}</div>
+                    <div class="sd-journal-dot {{ $j->penilaian == 'B' ? 'dot-b' : ($j->penilaian == 'C' ? 'dot-c' : 'dot-k') }}"></div>
+                    <div class="sd-journal-badge">{!! \App\Models\JurnalHarian::penilaianBadge($j->penilaian) !!}</div>
+                    <div class="sd-journal-mini">
+                        @if($j->surat?->nama)
+                        <span>{{ $j->surat->nama }}</span>
+                        @else
+                        <span style="color:#d4d4d4;">Surat tidak dicatat</span>
+                        @endif
+                    </div>
+                    <button class="sd-journal-detail-btn" type="button" onclick="event.stopPropagation();openJournalDetail({{ $index }})" title="Lihat detail">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        Detail
+                    </button>
                 </div>
-                <button class="sd-journal-detail-btn" type="button" onclick="event.stopPropagation();openJournalDetail({{ $index }})" title="Lihat detail">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                    Detail
-                </button>
+                @if($j->catatan)
+                <div class="sd-journal-note" onclick="event.stopPropagation();">
+                    <span class="sd-journal-note-label">Catatan Guru:</span>
+                    {{ $j->catatan }}
+                </div>
+                @endif
             </div>
             @endforeach
         </div>
@@ -653,18 +661,30 @@
    ════════════════════════════════════════════ */
 .sd-journal-list { display: flex; flex-direction: column; }
 .sd-journal-item {
-    display: grid; grid-template-columns: 80px 20px 50px 1fr auto;
-    align-items: center; gap: 10px; padding: 10px 12px;
+    display: flex; flex-direction: column;
+    padding: 12px 14px;
     border-bottom: 1px solid #f5f5f4; transition: background 0.15s;
 }
 .sd-journal-item:last-child { border-bottom: none; }
 .sd-journal-item:hover { background: #fafaf9; }
+.sd-journal-main {
+    display: grid; grid-template-columns: 80px 20px 50px 1fr auto;
+    align-items: center; gap: 10px;
+}
 .sd-journal-date { font-size: 12px; color: #78716c; font-weight: 500; }
 .sd-journal-dot { width: 10px; height: 10px; border-radius: 50%; justify-self: center; }
 .sd-journal-dot.dot-b { background: #86efac; }
 .sd-journal-dot.dot-c { background: #fde047; }
 .sd-journal-dot.dot-k { background: #fca5a5; }
 .sd-journal-mini { font-size: 12px; color: #78716c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sd-journal-note {
+    margin-top: 10px; padding: 10px 12px;
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
+    font-size: 12px; color: #92400e; line-height: 1.5;
+}
+.sd-journal-note-label {
+    font-weight: 700; margin-right: 4px;
+}
 .sd-journal-detail-btn {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 10px; background: #f5f5f4; color: #78716c;
@@ -709,7 +729,9 @@
 .sd-detail-value { font-size: 13px; color: #1c1917; font-weight: 600; text-align: right; max-width: 60%; word-wrap: break-word; overflow-wrap: break-word; }
 
 @media (max-width: 640px) {
-    .sd-journal-item { grid-template-columns: 70px 16px 40px 1fr auto; gap: 6px; padding: 8px; }
+    .sd-journal-main { grid-template-columns: 70px 16px 40px 1fr auto; gap: 6px; }
+    .sd-journal-item { padding: 10px; }
+    .sd-journal-note { font-size: 12px; padding: 8px 10px; }
     .sd-journal-mini { display: none; }
     .sd-r2grid { grid-template-columns: 1fr; }
     .sd-modal-content { padding: 16px; width: 95%; }
