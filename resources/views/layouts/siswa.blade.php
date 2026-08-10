@@ -253,6 +253,15 @@
         }
         .btn-tartil:hover { background: var(--ink-secondary); transform: translateY(-1px); }
 
+        .btn-tartil-outline {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 8px 18px; border-radius: 10px; border: 1px solid var(--border);
+            background: transparent; color: var(--ink);
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 600;
+            cursor: pointer; text-decoration: none; transition: all 0.15s;
+        }
+        .btn-tartil-outline:hover { background: var(--bg-body); border-color: var(--accent); color: var(--accent); }
+
         /* ═══ Tables ═══ */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .table-tartil {
@@ -310,6 +319,66 @@
             transition: color 0.15s;
         }
         .link-tartil:hover { color: var(--ink); }
+
+        /* ════════════════════════════════════════════
+           SHARED ADMIN-STYLE CLASSES (untuk view yang dipakai di layout siswa)
+           ════════════════════════════════════════════ */
+        :root {
+            --success: #0c8a5f;
+            --success-soft: #d1fae5;
+            --info: #1565c0;
+            --info-soft: #dbeafe;
+            --text-muted: #78716c;
+            --bg-body: #f5f5f4;
+        }
+
+        .page-header { margin-bottom: 20px; }
+        .page-title-display {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 24px; font-weight: 800;
+            letter-spacing: -0.5px; color: var(--ink);
+            margin: 0 0 4px;
+        }
+        .page-subtitle { font-size: 13px; color: var(--ink-muted); margin: 0; }
+
+        .card-tartil {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px; margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .badge-success, .badge-warning, .badge-error, .badge-primary, .badge-subject {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 3px 10px; border-radius: 999px;
+            font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+        }
+        .badge-success { background: var(--success-soft); color: #065f43; }
+        .badge-warning { background: #fef9c3; color: #854d0e; }
+        .badge-error { background: var(--danger-soft); color: #991b1b; }
+        .badge-primary { background: var(--info-soft); color: #1e40af; }
+        .badge-subject { background: #f5f5f4; color: var(--ink-secondary); }
+
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; text-align: center;
+        }
+        .stat-label { font-size: 11px; color: var(--ink-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .stat-value { font-size: 22px; font-weight: 800; color: var(--ink); }
+
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-tartil {
+            width: 100%; border-collapse: collapse; font-size: 13px;
+        }
+        .table-tartil th {
+            padding: 10px 12px; text-align: left;
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--ink-muted); border-bottom: 2px solid var(--border); background: var(--bg-body);
+        }
+        .table-tartil td {
+            padding: 10px 12px; border-bottom: 1px solid var(--border-light); color: var(--ink-secondary);
+        }
+        .table-tartil tbody tr:last-child td { border-bottom: none; }
+        .table-tartil tbody tr:hover td { background: var(--bg-body); }
 
         /* ═══ Mobile ═══ */
         @media (max-width: 640px) {

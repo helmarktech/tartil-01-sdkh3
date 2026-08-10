@@ -268,7 +268,7 @@
                 </div>
                 <div>
                     <button onclick="openForm({{ $s['siswa']['id'] }}, '{{ $s['siswa']['nama'] }}')" class="btn-tartil" style="padding: 6px 14px; font-size: 12px;">+ Setoran</button>
-                    <a href="{{ route('tahfidz.detail-siswa', $s['siswa']['id']) }}" class="btn-tartil-outline" style="padding: 6px 14px; font-size: 12px; text-decoration: none; margin-left: 4px;">Detail</a>
+                    <a href="{{ route('guru.tahfidz.detail-siswa', $s['siswa']['id']) }}" class="btn-tartil-outline" style="padding: 6px 14px; font-size: 12px; text-decoration: none; margin-left: 4px;">Detail</a>
                 </div>
             </div>
             @endforeach
