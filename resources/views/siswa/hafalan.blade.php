@@ -66,6 +66,32 @@
 .haf-badge-setengah_hafal { background: #e3f2fd; color: #1565c0; }
 .haf-badge-baru { background: #fff3cd; color: #856404; }
 
+.haf-surat-card {
+    background: #f8faf8;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.haf-surat-nomor {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #0c8a5f;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.haf-surat-info { flex: 1; min-width: 0; }
+.haf-surat-nama { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+.haf-surat-meta { font-size: 11px; color: #666; margin-top: 2px; }
+
 .haf-btn-konfirmasi {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     padding: 10px 18px; background: #0c8a5f; color: #fff;
@@ -117,6 +143,35 @@
         <span><span class="haf-legend-dot" style="background:#1565c0;"></span> Baru</span>
         <span><span class="haf-legend-dot" style="background:#e5e5e5;"></span> Belum</span>
     </div>
+</div>
+
+{{-- Surat yang Telah Dihafal --}}
+<div class="sd-section" style="margin-bottom: 20px;">
+    <h2 class="sd-section-title" style="margin-bottom: 16px;">Surat yang Telah Dihafal ({{ $suratHafalList->count() }} surat)</h2>
+
+    @if($suratHafalList->isEmpty())
+        <div style="text-align: center; padding: 32px; color: #888;">
+            <p>Belum ada surat yang ditandai hafal oleh guru.</p>
+        </div>
+    @else
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px;">
+            @foreach($suratHafalList as $sh)
+            <div class="haf-surat-card">
+                <div class="haf-surat-nomor">{{ $sh->surat->urutan ?? '-' }}</div>
+                <div class="haf-surat-info">
+                    <div class="haf-surat-nama">{{ $sh->surat?->nama_latin ?? '-' }}</div>
+                    <div class="haf-surat-meta">
+                        Juz {{ $sh->juz }} &middot; Ayat {{ $sh->ayat_mulai }}{{ $sh->ayat_selesai ? '-'.$sh->ayat_selesai : '' }}
+                        &middot; {{ $sh->tanggal_hafalan?->format('d/m/Y') }}
+                        @if($sh->kualitas)
+                            &middot; {{ \App\Models\HafalanTahfidz::labelKualitas($sh->kualitas) }}
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    @endif
 </div>
 
 {{-- Riwayat Setoran --}}

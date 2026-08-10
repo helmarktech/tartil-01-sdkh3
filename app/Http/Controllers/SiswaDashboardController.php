@@ -249,6 +249,13 @@ class SiswaDashboardController extends Controller
 
         $hafalanBelumDikonfirmasi = $hafalanList->whereNull('dikonfirmasi_orang_tua_at')->values();
 
+        $suratHafalList = $hafalanList
+            ->where('status', 'hafal')
+            ->whereNotNull('surat_id')
+            ->groupBy('surat_id')
+            ->map(fn ($items) => $items->first())
+            ->values();
+
         $juzAktif = HafalanTahfidz::where('siswa_id', $siswa->id)
             ->where('semester_id', $semester?->id)
             ->where('status', '!=', 'hafal')
@@ -257,7 +264,7 @@ class SiswaDashboardController extends Controller
 
         return view('siswa.hafalan', compact(
             'siswa', 'semester', 'progressJuz', 'totalJuzHafal',
-            'juzDistinct', 'hafalanList', 'juzAktif', 'hafalanBelumDikonfirmasi'
+            'juzDistinct', 'hafalanList', 'juzAktif', 'hafalanBelumDikonfirmasi', 'suratHafalList'
         ));
     }
 

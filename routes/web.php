@@ -20,6 +20,7 @@ use App\Http\Controllers\SiswaDashboardController;
 use App\Http\Controllers\SystemSetupController;
 use App\Http\Controllers\TahfidzController;
 use App\Http\Controllers\TrackRecordController;
+use App\Http\Middleware\PulseAccess;
 use Illuminate\Support\Facades\Route;
 
 // ==================== PUBLIC ====================
@@ -314,6 +315,7 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     // ===== TAHFIDZ (guru kelas Tahfidz) =====
     Route::middleware('semester')->group(function () {
         Route::get('/tahfidz', [TahfidzController::class, 'guruIndex'])->name('tahfidz.index');
+        Route::get('/tahfidz/siswa/{siswa}', [TahfidzController::class, 'guruDetailSiswa'])->name('tahfidz.detail-siswa');
         Route::post('/tahfidz/hafalan', [TahfidzController::class, 'guruStore'])->name('tahfidz.hafalan.store');
     });
 
@@ -366,4 +368,4 @@ Route::middleware(['auth:siswa'])->prefix('siswa')->name('siswa.')->group(functi
 // ════════════════════════════════════════════
 Route::get('/admin/pulse', function () {
     return view('pulse::dashboard');
-})->middleware(['web', \App\Http\Middleware\PulseAccess::class])->name('admin.pulse');
+})->middleware(['web', PulseAccess::class])->name('admin.pulse');

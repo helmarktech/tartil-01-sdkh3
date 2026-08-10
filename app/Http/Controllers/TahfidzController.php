@@ -316,6 +316,41 @@ class TahfidzController extends Controller
         ));
     }
 
+    // ==================== GURU: DETAIL SISWA ====================
+    public function guruDetailSiswa(Siswa $siswa)
+    {
+        $guru = auth()->user()?->guru;
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan.');
+        }
+
+        // Validasi: siswa harus di kelas guru ini
+        if ($siswa->kelasTartil?->guru_id !== $guru->id) {
+            return back()->with('error', 'Siswa tidak ada di kelas Anda.');
+        }
+
+        $semester = Semester::aktif()->first();
+        $hafalanList = HafalanTahfidz::where('siswa_id', $siswa->id)
+            ->with(['surat', 'semester', 'guru'])
+            ->orderBy('tanggal_hafalan', 'desc')
+            ->get();
+
+        $totalJuzHafal = HafalanTahfidz::totalJuzHafal($siswa->id);
+        $juzDistinct = $hafalanList->where('status', 'hafal')->pluck('juz')->unique()->sort()->values();
+
+        $suratHafalList = HafalanTahfidz::where('siswa_id', $siswa->id)
+            ->where('status', 'hafal')
+            ->whereNotNull('surat_id')
+            ->with('surat')
+            ->orderBy('tanggal_hafalan', 'desc')
+            ->get()
+            ->groupBy('surat_id')
+            ->map(fn ($items) => $items->first())
+            ->values();
+
+        return view('guru.tahfidz.detail-siswa', compact('siswa', 'hafalanList', 'totalJuzHafal', 'juzDistinct', 'semester', 'suratHafalList'));
+    }
+
     // ==================== GURU: INPUT HAFALAN ====================
     public function guruStore(Request $request)
     {
