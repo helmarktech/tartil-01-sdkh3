@@ -56,10 +56,14 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div class="sd-r2value">{{ $r2Akhir }}<span class="sd-r2unit">%</span></div>
-            <div class="sd-r2label">R2 Akhir</div>
-            <div class="sd-r2desc">Rata-rata R2 Harian & Penilaian</div>
+            <div class="sd-r2label">R2 Akhir Setelah Penilaian</div>
+            <div class="sd-r2desc">Rata-rata R2 Harian & R2 Penilaian</div>
             <div class="sd-r2bar"><div class="sd-r2bar-fill" style="width:{{ $r2Akhir }}%;"></div></div>
-            <div style="font-size:9px;color:#a8a29e;margin-top:6px;text-align:center;">B=2 &middot; C=1 &middot; K=0 &rarr; Rata-rata</div>
+            <div class="sd-r2breakdown">
+                <span>Sebelum penilaian: <strong>{{ $r2Harian }}%</strong></span>
+                <span class="sd-r2sep">&rarr;</span>
+                <span>Setelah penilaian: <strong>{{ $r2Akhir }}%</strong></span>
+            </div>
         </div>
     </div>
 
@@ -543,6 +547,13 @@
     height: 100%; background: #0c8a5f; border-radius: 2px;
     transition: width 0.8s ease;
 }
+.sd-r2breakdown {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid #333;
+    font-size: 11px; color: #a8a29e; flex-wrap: wrap; text-align: center;
+}
+.sd-r2breakdown strong { color: #fff; font-weight: 700; }
+.sd-r2sep { color: #0c8a5f; font-weight: 700; }
 
 .sd-row { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; margin-bottom: 20px; }
 @media (max-width: 768px) { .sd-row { grid-template-columns: 1fr; } }
