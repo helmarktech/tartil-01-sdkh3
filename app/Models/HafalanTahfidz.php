@@ -273,6 +273,37 @@ class HafalanTahfidz extends Model
     }
 
     /**
+     * Hitung persentase ayat yang sudah dikuasai untuk satu surat.
+     * Hanya menghitung ayat dengan status 'hafal' atau 'murajaah'.
+     * Return: 0.0 - 100.0.
+     */
+    public static function persentaseSurah(int $siswaId, int $suratId): float
+    {
+        $surat = Surat::find($suratId);
+        if (! $surat || $surat->jumlah_ayat <= 0) {
+            return 0.0;
+        }
+
+        $hafalan = self::where('siswa_id', $siswaId)
+            ->where('surat_id', $suratId)
+            ->whereIn('status', ['hafal', 'murajaah'])
+            ->get();
+
+        $hafalSet = [];
+        foreach ($hafalan as $h) {
+            $start = $h->ayat_mulai;
+            $end = $h->ayat_selesai ?? $h->ayat_mulai;
+            for ($a = $start; $a <= $end; $a++) {
+                if ($a <= $surat->jumlah_ayat) {
+                    $hafalSet[$a] = true;
+                }
+            }
+        }
+
+        return round((count($hafalSet) / $surat->jumlah_ayat) * 100, 1);
+    }
+
+    /**
      * Total juz yang sudah benar-benar dihafal (persentase ayat = 100%) per siswa.
      */
     public static function totalJuzHafal(int $siswaId): int

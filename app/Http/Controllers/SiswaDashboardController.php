@@ -254,6 +254,7 @@ class SiswaDashboardController extends Controller
             ->whereNotNull('surat_id')
             ->groupBy('surat_id')
             ->map(fn ($items) => $items->first())
+            ->filter(fn ($sh) => HafalanTahfidz::persentaseSurah($siswa->id, $sh->surat_id) >= 100)
             ->values();
 
         $juzAktif = HafalanTahfidz::where('siswa_id', $siswa->id)

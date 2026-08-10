@@ -183,6 +183,7 @@ class TahfidzController extends Controller
             ->get()
             ->groupBy('surat_id')
             ->map(fn ($items) => $items->first())
+            ->filter(fn ($sh) => HafalanTahfidz::persentaseSurah($siswa->id, $sh->surat_id) >= 100)
             ->values();
 
         return view('admin.tahfidz.detail-siswa', compact('siswa', 'hafalanList', 'totalJuzHafal', 'juzDistinct', 'semester', 'suratHafalList'));
@@ -346,6 +347,7 @@ class TahfidzController extends Controller
             ->get()
             ->groupBy('surat_id')
             ->map(fn ($items) => $items->first())
+            ->filter(fn ($sh) => HafalanTahfidz::persentaseSurah($siswa->id, $sh->surat_id) >= 100)
             ->values();
 
         return view('guru.tahfidz.detail-siswa', compact('siswa', 'hafalanList', 'totalJuzHafal', 'juzDistinct', 'semester', 'suratHafalList'));
