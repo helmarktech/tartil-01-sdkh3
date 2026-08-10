@@ -109,10 +109,13 @@
 }
 </style>
 
-<div class="sd-head" style="margin-bottom: 20px;">
+<div class="siswa-page-header">
+    <div class="siswa-page-icon" style="background: linear-gradient(135deg, #0c8a5f, #065f43);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    </div>
     <div>
-        <h1 class="sd-title" style="font-size: 22px;">&#128218; Hafalan Al-Quran</h1>
-        <p class="sd-sub">Pantau progres hafalan Anda</p>
+        <h1 class="siswa-page-title">Hafalan Al-Quran</h1>
+        <p class="siswa-page-subtitle">Pantau progres hafalan Anda</p>
     </div>
 </div>
 

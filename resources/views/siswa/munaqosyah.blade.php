@@ -5,10 +5,13 @@
 <div class="sm-wrap">
 
     {{-- Header --}}
-    <div class="page-header sm-header">
+    <div class="siswa-page-header">
+        <div class="siswa-page-icon" style="background: linear-gradient(135deg, #b45309, #92400e);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
         <div>
-            <h1 class="page-title-display">Riwayat Munaqosyah</h1>
-            <p class="page-subtitle">Daftar ujian munaqosyah yang pernah diikuti</p>
+            <h1 class="siswa-page-title">Riwayat Munaqosyah</h1>
+            <p class="siswa-page-subtitle">Daftar ujian munaqosyah yang pernah diikuti</p>
         </div>
     </div>
 

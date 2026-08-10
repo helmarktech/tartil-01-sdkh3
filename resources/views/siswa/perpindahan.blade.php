@@ -5,9 +5,14 @@
 <div class="sp-wrap">
 
     {{-- Header --}}
-    <div class="sp-head">
-        <h1 class="sp-title">Riwayat Kelas</h1>
-        <p class="sp-sub">Riwayat perpindahan kelas tartil dan kelas saat ini</p>
+    <div class="siswa-page-header">
+        <div class="siswa-page-icon" style="background: linear-gradient(135deg, #7c3aed, #4c1d95);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </div>
+        <div>
+            <h1 class="siswa-page-title">Riwayat Kelas</h1>
+            <p class="siswa-page-subtitle">Riwayat perpindahan kelas tartil dan kelas saat ini</p>
+        </div>
     </div>
 
     {{-- Kelas Saat Ini — SELALU tampil --}}

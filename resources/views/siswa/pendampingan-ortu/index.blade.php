@@ -53,10 +53,13 @@
 .po-ayat { font-size: 12px; color: #78716c; }
 </style>
 
-<div class="sd-head" style="margin-bottom: 20px;">
+<div class="siswa-page-header">
+    <div class="siswa-page-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
     <div>
-        <h1 class="sd-title" style="font-size: 22px;">&#128106; Pendampingan Orang Tua</h1>
-        <p class="sd-sub">Laporkan kegiatan tadarus dan murajaah bersama anak</p>
+        <h1 class="siswa-page-title">Pendampingan Orang Tua</h1>
+        <p class="siswa-page-subtitle">Laporkan kegiatan tadarus dan murajaah bersama anak</p>
     </div>
 </div>
 

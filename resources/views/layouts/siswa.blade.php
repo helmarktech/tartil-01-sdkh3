@@ -320,6 +320,27 @@
         }
         .link-tartil:hover { color: var(--ink); }
 
+        /* ═══ Consistent Siswa Page Header ═══ */
+        .siswa-page-header {
+            display: flex; align-items: center; gap: 16px;
+            margin-bottom: 24px; padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .siswa-page-icon {
+            width: 48px; height: 48px; border-radius: 14px;
+            background: linear-gradient(135deg, #0c8a5f, #065f43);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; box-shadow: 0 4px 12px rgba(12,138,95,0.18);
+        }
+        .siswa-page-icon svg { width: 24px; height: 24px; }
+        .siswa-page-title {
+            font-size: 20px; font-weight: 800; color: var(--ink);
+            margin: 0 0 3px; letter-spacing: -0.3px;
+        }
+        .siswa-page-subtitle {
+            font-size: 13px; color: var(--ink-muted); margin: 0;
+        }
+
         /* ════════════════════════════════════════════
            SHARED ADMIN-STYLE CLASSES (untuk view yang dipakai di layout siswa)
            ════════════════════════════════════════════ */

@@ -6,10 +6,15 @@
 <div class="sd-wrap">
 
     {{-- Header --}}
-    <div class="sd-head">
-        <div>
-            <h1 class="sd-title">Selamat Datang, {{ $siswa->nama }}</h1>
-            <p class="sd-sub">Pantau perkembangan pembelajaran Al-Quran Anda</p>
+    <div class="siswa-page-header" style="justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="siswa-page-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div>
+                <h1 class="siswa-page-title">Selamat Datang, {{ $siswa->nama }}</h1>
+                <p class="siswa-page-subtitle">Pantau perkembangan pembelajaran Al-Quran Anda</p>
+            </div>
         </div>
         <div class="sd-avatar">{{ $siswa->initials }}</div>
     </div>
