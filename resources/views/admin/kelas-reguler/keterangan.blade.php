@@ -95,7 +95,7 @@
                         </select>
                         <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Tahan Ctrl untuk pilih multiple</p>
                     </div>
-                    <button type="submit" class="btn-tartil" style="padding: 10px 20px; font-size: 13px; white-space: nowrap;" onclick="return confirm('Daftarkan siswa terpilih ke kelas {{ $kr->nama }}?')">
+                    <button type="submit" class="btn-tartil" style="padding: 10px 20px; font-size: 13px; white-space: nowrap;" onclick="return confirm({{ json_encode('Daftarkan siswa terpilih ke kelas '.$kr->nama.'?', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }})">
                         Daftarkan
                     </button>
                 </div>

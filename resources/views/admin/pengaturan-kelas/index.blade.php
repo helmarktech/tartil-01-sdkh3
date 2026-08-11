@@ -79,7 +79,7 @@
                         </td>
                         <td style="text-align: center;">
                             <div style="display: flex; gap: 4px; justify-content: center;">
-                                <button onclick="editIndikator({{ $ind->id }}, '{{ $ind->nama_indikator }}', {{ $ind->urutan }})" class="btn-tartil-outline" style="padding: 4px 10px; font-size: 11px;">Edit</button>
+                                <button onclick="editIndikator({{ $ind->id }}, {{ json_encode($ind->nama_indikator, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }}, {{ $ind->urutan }})" class="btn-tartil-outline" style="padding: 4px 10px; font-size: 11px;">Edit</button>
                                 <form method="POST" action="{{ route('admin.pengaturan-kelas.indikator.destroy', $ind->id) }}" style="display: inline;" onsubmit="return confirm('Hapus indikator ini?');">
                                     @csrf
                                     @method('DELETE')

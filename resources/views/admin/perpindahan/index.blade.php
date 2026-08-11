@@ -235,11 +235,11 @@
                                 <div style="display: flex; gap: 6px;">
                                     <form method="POST" action="{{ route('admin.perpindahan-tartil.approve', $p->id) }}" style="display: inline;">
                                         @csrf
-                                        <button type="submit" class="btn-tartil-success" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="return confirm('Setujui perpindahan {{ $p->siswa->nama }} ke {{ $p->kelasBaru->nama ?? '?' }}?')">Setuju</button>
+                                        <button type="submit" class="btn-tartil-success" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="return confirm({{ json_encode('Setujui perpindahan '.$p->siswa->nama.' ke '.($p->kelasBaru->nama ?? '?').'?', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }})">Setuju</button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.perpindahan-tartil.tolak', $p->id) }}" style="display: inline;">
                                         @csrf
-                                        <button type="submit" class="btn-tartil-danger" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="return confirm('Tolak perpindahan {{ $p->siswa->nama }}?')">Tolak</button>
+                                        <button type="submit" class="btn-tartil-danger" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="return confirm({{ json_encode('Tolak perpindahan '.$p->siswa->nama.'?', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }})">Tolak</button>
                                     </form>
                                 </div>
                             @else

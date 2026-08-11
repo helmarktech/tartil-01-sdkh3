@@ -62,7 +62,7 @@
                                 <input type="hidden" name="jenis" value="{{ $k->jenis }}">
                                 <input type="hidden" name="guru_id" value="{{ $k->guru_id }}">
                                 <input type="hidden" name="status" value="{{ $k->status == 'aktif' ? 'nonaktif' : 'aktif' }}">
-                                <button type="submit" class="btn-tartil-{{ $k->status == 'aktif' ? 'warning' : 'outline' }}" style="padding: 6px 12px; font-size: 12px;" onclick="return confirm('{{ $k->status == 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }} kelas {{ $k->nama }}?')">
+                                <button type="submit" class="btn-tartil-{{ $k->status == 'aktif' ? 'warning' : 'outline' }}" style="padding: 6px 12px; font-size: 12px;" onclick="return confirm({{ json_encode(($k->status == 'aktif' ? 'Nonaktifkan' : 'Aktifkan').' kelas '.$k->nama.'?', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }})">
                                     {{ $k->status == 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}
                                 </button>
                             </form>

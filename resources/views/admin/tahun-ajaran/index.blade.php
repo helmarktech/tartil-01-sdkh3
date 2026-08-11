@@ -92,7 +92,7 @@
                     </td>
                     <td>
                         @if($ta->status == 'aktif')
-                        <form method="POST" action="{{ route('admin.tahun-ajaran.tutup', $ta->id) }}" style="display: inline;" onsubmit="return confirm('Tutup TA {{ $ta->nama }}? Semua semester akan ditutup juga.')">
+                        <form method="POST" action="{{ route('admin.tahun-ajaran.tutup', $ta->id) }}" style="display: inline;" onsubmit="return confirm({{ json_encode('Tutup TA '.$ta->nama.'? Semua semester akan ditutup juga.', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }})">
                             @csrf
                             <button type="submit" class="btn-tartil-danger" style="padding: 4px 10px; font-size: 11px;">Tutup TA</button>
                         </form>
@@ -155,7 +155,7 @@
                             @if($s->status != 'ditutup')
                             <form method="POST" action="{{ route('admin.semester.tutup', $s->id) }}" style="display:inline;">
                                 @csrf
-                                <button type="submit" class="btn-tartil-danger" style="padding: 6px 12px; font-size: 12px;" onclick="return confirm('Tutup semester {{ $s->nama }}?')">Tutup</button>
+                                <button type="submit" class="btn-tartil-danger" style="padding: 6px 12px; font-size: 12px;" onclick="return confirm({{ json_encode('Tutup semester '.$s->nama.'?', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }})">Tutup</button>
                             </form>
                             @endif
                         </div>

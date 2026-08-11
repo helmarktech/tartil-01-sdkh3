@@ -92,7 +92,7 @@
                         <div style="display: flex; gap: 6px;">
                             <form method="POST" action="{{ route('admin.munaqosyah.approval.setuju', $p->approval->id ?? 0) }}" style="display:inline;">
                                 @csrf
-                                <button type="submit" class="btn-tartil-success" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="return confirm('Setujui pendaftaran {{ $p->siswa->nama ?? '' }} ke {{ $p->munaqosyah->nama ?? '' }}?')">Setuju</button>
+                                <button type="submit" class="btn-tartil-success" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="return confirm({{ json_encode('Setujui pendaftaran '.($p->siswa->nama ?? '').' ke '.($p->munaqosyah->nama ?? '').'?', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }})">Setuju</button>
                             </form>
                             <button onclick="document.getElementById('tolak-{{ $p->id }}').style.display='block'" class="btn-tartil-danger" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;">Tolak</button>
                         </div>

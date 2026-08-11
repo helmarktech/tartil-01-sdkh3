@@ -199,7 +199,7 @@
                     </td>
                     <td>{{ $p->nilai ?? '-' }}</td>
                     <td style="text-align: center;">
-                        <form method="POST" action="{{ route('admin.munaqosyah.peserta.batal', [$munaqosyah, $p]) }}" style="display:inline;" onsubmit="return confirm('Yakin membatalkan pendaftaran {{ $p->siswa->nama ?? 'siswa' }}?');">
+                        <form method="POST" action="{{ route('admin.munaqosyah.peserta.batal', [$munaqosyah, $p]) }}" style="display:inline;" onsubmit="return confirm({{ json_encode('Yakin membatalkan pendaftaran '.($p->siswa->nama ?? 'siswa').'?', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }});">
                             @csrf @method('DELETE')
                             <button type="submit" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:11px;font-weight:600;padding:2px 6px;border-radius:4px;" title="Batalkan Pendaftaran">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>

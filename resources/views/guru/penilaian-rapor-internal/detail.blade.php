@@ -114,7 +114,7 @@
                             @if($semesterPenilaian)
                             <a href="{{ route('guru.penilaian-rapor.isi-nilai', [$semesterPenilaian->id, $ps->siswa->kelas_tartil_id ?? 0]) }}" class="btn-tartil" style="padding: 4px 8px; font-size: 11px; text-decoration: none;">Nilai</a>
                             @endif
-                            <form method="POST" action="{{ route('guru.penilaian-rapor-internal.hapus-peserta', $ps->id) }}" style="display:inline;" onsubmit="return confirm('Hapus {{ $ps->siswa->nama ?? 'siswa' }}?')">
+                            <form method="POST" action="{{ route('guru.penilaian-rapor-internal.hapus-peserta', $ps->id) }}" style="display:inline;" onsubmit="return confirm({{ json_encode('Hapus '.($ps->siswa->nama ?? 'siswa').'?', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) }})">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-tartil-danger" style="padding: 4px 8px; font-size: 11px;">Hapus</button>
