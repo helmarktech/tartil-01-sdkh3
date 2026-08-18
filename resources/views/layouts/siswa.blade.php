@@ -98,21 +98,44 @@
             color: var(--ink-muted);
             font-weight: 500;
         }
-        .tartil-topbar .btn-logout {
-            background: none;
-            border: none;
-            color: var(--ink-muted);
+        .tartil-topbar .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tartil-topbar .btn-topbar {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px;
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
             cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 6px;
             transition: all 0.15s;
+            white-space: nowrap;
         }
-        .tartil-topbar .btn-logout:hover {
-            background: var(--border-light);
-            color: var(--ink);
+        .tartil-topbar .btn-topbar:hover { transform: translateY(-1px); }
+        .tartil-topbar .btn-topbar-profil {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+        .tartil-topbar .btn-topbar-profil:hover {
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+            border-color: var(--accent-dark);
+        }
+        .tartil-topbar .btn-topbar-logout {
+            color: var(--ink-muted);
+        }
+        .tartil-topbar .btn-topbar-logout:hover {
+            background: var(--danger-soft);
+            color: var(--danger);
+            border-color: #fecaca;
         }
 
         /* ═══ Content ═══ */
@@ -402,6 +425,8 @@
         @media (max-width: 640px) {
             .tartil-content { padding: 16px; }
             .tartil-topbar { padding: 10px 16px; }
+            .tartil-topbar .topbar-actions { gap: 6px; }
+            .tartil-topbar .btn-topbar { padding: 6px 10px; font-size: 11px; }
             .siswa-nav { gap: 5px; }
             .siswa-nav a { padding: 7px 12px; font-size: 11px; }
         }
@@ -423,10 +448,13 @@
                         <span class="brand-subtitle">SD Khadijah 3</span>
                     </div>
                 </div>
-                <form method="POST" action="{{ route('siswa.logout') }}" style="margin:0;">
-                    @csrf
-                    <button type="submit" class="btn-logout">Keluar</button>
-                </form>
+                <div class="topbar-actions">
+                    <a href="{{ route('siswa.no-hp.edit') }}" class="btn-topbar btn-topbar-profil">&#128100; Profil</a>
+                    <form method="POST" action="{{ route('siswa.logout') }}" style="margin:0;">
+                        @csrf
+                        <button type="submit" class="btn-topbar btn-topbar-logout">Keluar</button>
+                    </form>
+                </div>
             </header>
 
             <main class="tartil-content">
@@ -448,7 +476,6 @@
                     <a href="{{ route('siswa.perpindahan') }}" class="{{ request()->routeIs('siswa.perpindahan') ? 'active' : '' }}">&#128260; Riwayat Kelas</a>
                     <a href="{{ route('siswa.track-record') }}" class="{{ request()->routeIs('siswa.track-record') ? 'active' : '' }}">&#128099; Track Record</a>
                     <a href="{{ route('siswa.munaqosyah') }}" class="{{ request()->routeIs('siswa.munaqosyah') ? 'active' : '' }}">&#127942; Riwayat Munaqosyah</a>
-                    <a href="{{ route('siswa.no-hp.edit') }}" class="{{ request()->routeIs('siswa.no-hp.*') ? 'active' : '' }}">&#128100; Profil</a>
                 </nav>
 
                 @if(session('success'))
