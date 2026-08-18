@@ -157,19 +157,16 @@
         /* ═══ Navigation ═══ */
         .siswa-nav {
             display: flex;
+            flex-wrap: wrap;
             gap: 6px;
-            overflow-x: auto;
             padding: 8px 0 4px;
             margin-bottom: 16px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
         }
-        .siswa-nav::-webkit-scrollbar { display: none; }
         .siswa-nav a {
             white-space: nowrap;
-            padding: 8px 18px;
+            padding: 8px 14px;
             border-radius: 9999px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             text-decoration: none;
             color: var(--ink-muted);
@@ -405,6 +402,8 @@
         @media (max-width: 640px) {
             .tartil-content { padding: 16px; }
             .tartil-topbar { padding: 10px 16px; }
+            .siswa-nav { gap: 5px; }
+            .siswa-nav a { padding: 7px 12px; font-size: 11px; }
         }
         @media (hover: none) and (pointer: coarse) {
             .btn-tartil { min-height: 44px; }
