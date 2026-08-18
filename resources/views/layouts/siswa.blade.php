@@ -448,6 +448,7 @@
                     @endif
                     <a href="{{ route('siswa.perpindahan') }}" class="{{ request()->routeIs('siswa.perpindahan') ? 'active' : '' }}">&#128260; Riwayat Kelas</a>
                     <a href="{{ route('siswa.track-record') }}" class="{{ request()->routeIs('siswa.track-record') ? 'active' : '' }}">&#128099; Track Record</a>
+                    <a href="{{ route('siswa.munaqosyah') }}" class="{{ request()->routeIs('siswa.munaqosyah') ? 'active' : '' }}">&#127942; Riwayat Munaqosyah</a>
                     <a href="{{ route('siswa.no-hp.edit') }}" class="{{ request()->routeIs('siswa.no-hp.*') ? 'active' : '' }}">&#128100; Profil</a>
                 </nav>
 
