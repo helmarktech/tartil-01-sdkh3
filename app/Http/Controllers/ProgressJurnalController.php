@@ -380,11 +380,27 @@ class ProgressJurnalController extends Controller
             $hariLibur = $kelas->jumlahHariLibur($awalHitung, $endDate);
             $targetHari = max(0, $hariKerjaKelas - $hariLibur);
 
-            // Distinct tanggal jurnal yang sudah ada untuk kelas ini
-            $terisi = JurnalHarian::where('kelas_id', $kelas->id)
+            // Daftar tanggal libur untuk kelas ini dalam rentang perhitungan
+            $hariLiburList = $kelas->liburs()
+                ->whereBetween('tanggal', [$awalHitung, $endDate])
+                ->pluck('tanggal')
+                ->map(fn ($t) => \Carbon\Carbon::parse($t)->format('Y-m-d'))
+                ->toArray();
+
+            // Distinct tanggal jurnal yang sudah ada untuk kelas ini,
+            // difilter hanya yang masuk dalam target (rentang awal kelas, hari kerja, bukan libur).
+            $tanggalJurnal = JurnalHarian::where('kelas_id', $kelas->id)
                 ->where('semester_id', $semesterAktif->id)
                 ->distinct('tanggal')
-                ->count('tanggal');
+                ->pluck('tanggal');
+
+            $terisi = $tanggalJurnal->filter(function ($t) use ($awalHitung, $endDate, $hariLiburList) {
+                $tgl = \Carbon\Carbon::parse($t);
+
+                return $tgl->between($awalHitung, $endDate)
+                    && $tgl->isWeekday()
+                    && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
+            })->count();
 
             $kurang = $targetHari - $terisi;
 
