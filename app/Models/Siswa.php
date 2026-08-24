@@ -128,7 +128,7 @@ class Siswa extends Authenticatable
 
     /**
      * Hitung target pertemuan dinamis untuk siswa ini.
-     * - Siswa mutasi: hari kerja (Senin-Jumat) sejak tanggal masuk sampai akhir semester
+     * - Siswa mutasi: hari kerja (Senin-Kamis) sejak tanggal masuk sampai akhir semester
      * - Siswa biasa: target default (null = semua hari semester)
      */
     public function getTargetPertemuanDinamis(Semester $semester): ?int
@@ -138,11 +138,14 @@ class Siswa extends Authenticatable
         $start = $this->tanggal_masuk_kelas_tartil;
         $end = min($semester->tanggal_selesai, now());
 
-        // Hitung hari kerja (Senin-Jumat) antara start dan end
+        // Hitung hari kerja (Senin-Kamis) antara start dan end
         $hariKerja = 0;
         $current = $start->copy();
         while ($current->lte($end)) {
-            if ($current->isWeekday()) $hariKerja++;
+            // Hari aktif: Senin (1) - Kamis (4)
+            if ($current->dayOfWeek >= 1 && $current->dayOfWeek <= 4) {
+                $hariKerja++;
+            }
             $current->addDay();
         }
 

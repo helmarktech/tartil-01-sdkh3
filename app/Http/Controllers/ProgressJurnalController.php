@@ -402,7 +402,7 @@ class ProgressJurnalController extends Controller
                 $tgl = \Carbon\Carbon::parse($t);
 
                 return $tgl->between($awalHitung, $endDate)
-                    && $tgl->isWeekday()
+                    && $this->isHariAktif($tgl)
                     && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
             })->count();
 
@@ -410,7 +410,7 @@ class ProgressJurnalController extends Controller
             $tanggalKurang = collect();
             $current = $awalHitung->copy();
             while ($current->lte($endDate)) {
-                if ($current->isWeekday()
+                if ($this->isHariAktif($current)
                     && ! in_array($current->format('Y-m-d'), $hariLiburList)
                     && ! $tanggalTerisi->contains($current->format('Y-m-d'))
                 ) {
@@ -469,7 +469,16 @@ class ProgressJurnalController extends Controller
     }
 
     /**
-     * Hitung hari kerja (Senin-Jumat) antara dua tanggal.
+     * Cek apakah tanggal merupakan hari aktif pembelajaran (Senin-Kamis).
+     */
+    private function isHariAktif($tanggal): bool
+    {
+        // dayOfWeek: 0=Minggu, 1=Senin, 2=Selasa, 3=Rabu, 4=Kamis, 5=Jumat, 6=Sabtu
+        return $tanggal->dayOfWeek >= 1 && $tanggal->dayOfWeek <= 4;
+    }
+
+    /**
+     * Hitung hari kerja (Senin-Kamis) antara dua tanggal.
      */
     private function hitungHariKerja($mulai, $selesai): int
     {
@@ -478,7 +487,7 @@ class ProgressJurnalController extends Controller
         $end = $selesai->copy();
 
         while ($current->lte($end)) {
-            if ($current->isWeekday()) {
+            if ($this->isHariAktif($current)) {
                 $count++;
             }
             $current->addDay();
