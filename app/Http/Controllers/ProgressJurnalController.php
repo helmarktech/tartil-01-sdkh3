@@ -394,6 +394,10 @@ class ProgressJurnalController extends Controller
                 ->distinct('tanggal')
                 ->pluck('tanggal');
 
+            $tanggalTerisi = $tanggalJurnal->map(function ($t) {
+                return \Carbon\Carbon::parse($t)->format('Y-m-d');
+            });
+
             $terisi = $tanggalJurnal->filter(function ($t) use ($awalHitung, $endDate, $hariLiburList) {
                 $tgl = \Carbon\Carbon::parse($t);
 
@@ -402,7 +406,20 @@ class ProgressJurnalController extends Controller
                     && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
             })->count();
 
-            $kurang = $targetHari - $terisi;
+            // Daftar tanggal yang seharusnya diisi tetapi belum ada jurnal
+            $tanggalKurang = collect();
+            $current = $awalHitung->copy();
+            while ($current->lte($endDate)) {
+                if ($current->isWeekday()
+                    && ! in_array($current->format('Y-m-d'), $hariLiburList)
+                    && ! $tanggalTerisi->contains($current->format('Y-m-d'))
+                ) {
+                    $tanggalKurang->push($current->copy());
+                }
+                $current->addDay();
+            }
+
+            $kurang = $tanggalKurang->count();
 
             // Ambil tanggal terakhir mengisi jurnal
             $terakhir = JurnalHarian::where('kelas_id', $kelas->id)
@@ -419,6 +436,7 @@ class ProgressJurnalController extends Controller
                 'target_hari' => $targetHari,
                 'terisi' => $terisi,
                 'kurang' => max(0, $kurang),
+                'tanggal_kurang' => $tanggalKurang,
                 'persen' => $targetHari > 0 ? min(100, round(($terisi / $targetHari) * 100)) : 0,
                 'terakhir' => $terakhir,
             ];

@@ -91,8 +91,8 @@
         </div>
 
         {{-- Detail Kelas --}}
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
-            @foreach($g['kelas'] as $k)
+        @foreach($g['kelas'] as $k)
+        <div style="display: grid; grid-template-columns: {{ $k['kurang'] > 0 ? 'minmax(280px, 1fr) minmax(220px, 1fr)' : 'minmax(280px, 1fr)' }}; gap: 10px; margin-bottom: 10px;">
             <div style="border: 1px solid {{ $k['kurang'] > 0 ? '#EF9A9A' : '#C3D9C3' }}; border-radius: 6px; padding: 12px; background: {{ $k['kurang'] > 0 ? '#FFF8F8' : '#F8FBF8' }};">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
                     <div style="font-weight: 600; font-size: 13px;">{{ $k['kelas']->nama }}</div>
@@ -135,8 +135,23 @@
                 </div>
                 @endif
             </div>
-            @endforeach
+
+            @if($k['kurang'] > 0 && isset($k['tanggal_kurang']) && $k['tanggal_kurang']->count() > 0)
+            <div style="border: 1px solid #EF9A9A; border-radius: 6px; padding: 12px; background: #FFF8F8;">
+                <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #A85A52;">
+                    Detail Kurang ({{ $k['kurang'] }} hari)
+                </div>
+                <div style="max-height: 140px; overflow-y: auto;">
+                    @foreach($k['tanggal_kurang'] as $tgl)
+                    <div style="font-size: 11px; color: #4B5563; padding: 3px 0; border-bottom: 1px dashed #EF9A9A;">
+                        {{ $tgl->locale('id')->isoFormat('dddd, D MMM Y') }}
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
         </div>
+        @endforeach
     </div>
     @empty
     <div class="card-tartil" style="padding: 32px; text-align: center;">
