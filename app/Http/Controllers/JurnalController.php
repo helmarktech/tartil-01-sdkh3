@@ -112,14 +112,16 @@ class JurnalController extends Controller
             }
         }
 
-        // Auto-increment pertemuan_ke: hitung jumlah jurnal di bulan ini + 1
+        // Auto-increment pertemuan_ke: urutkan berdasarkan tanggal, bukan urutan simpan.
+        // Hitung jumlah jurnal di bulan ini yang tanggalnya lebih awal dari tanggal ini + 1.
         $pertemuanKe = $validated['pertemuan_ke'] ?? null;
         if (empty($pertemuanKe)) {
-            $countBulanIni = JurnalKelas::where('kelas_id', $kelasId)
+            $countSebelumTanggal = JurnalKelas::where('kelas_id', $kelasId)
                 ->whereYear('tanggal', date('Y', strtotime($tanggal)))
                 ->whereMonth('tanggal', date('m', strtotime($tanggal)))
+                ->where('tanggal', '<', $tanggal)
                 ->count();
-            $pertemuanKe = $countBulanIni + 1;
+            $pertemuanKe = $countSebelumTanggal + 1;
         }
 
         DB::beginTransaction();
