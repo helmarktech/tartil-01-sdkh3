@@ -238,12 +238,43 @@ class JurnalController extends Controller
                 }
             }
 
-            // 3. Update rekap bulanan
+            // 3. Pastikan semua siswa aktif di kelas memiliki baris JurnalHarian untuk tanggal ini.
+            // Siswa yang tidak dikirim penilaian disimpan dengan penilaian null agar total pertemuan konsisten antar siswa.
+            $siswaAktifIds = Siswa::where('status', 'aktif')
+                ->where('kelas_tartil_id', $kelasId)
+                ->pluck('id')
+                ->toArray();
+
+            $existingSiswaIds = JurnalHarian::where('kelas_id', $kelasId)
+                ->where('tanggal', $tanggal)
+                ->pluck('siswa_id')
+                ->toArray();
+
+            foreach (array_diff($siswaAktifIds, $existingSiswaIds) as $siswaId) {
+                JurnalHarian::create([
+                    'semester_id' => $semesterAktif->id,
+                    'kelas_id' => $kelasId,
+                    'guru_id' => $guruId,
+                    'siswa_id' => $siswaId,
+                    'tanggal' => $tanggal,
+                    'penilaian' => null,
+                    'catatan' => null,
+                    'surat_id' => $suratId,
+                    'ayat_mulai' => $ayatMulai,
+                    'ayat_selesai' => $ayatSelesai,
+                    'halaman' => $halaman,
+                    'materi' => $materi,
+                    'topik' => $topik,
+                    'rencana' => $rencana,
+                ]);
+                $inserted++;
+            }
+
+            // 4. Update rekap bulanan
             $this->updateRekapBulanan($semesterAktif->id, $kelasId, $tanggal);
 
-            // 4. Invalidate cache R2 untuk semua siswa di kelas ini
-            $siswaIds = array_column($validated['entries'], 'siswa_id');
-            \App\Models\RekapR2Akhir::whereIn('siswa_id', array_unique($siswaIds))->delete();
+            // 5. Invalidate cache R2 untuk semua siswa di kelas ini
+            \App\Models\RekapR2Akhir::whereIn('siswa_id', array_unique($siswaAktifIds))->delete();
 
             DB::commit();
             Cache::forget("rekap_kelas:{$kelasId}:{$bulan}");

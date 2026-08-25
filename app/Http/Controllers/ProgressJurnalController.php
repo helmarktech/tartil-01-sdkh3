@@ -107,6 +107,20 @@ class ProgressJurnalController extends Controller
                 ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
                 ->toArray();
 
+            // Total pertemuan kelas = unik tanggal aktif/non-libur yang sudah ada jurnal (sama untuk semua siswa)
+            $totalHariKelas = JurnalHarian::where('kelas_id', $kelasId)
+                ->where('semester_id', $semesterId)
+                ->distinct('tanggal')
+                ->pluck('tanggal')
+                ->filter(function ($t) use ($awalHitung, $endDate, $hariLiburList) {
+                    $tgl = Carbon::parse($t);
+
+                    return $tgl->between($awalHitung, $endDate)
+                        && $this->isHariAktif($tgl)
+                        && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
+                })
+                ->count();
+
             foreach ($siswas as $siswa) {
                 $jurnalRows = JurnalHarian::where('siswa_id', $siswa->id)
                     ->where('semester_id', $semesterId)
@@ -120,10 +134,13 @@ class ProgressJurnalController extends Controller
                             && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
                     });
 
-                $totalHari = $jurnalRows->count();
                 $countB = $jurnalRows->where('penilaian', 'B')->count();
                 $countC = $jurnalRows->where('penilaian', 'C')->count();
                 $countK = $jurnalRows->where('penilaian', 'K')->count();
+                $hadirDinilai = $countB + $countC + $countK;
+
+                // Total pertemuan yang ditampilkan sama untuk semua siswa (total pertemuan kelas)
+                $totalHari = $totalHariKelas;
 
                 // Penyesuaian target untuk siswa mutasi
                 $targetDinamis = null;
@@ -131,12 +148,12 @@ class ProgressJurnalController extends Controller
                 if ($siswa->isMutasi && $semester) {
                     $targetDinamis = $siswa->getTargetPertemuanDinamis($semester);
                     if ($targetDinamis && $targetDinamis > 0) {
-                        $persenSiswa = min(100, round(($totalHari / $targetDinamis) * 100));
+                        $persenSiswa = min(100, round(($hadirDinilai / $targetDinamis) * 100));
                     }
                 } else {
-                    // Siswa reguler: persentase dari target kelas
-                    $persenSiswa = $progressKelas['target'] > 0
-                        ? min(100, round(($totalHari / $progressKelas['target']) * 100))
+                    // Siswa reguler: persentase dari total pertemuan kelas
+                    $persenSiswa = $totalHariKelas > 0
+                        ? min(100, round(($hadirDinilai / $totalHariKelas) * 100))
                         : 0;
                 }
 
