@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\HafalanTahfidz;
 use App\Models\JurnalHarian;
+use App\Models\KelasLibur;
 use App\Models\MunaqosyahPendaftaran;
 use App\Models\PerpindahanKelas;
 use App\Models\RekapJurnalSemester;
 use App\Models\RekapMunaqosyahSemester;
 use App\Models\RekapR2Akhir;
 use App\Models\Semester;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class SiswaDashboardController extends Controller
@@ -33,27 +35,41 @@ class SiswaDashboardController extends Controller
 
         // Jurnal data
         // Note: 1 jurnal = 1 hari mengaji (1 entri per siswa per hari)
+        // Hanya tampilkan jurnal di hari efektif (Senin-Kamis) dan bukan hari libur kelas.
         $jurnals = collect();
         $totalJurnal = 0;
         $bCount = 0;
         $cCount = 0;
         $kCount = 0;
+        $jurnalsFiltered = collect();
 
         if ($semesterId && $siswa->kelas_tartil_id) {
-            $jurnals = JurnalHarian::where('siswa_id', $siswa->id)
+            $semuaJurnal = JurnalHarian::where('siswa_id', $siswa->id)
                 ->where('semester_id', $semesterId)
                 ->with('surat')
-                ->orderBy('tanggal', 'desc')
-                ->limit(30)
                 ->get();
 
-            $totalJurnal = JurnalHarian::where('siswa_id', $siswa->id)
-                ->where('semester_id', $semesterId)
-                ->count();
+            $start = $semester->tanggal_mulai ?? now()->startOfYear();
+            $end = min($semester->tanggal_selesai ?? now(), now());
 
-            $bCount = JurnalHarian::where('siswa_id', $siswa->id)->where('semester_id', $semesterId)->where('penilaian', 'B')->count();
-            $cCount = JurnalHarian::where('siswa_id', $siswa->id)->where('semester_id', $semesterId)->where('penilaian', 'C')->count();
-            $kCount = JurnalHarian::where('siswa_id', $siswa->id)->where('semester_id', $semesterId)->where('penilaian', 'K')->count();
+            $hariLiburList = KelasLibur::where('kelas_id', $siswa->kelas_tartil_id)
+                ->whereBetween('tanggal', [$start, $end])
+                ->pluck('tanggal')
+                ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
+                ->toArray();
+
+            $jurnalsFiltered = $semuaJurnal->filter(function ($j) use ($hariLiburList) {
+                $tgl = $j->tanggal;
+
+                return $tgl->dayOfWeek >= 1 && $tgl->dayOfWeek <= 4
+                    && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
+            });
+
+            $jurnals = $jurnalsFiltered->sortByDesc('tanggal')->take(30)->values();
+            $totalJurnal = $jurnalsFiltered->count();
+            $bCount = $jurnalsFiltered->where('penilaian', 'B')->count();
+            $cCount = $jurnalsFiltered->where('penilaian', 'C')->count();
+            $kCount = $jurnalsFiltered->where('penilaian', 'K')->count();
         }
 
         // 1 jurnal = 1 hari mengaji (1 entri = 1 kali pertemuan/hari)
@@ -118,6 +134,7 @@ class SiswaDashboardController extends Controller
         }
 
         // Bulan data + perubahan persentase
+        // Menggunakan data jurnal yang sudah difilter (hari efektif saja)
         $bulanData = [];
         $prevPct = null;
         if ($semesterId && $siswa->kelas_tartil_id) {
@@ -127,8 +144,8 @@ class SiswaDashboardController extends Controller
             while ($current <= $end) {
                 $tahun = $current->year;
                 $bln = $current->month;
-                $jB = JurnalHarian::where('siswa_id', $siswa->id)->where('semester_id', $semesterId)->whereYear('tanggal', $tahun)->whereMonth('tanggal', $bln)->where('penilaian', 'B')->count();
-                $jTotal = JurnalHarian::where('siswa_id', $siswa->id)->where('semester_id', $semesterId)->whereYear('tanggal', $tahun)->whereMonth('tanggal', $bln)->count();
+                $jB = $jurnalsFiltered->filter(fn ($j) => $j->tanggal->year == $tahun && $j->tanggal->month == $bln && $j->penilaian == 'B')->count();
+                $jTotal = $jurnalsFiltered->filter(fn ($j) => $j->tanggal->year == $tahun && $j->tanggal->month == $bln)->count();
                 $pct = $jTotal > 0 ? round(($jB / $jTotal) * 100) : 0;
 
                 // Hitung keterangan perubahan vs bulan sebelumnya

@@ -265,6 +265,38 @@ class ProgressJurnalController extends Controller
     // ═══════════════════════════════════════════════════
 
     /**
+     * Tampilkan daftar hari libur dan form tandai libur massal.
+     */
+    public function liburIndex(Request $request)
+    {
+        $semesterAktif = Semester::aktif()->first();
+
+        $liburList = collect();
+        if ($semesterAktif) {
+            $mulai = $semesterAktif->tanggal_mulai;
+            $selesai = min($semesterAktif->tanggal_selesai, now());
+
+            $liburList = KelasLibur::with('kelas')
+                ->whereBetween('tanggal', [$mulai, $selesai])
+                ->orderBy('tanggal', 'desc')
+                ->get()
+                ->groupBy(fn ($l) => $l->tanggal->format('Y-m-d'))
+                ->map(function ($items, $tgl) {
+                    return [
+                        'tanggal' => \Carbon\Carbon::parse($tgl),
+                        'keterangan' => $items->first()->keterangan,
+                        'jumlah_kelas' => $items->count(),
+                        'contoh_kelas' => $items->first()->kelas?->nama ?? '-',
+                        'items' => $items,
+                    ];
+                })
+                ->values();
+        }
+
+        return view('admin.libur.index', compact('semesterAktif', 'liburList'));
+    }
+
+    /**
      * Tandai hari libur untuk kelas tertentu atau semua kelas aktif.
      */
     public function liburStore(Request $request)
@@ -333,7 +365,7 @@ class ProgressJurnalController extends Controller
      * Monitoring guru yang belum mengisi jurnal.
      *
      * Logika (dengan penyesuaian hari libur per kelas):
-     * 1. Hitung hari kerja (Senin-Jumat) dari awal semester sampai hari ini
+     * 1. Hitung hari kerja (Senin-Kamis) dari awal semester sampai hari ini
      * 2. Kurangi hari libur yang sudah ditandai per kelas
      * 3. Target per kelas = hari kerja − hari libur kelas tersebut
      * 4. Terisi = distinct tanggal jurnal yang sudah ada
@@ -352,7 +384,7 @@ class ProgressJurnalController extends Controller
 
         $endDate = min($semesterAktif->tanggal_selesai, now());
 
-        // Hitung hari kerja dasar (Senin-Jumat)
+        // Hitung hari kerja dasar (Senin-Kamis)
         $hariKerjaDasar = $this->hitungHariKerja($semesterAktif->tanggal_mulai, $endDate);
 
         // Ambil semua kelas aktif dengan guru
@@ -503,7 +535,7 @@ class ProgressJurnalController extends Controller
     /**
      * Progress Jurnal:
      * Persentase = distinct tanggal kelas ini / target hari di semester
-     * Target = hari kerja (Senin-Jumat) − hari libur yang ditandai untuk kelas ini
+     * Target = hari kerja (Senin-Kamis) − hari libur yang ditandai untuk kelas ini
      */
     private function hitungProgressJurnal($kelasId, $semesterIds): array
     {
@@ -545,7 +577,7 @@ class ProgressJurnalController extends Controller
      * Progress Absensi:
      * Persentase = total jurnal terisi / (jumlah_siswa × jumlah_hari_efektif) × 100
      *
-     * jumlah_hari_efektif = hari kerja (Senin-Jumat) − hari libur yang ditandai
+     * jumlah_hari_efektif = hari kerja (Senin-Kamis) − hari libur yang ditandai
      * total_yang_seharusnya = setiap siswa seharusnya punya jurnal di setiap hari efektif
      * terisi = baris jurnal yang sudah ada (dengan nilai B/C/K)
      */

@@ -168,55 +168,6 @@
         @endif
     </div>
 
-    {{-- Form Tandai Hari Libur --}}
-    @php
-        $liburList = $kelas->liburs()
-            ->whereBetween('tanggal', [$semester->tanggal_mulai, min($semester->tanggal_selesai, now())])
-            ->orderBy('tanggal', 'desc')
-            ->get();
-    @endphp
-    <div class="card-tartil" style="padding: 16px; margin-bottom: 16px; background: #faf8f5;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h4 style="font-size: 13px; font-weight: 600; margin: 0; color: var(--text-primary);">Hari Libur Kelas {{ $kelas->nama }}</h4>
-            <span style="font-size: 11px; color: var(--text-muted);">{{ $liburList->count() }} hari ditandai</span>
-        </div>
-
-        <form method="POST" action="{{ route('admin.kelas-libur.store') }}" style="margin-bottom: 10px;">
-            @csrf
-            <input type="hidden" name="kelas_id" value="{{ $kelas->id }}">
-            <div style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 8px;">
-                <div>
-                    <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Tanggal</label>
-                    <input type="date" name="tanggal" class="form-input" required style="font-size: 12px; padding: 5px 8px; width: 140px;">
-                </div>
-                <div style="flex: 1; min-width: 150px;">
-                    <label style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;">Keterangan</label>
-                    <input type="text" name="keterangan" class="form-input" required placeholder="Contoh: Kegiatan OSIS" style="font-size: 12px; padding: 5px 8px; width: 100%;">
-                </div>
-                <button type="submit" class="btn-tartil" style="font-size: 11px; padding: 6px 12px; white-space: nowrap;">+ Tandai Libur</button>
-            </div>
-            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer;">
-                <input type="checkbox" name="semua_kelas" value="1" style="cursor: pointer;">
-                <span>Terapkan untuk semua kelas aktif</span>
-            </label>
-        </form>
-
-        @if($liburList->count() > 0)
-        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-            @foreach($liburList as $libur)
-            <div style="display: inline-flex; align-items: center; gap: 4px; background: #FFF8E1; border: 1px solid #FFE082; border-radius: 4px; padding: 3px 8px; font-size: 11px; color: #856404;">
-                <span>{{ $libur->tanggal->format('d/m/Y') }} — {{ $libur->keterangan }}</span>
-                <form method="POST" action="{{ route('admin.kelas-libur.destroy', $libur) }}" style="display: inline;" onsubmit="return confirm('Hapus tanda libur ini?')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" style="background: none; border: none; color: #B8860B; cursor: pointer; font-size: 13px; padding: 0 2px;">&times;</button>
-                </form>
-            </div>
-            @endforeach
-        </div>
-        @endif
-    </div>
-
     <div class="card-tartil table-responsive">
         <table class="table-tartil">
             <thead>

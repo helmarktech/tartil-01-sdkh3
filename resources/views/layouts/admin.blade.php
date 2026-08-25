@@ -160,7 +160,7 @@
                 $munaqosyahOpen = str_contains($p, 'admin/munaqosyah') || str_contains($p, 'admin/munaqosyah-rekap');
 
                 // ====== JURNAL GROUP ======
-                $jurnalOpen = str_contains($p, 'admin/rekap-jurnal') || str_contains($p, 'admin/progress-jurnal') || str_contains($p, 'admin/progress-absensi') || str_contains($p, 'admin/jurnal') || str_contains($p, 'admin/jurnal-bulanan') || str_contains($p, 'admin/monitoring-guru');
+                $jurnalOpen = str_contains($p, 'admin/rekap-jurnal') || str_contains($p, 'admin/progress-jurnal') || str_contains($p, 'admin/progress-absensi') || str_contains($p, 'admin/jurnal') || str_contains($p, 'admin/jurnal-bulanan') || str_contains($p, 'admin/monitoring-guru') || str_contains($p, 'admin/kelas-libur');
 
                 // ====== RIWAYAT SISWA GROUP ======
                 $riwayatSiswaOpen = str_contains($p, 'admin/riwayat-siswa') || str_contains($p, 'admin/track-record');
@@ -315,6 +315,7 @@
                             </a>
                             <a href="{{ route('admin.jurnal-bulanan') }}" class="nav-subitem {{ str_contains($p, 'admin/jurnal-bulanan') ? 'active' : '' }}">Rekap Jurnal</a>
                             <a href="{{ route('admin.rekap-jurnal') }}" class="nav-subitem {{ str_contains($p, 'admin/rekap-jurnal') ? 'active' : '' }}">Rekap Absensi</a>
+                            <a href="{{ route('admin.kelas-libur.index') }}" class="nav-subitem {{ str_contains($p, 'admin/kelas-libur') ? 'active' : '' }}">Hari Libur</a>
                         </div>
                     </div>
 
