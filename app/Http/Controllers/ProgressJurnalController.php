@@ -316,6 +316,7 @@ class ProgressJurnalController extends Controller
         $semesterAktif = Semester::aktif()->first();
 
         $liburList = collect();
+        $kelasAktif = collect();
         if ($semesterAktif) {
             $mulai = $semesterAktif->tanggal_mulai;
             $selesai = min($semesterAktif->tanggal_selesai, now());
@@ -335,9 +336,22 @@ class ProgressJurnalController extends Controller
                     ];
                 })
                 ->values();
+
+            $kelasAktif = Kelas::where('status', 'aktif')
+                ->with('guru')
+                ->orderBy('nama')
+                ->get()
+                ->map(function ($k) use ($semesterAktif) {
+                    $awalHitung = $k->getAwalHitungHari($semesterAktif->tanggal_mulai);
+
+                    return [
+                        'kelas' => $k,
+                        'tanggal_mulai_efektif' => $awalHitung,
+                    ];
+                });
         }
 
-        return view('admin.libur.index', compact('semesterAktif', 'liburList'));
+        return view('admin.libur.index', compact('semesterAktif', 'liburList', 'kelasAktif'));
     }
 
     /**
