@@ -14,54 +14,66 @@ use Illuminate\Http\Request;
 
 class TahfidzController extends Controller
 {
-    // ==================== ADMIN: INDEX (REKAP KELAS TARTIL) ====================
+    // ==================== ADMIN: INDEX (3 STEP: SEMESTER → KELAS → REKAP) ====================
     public function adminIndex(Request $request)
     {
         $semesterAktif = Semester::aktif()->first();
-        $selectedSemester = $request->filled('semester_id')
-            ? Semester::find($request->semester_id)
-            : null;
-        $semester = $selectedSemester ?? $semesterAktif;
+        $semesterId = $request->filled('semester_id') ? (int) $request->semester_id : null;
+        $semester = $semesterId ? Semester::find($semesterId) : null;
+
+        $kelasId = $request->filled('kelas_id') ? (int) $request->kelas_id : null;
+        $kelasTerpilih = null;
 
         $juzSelected = (int) $request->get('juz', 0);
         if ($juzSelected < 1 || $juzSelected > 30) {
             $juzSelected = 0;
         }
 
-        $kelasList = Kelas::where('status', 'aktif')
-            ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
-            ->get();
+        $juzSurat = collect();
+        $persentaseJuz = [];
+        $kelasList = null;
+        $kelasListOptions = null;
 
-        $kelasList = $kelasList->map(function ($k) use ($semester, $semesterAktif) {
+        // Step 3: tampilkan rekap kelas yang dipilih
+        if ($semester && $kelasId) {
+            $kelasTerpilih = Kelas::where('status', 'aktif')
+                ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
+                ->findOrFail($kelasId);
+
             $siswaIds = null;
-            if ($semester && $semester->id !== $semesterAktif?->id) {
+            if ($semester->id !== $semesterAktif?->id) {
                 $siswaIds = SemesterSiswa::where('semester_id', $semester->id)
-                    ->where('kelas_id', $k->id)
+                    ->where('kelas_id', $kelasTerpilih->id)
                     ->pluck('siswa_id')
                     ->toArray();
             }
 
-            $rekap = HafalanTahfidz::cacheStore()->remember(
-                HafalanTahfidz::cacheKeyRekapKelas($k->id, $semester->id),
+            $kelasTerpilih->rekap = HafalanTahfidz::cacheStore()->remember(
+                HafalanTahfidz::cacheKeyRekapKelas($kelasTerpilih->id, $semester->id),
                 now()->addHours(6),
-                fn () => HafalanTahfidz::rekapPerKelasSampaiSemester($k->id, $semester, $siswaIds)
+                fn () => HafalanTahfidz::rekapPerKelasSampaiSemester($kelasTerpilih->id, $semester, $siswaIds)
             );
-            $k->rekap = $rekap;
-            $k->avgJuz = count($rekap['perSiswa']) > 0
-                ? round(collect($rekap['perSiswa'])->avg('juzHafal'), 1)
+            $kelasTerpilih->avgJuz = count($kelasTerpilih->rekap['perSiswa'] ?? []) > 0
+                ? round(collect($kelasTerpilih->rekap['perSiswa'])->avg('juzHafal'), 1)
                 : 0;
 
-            return $k;
-        });
+            $juzSurat = $juzSelected
+                ? HafalanTahfidz::suratDalamJuz($juzSelected)
+                : collect();
 
-        $juzSurat = $juzSelected
-            ? HafalanTahfidz::suratDalamJuz($juzSelected)
-            : collect();
+            $persentaseJuz = $juzSelected
+                ? $this->buildPersentaseJuz(collect([$kelasTerpilih]), $juzSelected, $semester)
+                : [];
+        }
 
-        $persentaseJuz = $juzSelected
-            ? $this->buildPersentaseJuz($kelasList, $juzSelected, $semester)
-            : [];
+        // Step 2: pilih kelas (semester sudah dipilih)
+        if ($semester && ! $kelasId) {
+            $kelasListOptions = Kelas::where('status', 'aktif')
+                ->orderBy('nama')
+                ->get();
+        }
 
+        // Step 1: pilih semester
         $tahunAjaranList = TahunAjaran::orderBy('nama', 'desc')->get();
         $semesterMap = Semester::orderBy('tanggal_mulai')
             ->get()
@@ -70,7 +82,9 @@ class TahfidzController extends Controller
             ->toArray();
 
         return view('admin.tahfidz.index', compact(
-            'kelasList', 'semester', 'semesterAktif', 'juzSelected', 'juzSurat', 'persentaseJuz',
+            'kelasList', 'kelasListOptions', 'kelasTerpilih',
+            'semester', 'semesterAktif', 'semesterId', 'kelasId',
+            'juzSelected', 'juzSurat', 'persentaseJuz',
             'tahunAjaranList', 'semesterMap'
         ));
     }
