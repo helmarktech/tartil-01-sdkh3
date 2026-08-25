@@ -1194,63 +1194,41 @@ class AdminController extends Controller
         return view('admin.tahun-ajaran.index', compact('tahunAjarans', 'semesters', 'taAktif'));
     }
 
-    public function tahunAjaranStore(Request $request)
+    public function tahunAjaranStorePreview(Request $request)
     {
         $validated = $request->validate([
             'nama' => 'required|max:20|unique:tahun_ajaran,nama',
             'tanggal_mulai' => 'required|date',
         ]);
 
-        // === VALIDASI: Hanya boleh 1x per TA baru ===
-        // 1. Cek apakah sudah ada semester untuk TA ini
-        $semesterSudahAda = Semester::where('tahun_ajaran', $validated['nama'])->exists();
-        if ($semesterSudahAda) {
-            return back()->with('error', 'TA "'.$validated['nama'].'" sudah pernah dibuat. Pembuatan TA hanya boleh dilakukan sekali.');
+        $error = $this->validasiBuatTA($validated);
+        if ($error) {
+            return back()->with('error', $error);
         }
 
-        // 2. Cek apakah ada TA yang benar-benar aktif (masih punya semester aktif)
-        $taAktif = TahunAjaran::aktif()->first();
-        if ($taAktif && $taAktif->isBenarAktif()) {
-            return back()->with('error', 'TA "'.$taAktif->nama.'" masih aktif. Tutup semesternya terlebih dahulu sebelum membuat TA baru.');
-        }
-        // Jika TA "aktif" tapi semua semesternya sudah ditutup, otomatis tutup TA-nya
-        if ($taAktif && $taAktif->isSemuaSemesterDitutup()) {
-            $taAktif->update(['status' => 'ditutup']);
-        }
+        $kelasTartil = Kelas::where('status', 'aktif')->with('guru')->orderBy('nama')->get();
+        $tglMulaiDefault = Carbon::parse($validated['tanggal_mulai'])->format('Y-m-d');
 
-        // 3. Cek apakah ada semester aktif
-        $semesterAktif = Semester::aktif()->first();
-        if ($semesterAktif) {
-            return back()->with('error', 'Semester "'.$semesterAktif->nama.'" masih aktif. Nonaktifkan semester lama terlebih dahulu.');
-        }
+        return view('admin.tahun-ajaran.confirm', compact('validated', 'kelasTartil', 'tglMulaiDefault'));
+    }
 
-        // 4. VALIDASI: Kelas aktif jenjang 1-5 yang punya siswa harus punya kelas tujuan (jenjang+1, rombel sama)
-        $kelasTanpaTujuan = [];
-        for ($jenjang = 5; $jenjang >= 1; $jenjang--) {
-            $kelasLamaList = KelasReguler::where('jenjang', $jenjang)->where('is_aktif', true)->get();
-            foreach ($kelasLamaList as $kl) {
-                // Hanya validasi kelas yang punya siswa aktif
-                $jumlahSiswa = Siswa::where('kelas_reguler_id', $kl->id)->where('status', 'aktif')->count();
-                if ($jumlahSiswa === 0) {
-                    continue;
-                } // kelas kosong, skip validasi
+    public function tahunAjaranStore(Request $request)
+    {
+        $validated = $request->validate([
+            'nama' => 'required|max:20|unique:tahun_ajaran,nama',
+            'tanggal_mulai' => 'required|date',
+            'tanggal_dimulai' => 'required|array',
+            'tanggal_dimulai.*' => 'nullable|date',
+        ]);
 
-                $kb = KelasReguler::where('jenjang', $jenjang + 1)
-                    ->where('tingkat', $kl->tingkat)
-                    ->where('is_aktif', true)
-                    ->first();
-                if (! $kb) {
-                    $kelasTanpaTujuan[] = "{$kl->nama} (jenjang {$jenjang} → ".($jenjang + 1).", rombel {$kl->tingkat}, {$jumlahSiswa} siswa)";
-                }
-            }
-        }
-        if (! empty($kelasTanpaTujuan)) {
-            $daftar = implode(', ', $kelasTanpaTujuan);
-
-            return back()->with('error', 'Pembuatan TA dibatalkan. Kelas tujuan tidak ditemukan untuk: '.$daftar.'. Silakan buat kelas tujuan terlebih dahulu di menu Kelas Reguler.');
+        $error = $this->validasiBuatTA($validated);
+        if ($error) {
+            return back()->with('error', $error);
         }
 
-        return \DB::transaction(function () use ($validated) {
+        $tanggalDimulai = $validated['tanggal_dimulai'];
+
+        return \DB::transaction(function () use ($validated, $tanggalDimulai) {
             $log = [];
 
             // === STEP 1: Tutup TA lama + semester lama ===
@@ -1287,7 +1265,6 @@ class AdminController extends Controller
             }
 
             // Kelas 5→6, 4→5, 3→4, 2→3, 1→2 (rombel tetap)
-            // Sudah divalidasi di atas, semua kelas punya tujuan
             for ($jenjang = 5; $jenjang >= 1; $jenjang--) {
                 $kelasLamaList = KelasReguler::where('jenjang', $jenjang)->where('is_aktif', true)->get();
                 foreach ($kelasLamaList as $kl) {
@@ -1297,11 +1274,10 @@ class AdminController extends Controller
                         ->first();
                     if (! $kb) {
                         continue;
-                    } // skip kalau tidak ada kelas tujuan (kelas kosong)
+                    }
 
                     $siswaList = Siswa::where('kelas_reguler_id', $kl->id)->where('status', 'aktif')->get();
                     foreach ($siswaList as $s) {
-                        // Naik kelas reguler + reset status mutasi (jadi reguler di TA baru)
                         $s->update([
                             'kelas_reguler_id' => $kb->id,
                             'tanggal_masuk_kelas_tartil' => null,
@@ -1347,8 +1323,16 @@ class AdminController extends Controller
             ]);
             $log[] = "Semester Genap {$semGenap->nama} dibuat";
 
-            // === STEP 5: Snapshot kelas tartil + siswa aktif ke semester ganjil ===
+            // === STEP 5: Atur tanggal dimulai per kelas tartil ===
             $kelasTartil = Kelas::where('status', 'aktif')->get();
+            foreach ($kelasTartil as $k) {
+                $k->update([
+                    'tanggal_dimulai' => $tanggalDimulai[$k->id] ?? $tglMulai,
+                ]);
+            }
+            $log[] = "Tanggal mulai diatur untuk {$kelasTartil->count()} kelas tartil";
+
+            // === STEP 6: Snapshot kelas tartil + siswa aktif ke semester ganjil ===
             foreach ($kelasTartil as $k) {
                 $jumlah = Siswa::where('kelas_tartil_id', $k->id)->where('status', 'aktif')->count();
                 SemesterKelas::create([
@@ -1375,6 +1359,57 @@ class AdminController extends Controller
             return redirect()->route('admin.tahun-ajaran.index')
                 ->with('success', "TA {$taBaru->nama} berhasil dibuat. ".implode('. ', $log).'.');
         });
+    }
+
+    /**
+     * Validasi bersama sebelum preview/proses pembuatan TA.
+     * Mengembalikan string error atau null jika lolos.
+     */
+    private function validasiBuatTA(array $validated): ?string
+    {
+        // 1. Cek apakah sudah ada semester untuk TA ini
+        if (Semester::where('tahun_ajaran', $validated['nama'])->exists()) {
+            return 'TA "'.$validated['nama'].'" sudah pernah dibuat. Pembuatan TA hanya boleh dilakukan sekali.';
+        }
+
+        // 2. Cek apakah ada TA yang benar-benar aktif
+        $taAktif = TahunAjaran::aktif()->first();
+        if ($taAktif && $taAktif->isBenarAktif()) {
+            return 'TA "'.$taAktif->nama.'" masih aktif. Tutup semesternya terlebih dahulu sebelum membuat TA baru.';
+        }
+        if ($taAktif && $taAktif->isSemuaSemesterDitutup()) {
+            $taAktif->update(['status' => 'ditutup']);
+        }
+
+        // 3. Cek apakah ada semester aktif
+        if (Semester::aktif()->first()) {
+            return 'Semester masih aktif. Nonaktifkan semester lama terlebih dahulu.';
+        }
+
+        // 4. VALIDASI: Kelas aktif jenjang 1-5 yang punya siswa harus punya kelas tujuan
+        $kelasTanpaTujuan = [];
+        for ($jenjang = 5; $jenjang >= 1; $jenjang--) {
+            $kelasLamaList = KelasReguler::where('jenjang', $jenjang)->where('is_aktif', true)->get();
+            foreach ($kelasLamaList as $kl) {
+                $jumlahSiswa = Siswa::where('kelas_reguler_id', $kl->id)->where('status', 'aktif')->count();
+                if ($jumlahSiswa === 0) {
+                    continue;
+                }
+
+                $kb = KelasReguler::where('jenjang', $jenjang + 1)
+                    ->where('tingkat', $kl->tingkat)
+                    ->where('is_aktif', true)
+                    ->first();
+                if (! $kb) {
+                    $kelasTanpaTujuan[] = "{$kl->nama} (jenjang {$jenjang} → ".($jenjang + 1).", rombel {$kl->tingkat}, {$jumlahSiswa} siswa)";
+                }
+            }
+        }
+        if (! empty($kelasTanpaTujuan)) {
+            return 'Pembuatan TA dibatalkan. Kelas tujuan tidak ditemukan untuk: '.implode(', ', $kelasTanpaTujuan).'. Silakan buat kelas tujuan terlebih dahulu di menu Kelas Reguler.';
+        }
+
+        return null;
     }
 
     public function semesterTutup(Semester $semester)

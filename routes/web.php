@@ -104,6 +104,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Tahun Ajaran (auto buat ganjil+genap + kenaikan kelas + snapshot)
     Route::get('/tahun-ajaran', [AdminController::class, 'tahunAjaranIndex'])->name('tahun-ajaran.index');
+    Route::post('/tahun-ajaran/preview', [AdminController::class, 'tahunAjaranStorePreview'])->name('tahun-ajaran.preview');
     Route::post('/tahun-ajaran', [AdminController::class, 'tahunAjaranStore'])->name('tahun-ajaran.store');
     Route::post('/tahun-ajaran/{tahunAjaran}/tutup', [AdminController::class, 'tahunAjaranTutup'])->name('tahun-ajaran.tutup');
 

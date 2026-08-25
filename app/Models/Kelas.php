@@ -10,10 +10,11 @@ class Kelas extends Model
     protected $table = 'kelas';
     protected $fillable = [
         'nama', 'jenis', 'mata_pelajaran', 'deskripsi',
-        'guru_id', 'status', 'tanggal_dibuat'
+        'guru_id', 'status', 'tanggal_dibuat', 'tanggal_dimulai'
     ];
     protected $casts = [
         'tanggal_dibuat' => 'date',
+        'tanggal_dimulai' => 'date',
     ];
 
     public function guru()
@@ -75,11 +76,19 @@ class Kelas extends Model
 
     /**
      * Ambil tanggal awal untuk perhitungan target hari.
-     * Kalau kelas baru (punya tanggal_dibuat), pakai tanggal_dibuat.
-     * Kalau kelas lama, pakai awal semester.
+     * Prioritas: tanggal_dimulai > tanggal_dibuat > awal semester.
+     * tanggal_dimulai diisi admin saat tutup/buat semester baru.
      */
     public function getAwalHitungHari(\Carbon\Carbon $semesterMulai): \Carbon\Carbon
     {
-        return $this->tanggal_dibuat ?? $semesterMulai;
+        if ($this->tanggal_dimulai) {
+            return \Carbon\Carbon::parse($this->tanggal_dimulai);
+        }
+
+        if ($this->tanggal_dibuat) {
+            return \Carbon\Carbon::parse($this->tanggal_dibuat);
+        }
+
+        return $semesterMulai;
     }
 }
