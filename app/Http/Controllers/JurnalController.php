@@ -5,15 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 use App\Models\JurnalHarian;
 use App\Models\JurnalKelas;
-use App\Models\RekapJurnalBulanan;
 use App\Models\Kelas;
+use App\Models\KelasLibur;
 use App\Models\KelasReguler;
-use App\Models\Siswa;
+use App\Models\RekapJurnalBulanan;
 use App\Models\Semester;
-use App\Models\SemesterSiswa;
 use App\Models\SemesterKelas;
+use App\Models\SemesterSiswa;
+use App\Models\Siswa;
 use App\Models\Surat;
 
 class JurnalController extends Controller
@@ -102,6 +104,7 @@ class JurnalController extends Controller
         $guruId = $guru?->id ?? auth()->guard('web')->user()?->id;
         $kelasId = $validated['kelas_id'];
         $tanggal = $validated['tanggal'];
+        $tanggalCarbon = Carbon::parse($tanggal);
         $bulan = (int) date('Ym', strtotime($tanggal));
 
         // Validasi wali kelas
@@ -110,6 +113,20 @@ class JurnalController extends Controller
             if (!$isWaliKelas) {
                 return response()->json(['error' => 'Anda bukan wali kelas untuk kelas ini.'], 403);
             }
+        }
+
+        // Validasi hari aktif dan hari libur
+        if (! $this->isHariAktif($tanggalCarbon)) {
+            return response()->json(['error' => 'Tidak dapat mengisi jurnal di hari non-aktif (Jumat-Minggu).'], 422);
+        }
+
+        $kelas = Kelas::find($kelasId);
+        $semesterMulai = $semesterAktif->tanggal_mulai ?? $semesterAktif->tahunAjaran?->tanggal_mulai ?? now()->startOfYear();
+        $awalHitung = $kelas?->getAwalHitungHari($semesterMulai) ?? $semesterMulai;
+        $hariLiburList = $this->getHariLiburList($kelasId, $awalHitung, min($semesterAktif->tanggal_selesai, now()));
+
+        if (in_array($tanggalCarbon->format('Y-m-d'), $hariLiburList)) {
+            return response()->json(['error' => 'Tanggal ini ditandai sebagai hari libur untuk kelas ini.'], 422);
         }
 
         // Auto-increment pertemuan_ke: urutkan berdasarkan tanggal, bukan urutan simpan.
@@ -499,38 +516,44 @@ class JurnalController extends Controller
                       ->whereMonth('tanggal', (int) $bulan);
             }
 
-            $jurnals = $query->select('siswa_id',
-                    DB::raw('COUNT(*) as total_hadir'),
-                    DB::raw("SUM(CASE WHEN penilaian = 'B' THEN 1 ELSE 0 END) as count_b"),
-                    DB::raw("SUM(CASE WHEN penilaian = 'C' THEN 1 ELSE 0 END) as count_c"),
-                    DB::raw("SUM(CASE WHEN penilaian = 'K' THEN 1 ELSE 0 END) as count_k"),
-                    DB::raw('AVG(CASE 
-                        WHEN penilaian = "B" THEN 100 
-                        WHEN penilaian = "C" THEN 67 
-                        WHEN penilaian = "K" THEN 33 
-                        ELSE 0 END) as rata_rata')
-                )
-                ->groupBy('siswa_id')
-                ->get();
+            // Filter hanya hari aktif (Senin-Kamis) dan bukan hari libur kelas
+            $kelas = Kelas::find($kelasId);
+            $semesterMulai = $semester->tanggal_mulai ?? $semester->tahunAjaran?->tanggal_mulai ?? now()->startOfYear();
+            $awalHitung = $kelas?->getAwalHitungHari($semesterMulai) ?? $semesterMulai;
+            $batasAkhir = min(Carbon::parse($semester->tanggal_selesai ?? now()), now());
+            $hariLiburList = $this->getHariLiburList($kelasId, Carbon::parse($awalHitung), $batasAkhir);
+
+            $rows = $query->select('siswa_id', 'tanggal', 'penilaian')->get();
+            $filteredRows = $rows->filter(function ($row) use ($hariLiburList) {
+                $t = Carbon::parse($row->tanggal);
+                return $this->isHariAktif($t) && !in_array($t->format('Y-m-d'), $hariLiburList);
+            });
 
             // Ambil data siswa (termasuk yang sudah lulus/nonaktif)
-            $siswaIds = $jurnals->pluck('siswa_id')->toArray();
+            $siswaIds = $filteredRows->pluck('siswa_id')->unique()->toArray();
             $siswaDariRekap = Siswa::whereIn('id', $siswaIds)
                 ->select('id', 'nis', 'nama', 'status')
                 ->get()
                 ->keyBy('id');
 
-            // Format menjadi collection yang kompatibel dengan view
-            $rekap = $jurnals->mapWithKeys(function ($j) use ($siswaDariRekap) {
-                $siswa = $siswaDariRekap->get($j->siswa_id);
-                return [$j->siswa_id => collect([(object)[
-                    'siswa_id' => $j->siswa_id,
+            // Aggregate manual per siswa
+            $grouped = $filteredRows->groupBy('siswa_id');
+            $rekap = $grouped->mapWithKeys(function ($items, $siswaId) use ($siswaDariRekap) {
+                $siswa = $siswaDariRekap->get($siswaId);
+                $b = $items->where('penilaian', 'B')->count();
+                $c = $items->where('penilaian', 'C')->count();
+                $k = $items->where('penilaian', 'K')->count();
+                $total = $items->count();
+                $rataRata = $total > 0 ? round((($b * 100) + ($c * 67) + ($k * 33)) / $total, 2) : 0;
+
+                return [$siswaId => collect([(object)[
+                    'siswa_id' => $siswaId,
                     'siswa' => $siswa,
-                    'total_hadir' => $j->total_hadir,
-                    'count_b' => $j->count_b,
-                    'count_c' => $j->count_c,
-                    'count_k' => $j->count_k,
-                    'rata_rata' => round((float) $j->rata_rata, 2),
+                    'total_hadir' => $total,
+                    'count_b' => $b,
+                    'count_c' => $c,
+                    'count_k' => $k,
+                    'rata_rata' => $rataRata,
                 ]])];
             });
         }
@@ -553,13 +576,23 @@ class JurnalController extends Controller
             $year = (int) substr(str_replace('-', '', $bulan), 0, 4);
             $month = (int) substr(str_replace('-', '', $bulan), 4, 2);
 
-            $jurnals = JurnalKelas::where('semester_id', $semesterId)
+            $semester = Semester::find($semesterId);
+            $semesterMulai = $semester?->tanggal_mulai ?? now()->startOfYear();
+            $batasAkhir = min(Carbon::parse($semester?->tanggal_selesai ?? now()), now());
+            $hariLiburList = $this->getHariLiburList($kelasId, Carbon::parse($semesterMulai), $batasAkhir);
+
+            $rawJurnals = JurnalKelas::where('semester_id', $semesterId)
                 ->where('kelas_id', $kelasId)
                 ->whereYear('tanggal', $year)
                 ->whereMonth('tanggal', $month)
                 ->with('kelas', 'guru', 'surat')
                 ->orderBy('tanggal')
                 ->get();
+
+            $jurnals = $rawJurnals->filter(function ($jk) use ($hariLiburList) {
+                $t = Carbon::parse($jk->tanggal);
+                return $this->isHariAktif($t) && !in_array($t->format('Y-m-d'), $hariLiburList);
+            })->values();
         }
 
         return view('admin.jurnal.daftar', compact(
@@ -667,6 +700,15 @@ class JurnalController extends Controller
                 ->orderBy('tanggal')
                 ->pluck('tanggal');
 
+            // Filter hanya hari aktif (Senin-Kamis) dan bukan hari libur kelas
+            $semesterMulai = $semester->tanggal_mulai ?? now()->startOfYear();
+            $batasAkhir = min(Carbon::parse($semester->tanggal_selesai ?? now()), now());
+            $hariLiburList = $this->getHariLiburList($kelasId, Carbon::parse($semesterMulai), $batasAkhir);
+
+            $tanggalUnik = $tanggalUnik->filter(function ($tgl) use ($hariLiburList) {
+                return $this->isHariAktif($tgl) && !in_array($tgl->format('Y-m-d'), $hariLiburList);
+            })->values();
+
             // Ambil detail jurnal kelas jika ada (materi, rencana, catatan)
             $jurnalKelasQuery = JurnalKelas::where('kelas_id', $kelasId)
                 ->where('semester_id', $semesterId);
@@ -769,5 +811,26 @@ class JurnalController extends Controller
                 ]
             );
         }
+    }
+
+    /**
+     * Cek apakah tanggal merupakan hari aktif pembelajaran (Senin-Kamis).
+     */
+    private function isHariAktif($tanggal): bool
+    {
+        // dayOfWeek: 0=Minggu, 1=Senin, 2=Selasa, 3=Rabu, 4=Kamis, 5=Jumat, 6=Sabtu
+        return $tanggal->dayOfWeek >= 1 && $tanggal->dayOfWeek <= 4;
+    }
+
+    /**
+     * Ambil daftar tanggal libur untuk kelas dalam rentang semester.
+     */
+    private function getHariLiburList(int $kelasId, Carbon $mulai, Carbon $selesai): array
+    {
+        return KelasLibur::where('kelas_id', $kelasId)
+            ->whereBetween('tanggal', [$mulai, $selesai])
+            ->pluck('tanggal')
+            ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
+            ->toArray();
     }
 }

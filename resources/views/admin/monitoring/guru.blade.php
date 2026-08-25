@@ -54,7 +54,7 @@
             1. <strong>Hari kerja</strong> = Senin-Kamis dari awal semester sampai hari ini.<br>
             2. <strong>Hari libur</strong> = tanggal yang ditandai libur untuk kelas tersebut (kegiatan sekolah, dll).<br>
             3. <strong>Target per kelas</strong> = hari kerja − hari libur kelas itu.<br>
-            4. Guru bisa menandai libur via tombol di progress jurnal/absensi.<br>
+            4. Hari libur dikelola admin via menu <strong>Pengaturan → Hari Libur</strong>.<br>
             5. <strong>Kurang</strong> = target − distinct tanggal jurnal yang sudah terisi.
         </div>
     </div>

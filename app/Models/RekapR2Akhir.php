@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class RekapR2Akhir extends Model
@@ -66,23 +67,32 @@ class RekapR2Akhir extends Model
 
         // R2 Harian — sistem poin: B=2, C=1, K=0
         // Hanya hitung jurnal di semester dan kelas yang bersangkutan
-        $totalJurnal = JurnalHarian::where('siswa_id', $siswa->id)
+        // serta hanya pada hari aktif (Senin-Kamis) dan bukan hari libur kelas.
+        $endDate = min($semester->tanggal_selesai, now());
+        $hariLiburList = KelasLibur::where('kelas_id', $kelas->id)
+            ->whereBetween('tanggal', [$semester->tanggal_mulai, $endDate])
+            ->pluck('tanggal')
+            ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
+            ->toArray();
+
+        $jurnals = JurnalHarian::where('siswa_id', $siswa->id)
             ->where('semester_id', $semester->id)
             ->where('kelas_id', $kelas->id)
             ->whereNotNull('penilaian')
-            ->count();
+            ->get()
+            ->filter(function ($j) use ($semester, $endDate, $hariLiburList) {
+                $tgl = Carbon::parse($j->tanggal);
+
+                return $tgl->between($semester->tanggal_mulai, $endDate)
+                    && $tgl->dayOfWeek >= 1 && $tgl->dayOfWeek <= 4
+                    && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
+            });
+
+        $totalJurnal = $jurnals->count();
         $r2Harian = 0;
         if ($totalJurnal > 0) {
-            $bCount = JurnalHarian::where('siswa_id', $siswa->id)
-                ->where('semester_id', $semester->id)
-                ->where('kelas_id', $kelas->id)
-                ->where('penilaian', 'B')
-                ->count();
-            $cCount = JurnalHarian::where('siswa_id', $siswa->id)
-                ->where('semester_id', $semester->id)
-                ->where('kelas_id', $kelas->id)
-                ->where('penilaian', 'C')
-                ->count();
+            $bCount = $jurnals->where('penilaian', 'B')->count();
+            $cCount = $jurnals->where('penilaian', 'C')->count();
             $totalPoin = ($bCount * 2) + ($cCount * 1);
             $maxPoin = $totalJurnal * 2;
             $r2Harian = round(($totalPoin / $maxPoin) * 100);

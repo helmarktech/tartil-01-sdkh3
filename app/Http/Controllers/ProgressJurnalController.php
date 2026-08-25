@@ -10,6 +10,7 @@ use App\Models\Semester;
 use App\Models\SemesterSiswa;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ProgressJurnalController extends Controller
@@ -96,23 +97,33 @@ class ProgressJurnalController extends Controller
             // Detail jurnal per siswa (dengan penyesuaian siswa mutasi)
             $semester = Semester::find($semesterId);
             $detailSiswa = [];
-            foreach ($siswas as $siswa) {
-                $totalHari = JurnalHarian::where('siswa_id', $siswa->id)
-                    ->where('semester_id', $semesterId)
-                    ->count();
 
-                $countB = JurnalHarian::where('siswa_id', $siswa->id)
+            $semesterMulai = $semester->tanggal_mulai ?? $semester->tahunAjaran?->tanggal_mulai ?? now()->startOfYear();
+            $awalHitung = $kelas->getAwalHitungHari($semesterMulai);
+            $endDate = min(Carbon::parse($semester->tanggal_selesai ?? now()), now());
+            $hariLiburList = $kelas->liburs()
+                ->whereBetween('tanggal', [$awalHitung, $endDate])
+                ->pluck('tanggal')
+                ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
+                ->toArray();
+
+            foreach ($siswas as $siswa) {
+                $jurnalRows = JurnalHarian::where('siswa_id', $siswa->id)
                     ->where('semester_id', $semesterId)
-                    ->where('penilaian', 'B')
-                    ->count();
-                $countC = JurnalHarian::where('siswa_id', $siswa->id)
-                    ->where('semester_id', $semesterId)
-                    ->where('penilaian', 'C')
-                    ->count();
-                $countK = JurnalHarian::where('siswa_id', $siswa->id)
-                    ->where('semester_id', $semesterId)
-                    ->where('penilaian', 'K')
-                    ->count();
+                    ->where('kelas_id', $kelasId)
+                    ->get()
+                    ->filter(function ($j) use ($awalHitung, $endDate, $hariLiburList) {
+                        $tgl = Carbon::parse($j->tanggal);
+
+                        return $tgl->between($awalHitung, $endDate)
+                            && $this->isHariAktif($tgl)
+                            && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
+                    });
+
+                $totalHari = $jurnalRows->count();
+                $countB = $jurnalRows->where('penilaian', 'B')->count();
+                $countC = $jurnalRows->where('penilaian', 'C')->count();
+                $countK = $jurnalRows->where('penilaian', 'K')->count();
 
                 // Penyesuaian target untuk siswa mutasi
                 $targetDinamis = null;
@@ -225,15 +236,31 @@ class ProgressJurnalController extends Controller
                 ->get();
 
             $detailSiswa = [];
-            foreach ($siswas as $siswa) {
-                $totalEntry = JurnalHarian::where('siswa_id', $siswa->id)
-                    ->where('semester_id', $semesterId)
-                    ->count();
 
-                $dinilai = JurnalHarian::where('siswa_id', $siswa->id)
+            $semesterMulai = $semester->tanggal_mulai ?? $semester->tahunAjaran?->tanggal_mulai ?? now()->startOfYear();
+            $awalHitung = $kelas->getAwalHitungHari($semesterMulai);
+            $endDate = min(Carbon::parse($semester->tanggal_selesai ?? now()), now());
+            $hariLiburList = $kelas->liburs()
+                ->whereBetween('tanggal', [$awalHitung, $endDate])
+                ->pluck('tanggal')
+                ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
+                ->toArray();
+
+            foreach ($siswas as $siswa) {
+                $jurnalRows = JurnalHarian::where('siswa_id', $siswa->id)
                     ->where('semester_id', $semesterId)
-                    ->whereNotNull('penilaian')
-                    ->count();
+                    ->where('kelas_id', $kelasId)
+                    ->get()
+                    ->filter(function ($j) use ($awalHitung, $endDate, $hariLiburList) {
+                        $tgl = Carbon::parse($j->tanggal);
+
+                        return $tgl->between($awalHitung, $endDate)
+                            && $this->isHariAktif($tgl)
+                            && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
+                    });
+
+                $totalEntry = $jurnalRows->count();
+                $dinilai = $jurnalRows->whereNotNull('penilaian')->count();
 
                 $belum = $totalEntry - $dinilai;
 
@@ -536,17 +563,12 @@ class ProgressJurnalController extends Controller
      * Progress Jurnal:
      * Persentase = distinct tanggal kelas ini / target hari di semester
      * Target = hari kerja (Senin-Kamis) − hari libur yang ditandai untuk kelas ini
+     * Terisi hanya dihitung pada hari aktif (Senin-Kamis) dan bukan hari libur.
      */
     private function hitungProgressJurnal($kelasId, $semesterIds): array
     {
         $semester = Semester::find($semesterIds[0] ?? null);
         $kelas = Kelas::find($kelasId);
-
-        // Distinct tanggal yang sudah ada jurnal untuk kelas ini
-        $tanggalTerisi = JurnalHarian::where('kelas_id', $kelasId)
-            ->whereIn('semester_id', $semesterIds)
-            ->distinct('tanggal')
-            ->count('tanggal');
 
         // Target: hari kerja dari tanggal_dibuat (atau awal semester) − hari libur
         // Referensi tanggal mulai dari semester yang terhubung ke tahun ajaran
@@ -558,9 +580,33 @@ class ProgressJurnalController extends Controller
             $hariKerja = $this->hitungHariKerja($awalHitung, $endDate);
             $hariLibur = $kelas->jumlahHariLibur($awalHitung, $endDate);
             $targetPertemuan = max(1, $hariKerja - $hariLibur);
+
+            $hariLiburList = $kelas->liburs()
+                ->whereBetween('tanggal', [$awalHitung, $endDate])
+                ->pluck('tanggal')
+                ->map(fn ($t) => \Carbon\Carbon::parse($t)->format('Y-m-d'))
+                ->toArray();
+
+            // Distinct tanggal jurnal yang hanya jatuh pada hari aktif dan bukan libur
+            $tanggalTerisi = JurnalHarian::where('kelas_id', $kelasId)
+                ->whereIn('semester_id', $semesterIds)
+                ->distinct('tanggal')
+                ->pluck('tanggal')
+                ->filter(function ($t) use ($awalHitung, $endDate, $hariLiburList) {
+                    $tgl = \Carbon\Carbon::parse($t);
+
+                    return $tgl->between($awalHitung, $endDate)
+                        && $this->isHariAktif($tgl)
+                        && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
+                })
+                ->count();
         } else {
             $targetPertemuan = 1;
             $hariLibur = 0;
+            $tanggalTerisi = JurnalHarian::where('kelas_id', $kelasId)
+                ->whereIn('semester_id', $semesterIds)
+                ->distinct('tanggal')
+                ->count('tanggal');
         }
 
         return [
@@ -579,7 +625,7 @@ class ProgressJurnalController extends Controller
      *
      * jumlah_hari_efektif = hari kerja (Senin-Kamis) − hari libur yang ditandai
      * total_yang_seharusnya = setiap siswa seharusnya punya jurnal di setiap hari efektif
-     * terisi = baris jurnal yang sudah ada (dengan nilai B/C/K)
+     * terisi = baris jurnal yang sudah ada (dengan nilai B/C/K) pada hari aktif dan bukan libur
      */
     private function hitungProgressAbsensi($kelasId, $semesterIds): array
     {
@@ -612,22 +658,40 @@ class ProgressJurnalController extends Controller
             $hariKerja = $this->hitungHariKerja($awalHitung, $endDate);
             $hariLibur = $kelas->jumlahHariLibur($awalHitung, $endDate);
             $jumlahHari = max(0, $hariKerja - $hariLibur);
+
+            $hariLiburList = $kelas->liburs()
+                ->whereBetween('tanggal', [$awalHitung, $endDate])
+                ->pluck('tanggal')
+                ->map(fn ($t) => \Carbon\Carbon::parse($t)->format('Y-m-d'))
+                ->toArray();
+
+            // Total jurnal yang sudah terisi hanya pada hari aktif dan bukan libur
+            $terisi = JurnalHarian::where('kelas_id', $kelasId)
+                ->whereIn('semester_id', $semesterIds)
+                ->whereNotNull('penilaian')
+                ->get()
+                ->filter(function ($j) use ($awalHitung, $endDate, $hariLiburList) {
+                    $tgl = \Carbon\Carbon::parse($j->tanggal);
+
+                    return $tgl->between($awalHitung, $endDate)
+                        && $this->isHariAktif($tgl)
+                        && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
+                })
+                ->count();
         } else {
             $jumlahHari = JurnalHarian::where('kelas_id', $kelasId)
                 ->whereIn('semester_id', $semesterIds)
                 ->distinct('tanggal')
                 ->count('tanggal');
             $hariLibur = 0;
+            $terisi = JurnalHarian::where('kelas_id', $kelasId)
+                ->whereIn('semester_id', $semesterIds)
+                ->whereNotNull('penilaian')
+                ->count();
         }
 
         // Total slot yang seharusnya terisi = siswa × hari efektif
         $totalSlot = $jumlahSiswa * $jumlahHari;
-
-        // Total jurnal yang sudah terisi
-        $terisi = JurnalHarian::where('kelas_id', $kelasId)
-            ->whereIn('semester_id', $semesterIds)
-            ->whereNotNull('penilaian')
-            ->count();
 
         return [
             'jumlah_siswa' => $jumlahSiswa,
