@@ -401,6 +401,21 @@ class ProgressJurnalController extends Controller
         return back()->with('success', 'Tanda libur berhasil dihapus.');
     }
 
+    /**
+     * Hapus semua tanda hari libur untuk tanggal tertentu (massal).
+     */
+    public function liburDestroyByTanggal(Request $request, string $tanggal)
+    {
+        $semesterAktif = Semester::aktif()->first();
+        if (! $semesterAktif) {
+            return back()->with('error', 'Tidak ada semester aktif.');
+        }
+
+        $count = KelasLibur::whereDate('tanggal', $tanggal)->delete();
+
+        return back()->with('success', "{$count} tanda libur pada tanggal " . \Carbon\Carbon::parse($tanggal)->format('d/m/Y') . ' berhasil dihapus.');
+    }
+
     // ═══════════════════════════════════════════════════
     // MONITORING: Guru yang belum mengisi jurnal
     // ═══════════════════════════════════════════════════

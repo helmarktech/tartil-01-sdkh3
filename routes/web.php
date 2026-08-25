@@ -232,6 +232,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/kelas-libur', [ProgressJurnalController::class, 'liburIndex'])->name('kelas-libur.index');
     Route::post('/kelas-libur', [ProgressJurnalController::class, 'liburStore'])->name('kelas-libur.store');
     Route::delete('/kelas-libur/{libur}', [ProgressJurnalController::class, 'liburDestroy'])->name('kelas-libur.destroy');
+    Route::delete('/kelas-libur/tanggal/{tanggal}', [ProgressJurnalController::class, 'liburDestroyByTanggal'])->name('kelas-libur.destroy-by-tanggal');
 
     // ===== TAHFIDZ: TRACKING HAFALAN =====
     Route::get('/tahfidz', [TahfidzController::class, 'adminIndex'])->name('tahfidz.index');
