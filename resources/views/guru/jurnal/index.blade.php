@@ -66,8 +66,10 @@
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
             <div>
                 <label class="form-label" style="font-size: 12px;">TM (Pertemuan Ke-)</label>
-                <input type="number" id="pertemuan_ke" class="form-input" value="{{ $jurnalKelas->pertemuan_ke ?? '' }}" placeholder="Auto" min="1" title="Kosongkan untuk otomatis (hitung pertemuan di bulan ini)" style="width: 100%;">
-                <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Kosongkan = auto (pertemuan ke-<span id="previewPertemuan">?</span>)</div>
+                <div style="padding: 10px 14px; background: var(--bg-body); border-radius: 8px; font-size: 14px; color: var(--text-primary);">
+                    {{ $jurnalKelas->pertemuan_ke ?? 'Auto' }}
+                </div>
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Dihitung otomatis per bulan</div>
             </div>
             <div>
                 <label class="form-label" style="font-size: 12px;">Surat</label>
@@ -195,12 +197,6 @@ const KELAS_ID = {{ $kelasId ?? 'null' }};
 const TANGGAL = '{{ $tanggal }}';
 const CSRF = '{{ csrf_token() }}';
 
-// Show auto pertemuan preview
-const savedPertemuan = {{ $jurnalKelas->pertemuan_ke ?? 'null' }};
-if (savedPertemuan) {
-    document.getElementById('previewPertemuan').textContent = savedPertemuan + ' (tersimpan)';
-}
-
 // ================= TOGGLE NILAI B/C/K =================
 function setNilai(siswaId, nilai) {
     const group = document.querySelector('.toggle-group[data-siswa="' + siswaId + '"]');
@@ -236,7 +232,6 @@ function simpanJurnal() {
     const suratId = document.getElementById('surat_id').value || null;
 
     const jurnalKelas = {
-        pertemuan_ke: document.getElementById('pertemuan_ke').value || null,
         halaman_juz: document.getElementById('halaman_juz').value || null,
         surat_id: suratId,
         ayat: document.getElementById('ayat').value || null,

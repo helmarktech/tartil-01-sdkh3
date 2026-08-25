@@ -79,7 +79,6 @@ class JurnalController extends Controller
         $validated = $request->validate([
             'tanggal' => 'required|date',
             'kelas_id' => 'required|exists:kelas,id',
-            'pertemuan_ke' => 'nullable|integer|min:1',
             'halaman_juz' => 'nullable|string|max:50',
             'surat_id' => 'nullable|exists:surats,id',
             'ayat' => 'nullable|string|max:50',
@@ -129,17 +128,25 @@ class JurnalController extends Controller
             return response()->json(['error' => 'Tanggal ini ditandai sebagai hari libur untuk kelas ini.'], 422);
         }
 
-        // Auto-increment pertemuan_ke: urutkan berdasarkan tanggal, bukan urutan simpan.
-        // Hitung jumlah jurnal di bulan ini yang tanggalnya lebih awal dari tanggal ini + 1.
-        $pertemuanKe = $validated['pertemuan_ke'] ?? null;
-        if (empty($pertemuanKe)) {
-            $countSebelumTanggal = JurnalKelas::where('kelas_id', $kelasId)
-                ->whereYear('tanggal', date('Y', strtotime($tanggal)))
-                ->whereMonth('tanggal', date('m', strtotime($tanggal)))
-                ->where('tanggal', '<', $tanggal)
-                ->count();
-            $pertemuanKe = $countSebelumTanggal + 1;
+        // Validasi tanggal tidak sebelum awal hitung kelas
+        $awalHitungCarbon = Carbon::parse($awalHitung);
+        if ($tanggalCarbon->lt($awalHitungCarbon)) {
+            return response()->json(['error' => 'Tanggal sebelum kelas ini aktif (' . $awalHitungCarbon->format('d/m/Y') . ').'], 422);
         }
+
+        // Auto-increment pertemuan_ke: urutkan berdasarkan tanggal aktif di bulan ini.
+        // Hitung jumlah jurnal di bulan ini pada hari aktif & non-libur yang tanggalnya lebih awal, lalu +1.
+        $pertemuanKe = JurnalKelas::where('kelas_id', $kelasId)
+            ->whereYear('tanggal', $tanggalCarbon->year)
+            ->whereMonth('tanggal', $tanggalCarbon->month)
+            ->where('tanggal', '<', $tanggal)
+            ->get()
+            ->filter(function ($jk) use ($hariLiburList) {
+                $t = Carbon::parse($jk->tanggal);
+
+                return $this->isHariAktif($t) && ! in_array($t->format('Y-m-d'), $hariLiburList);
+            })
+            ->count() + 1;
 
         DB::beginTransaction();
         try {
