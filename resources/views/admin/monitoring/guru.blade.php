@@ -27,7 +27,7 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
         <div class="card-tartil" style="text-align: center;">
             <div style="font-size: 24px; font-weight: 600; color: var(--accent);">{{ $ringkasan['hari_kerja'] }}</div>
-            <div style="font-size: 11px; color: var(--text-muted);">Hari Kerja<br>(Senin-Kamis)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Hari Aktif Semester<br>(Senin-Kamis)</div>
         </div>
         <div class="card-tartil" style="text-align: center;">
             <div style="font-size: 24px; font-weight: 600; color: var(--accent);">{{ $ringkasan['total_hari_libur'] }}</div>
@@ -50,12 +50,13 @@
     {{-- Penjelasan Logika --}}
     <div class="card-tartil" style="padding: 16px; margin-bottom: 20px; background: #f8f9fa;">
         <div style="font-size: 12px; color: var(--text-muted); line-height: 1.7;">
-            <strong style="color: var(--text-primary);">Logika (dengan hari libur per kelas):</strong><br>
-            1. <strong>Hari kerja</strong> = Senin-Kamis dari awal semester sampai hari ini.<br>
-            2. <strong>Hari libur</strong> = tanggal yang ditandai libur untuk kelas tersebut (kegiatan sekolah, dll).<br>
-            3. <strong>Target per kelas</strong> = hari kerja − hari libur kelas itu.<br>
-            4. Hari libur dikelola admin via menu <strong>Pengaturan → Hari Libur</strong>.<br>
-            5. <strong>Kurang</strong> = target − distinct tanggal jurnal yang sudah terisi.
+            <strong style="color: var(--text-primary);">Logika perhitungan:</strong><br>
+            1. <strong>Hari aktif semester</strong> = Senin-Kamis dari awal semester sampai hari ini.<br>
+            2. <strong>Tanggal mulai efektif</strong> = tanggal_dimulai kelas (jika diisi), atau tanggal_dibuat, atau awal semester.<br>
+            3. <strong>Target per kelas</strong> = hari aktif dari tanggal mulai efektif kelas itu − hari libur kelas itu.<br>
+            4. <strong>Hari libur</strong> = tanggal yang ditandai libur untuk kelas tersebut (kegiatan sekolah, dll).<br>
+            5. Hari libur dikelola admin via menu <strong>Pengaturan → Hari Libur</strong>.<br>
+            6. <strong>Kurang</strong> = target per kelas − distinct tanggal jurnal yang sudah terisi.
         </div>
     </div>
 
