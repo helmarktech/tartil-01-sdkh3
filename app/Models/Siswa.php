@@ -2,21 +2,26 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 class Siswa extends Authenticatable
 {
-    use SoftDeletes, \App\Traits\Auditable;
+    use \App\Traits\Auditable, HasPushSubscriptions, Notifiable, SoftDeletes;
 
     protected $table = 'siswas';
+
     protected $fillable = [
         'nis', 'nama', 'no_hp', 'password', 'jenis_kelamin',
         'kelas_reguler_id', 'kelas_tartil_id', 'tanggal_masuk_kelas_tartil',
         'keterangan_mutasi', 'tanggal_lahir', 'tempat_lahir', 'alamat',
-        'nama_ayah', 'no_hp_ortu', 'tanggal_masuk', 'status', 'keterangan_status'
+        'nama_ayah', 'no_hp_ortu', 'tanggal_masuk', 'status', 'keterangan_status',
     ];
+
     protected $hidden = ['password', 'remember_token'];
+
     protected $casts = [
         'tanggal_lahir' => 'date',
         'tanggal_masuk' => 'date',
@@ -71,7 +76,8 @@ class Siswa extends Authenticatable
     public function getInitialsAttribute(): string
     {
         $words = explode(' ', strtoupper($this->nama));
-        return implode('', array_slice(array_map(fn($w) => $w[0] ?? '', $words), 0, 2));
+
+        return implode('', array_slice(array_map(fn ($w) => $w[0] ?? '', $words), 0, 2));
     }
 
     // Riwayat semester: semua semester yang pernah diikuti siswa beserta kelasnya
@@ -122,8 +128,11 @@ class Siswa extends Authenticatable
      */
     public function getMutasiLabelAttribute(): ?string
     {
-        if (!$this->isMutasi) return null;
-        return 'Mutasi masuk ' . $this->tanggal_masuk_kelas_tartil->format('d/m/Y');
+        if (! $this->isMutasi) {
+            return null;
+        }
+
+        return 'Mutasi masuk '.$this->tanggal_masuk_kelas_tartil->format('d/m/Y');
     }
 
     /**
@@ -133,7 +142,9 @@ class Siswa extends Authenticatable
      */
     public function getTargetPertemuanDinamis(Semester $semester): ?int
     {
-        if (!$this->isMutasi) return null;
+        if (! $this->isMutasi) {
+            return null;
+        }
 
         $start = $this->tanggal_masuk_kelas_tartil;
         $end = min($semester->tanggal_selesai, now());

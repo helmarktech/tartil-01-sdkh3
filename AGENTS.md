@@ -25,6 +25,8 @@ Fitur inti meliputi:
 - Manajemen tahun ajaran dan semester (ganjil/genap).
 - Hari libur per kelas.
 - Tahfidz: tracking hafalan siswa per juz 1–30 (tidak harus berurutan), dengan rekap per semester yang membedakan total siswa, siswa sudah hafal, dan siswa tuntas per juz.
+- Notifikasi siswa (database + push Web VAPID): siswa menerima notifikasi saat guru menginput jurnal harian, menambahkan setoran hafalan, dan mengkonfirmasi laporan pendampingan orangtua. Lonceng notifikasi di topbar siswa + halaman `/siswa/notifikasi`.
+- PWA: installable (manifest + service worker `public/sw.js`), caching cache-first hanya untuk asset statis (`/build/`, `/icons/`, `/images/`, `/css/`), halaman dinamis network-only.
 - Audit trail perubahan data via `activity_logs`.
 
 ---
@@ -39,6 +41,7 @@ Fitur inti meliputi:
   - `laravel/framework` ^13.0
   - `barryvdh/laravel-dompdf` ^3.0 — cetak PDF
   - `phpoffice/phpspreadsheet` ^2.0 — import/export Excel
+  - `laravel-notification-channels/webpush` ^12.1 — push notification Web (VAPID) untuk siswa
   - `laravel/tinker`
 - **Dev Tools:**
   - `phpunit/phpunit` ^11.5
@@ -191,6 +194,7 @@ Test suite saat ini mencakup:
 - `tests/Feature/ExampleTest.php`
 - `tests/Feature/TahfidzKumulatifTest.php` — memastikan hafalan Tahfidz kumulatif antar semester/TA dan pemilihan juz 1–30 berfungsi.
 - `tests/Feature/DataAmanTutupSemesterTest.php` — memastikan data jurnal, munaqosyah, penilaian rapor, dan tahfidz tidak hilang saat semester ditutup.
+- `tests/Feature/NotifikasiSiswaTest.php` — memastikan notifikasi siswa terkirim saat jurnal diinput, setoran hafalan ditambahkan, pendampingan dikonfirmasi, dan subscription push tersimpan.
 
 > Migration yang mengandung raw SQL khusus MySQL (`SHOW COLUMNS`, `ALTER TABLE ... MODIFY`, dsb.) sudah dibungkus dengan pengecekan driver agar test SQLite bisa berjalan, tanpa mengubah perilaku di MySQL/MariaDB.
 
@@ -216,6 +220,7 @@ Test suite saat ini mencakup:
 | `php artisan semester:retroactive-lock {semester_id} \| --all` | Kunci/snapshot data semester lama secara retroaktif |
 | `php artisan jurnal:sync-surat` | Sinkronisasi surat/ayat/materi dari `jurnal_kelas` ke `jurnal_harians` |
 | `php artisan pulse:token` | Generate token akses Laravel Pulse |
+| `php artisan webpush:vapid` | Generate VAPID keys untuk push notification (butuh `OPENSSL_CONF` di Windows) |
 | `php artisan session:fix` | Diagnosa dan perbaiki konfigurasi session (di `routes/console.php`) |
 
 ---
@@ -300,6 +305,8 @@ Proyek ini memiliki dokumen arsitektur tersendiri:
 | `hafalan_tahfidzs` / `rekap_tahfidz_semesters` | Tracking hafalan |
 | `juz_surats` | Mapping surat-ayat per juz untuk perhitungan persentase hafalan |
 | `activity_logs` | Audit trail perubahan data |
+| `notifications` | Notifikasi siswa (morph ke `siswas`, channel database) |
+| `push_subscriptions` | Subscription push Web per siswa (package webpush) |
 | `kop_surat_rapors` | Pengaturan kop surat rapor PDF |
 | `semester_audit_logs` | Log proses lock/snapshot semester |
 
@@ -449,6 +456,13 @@ Saat semester ditutup, sistem dapat membuat snapshot di tabel berikut (data asli
 7. Jalankan build: `npm install && npm run build` (file entry Vite sudah tersedia).
 8. Cache config, route, view: `php artisan config:cache`, `php artisan route:cache`, `php artisan view:cache`.
 9. Atur queue worker jika menggunakan queue untuk PDF/R2: `php artisan queue:work`.
+
+### PWA & Push Notification
+
+- Push Web (VAPID) **wajib HTTPS** (atau `localhost` saat development — `http://tartil-assessment.test` di Laragon tidak mengaktifkan push karena bukan secure context).
+- Generate VAPID keys saat deploy: `php artisan webpush:vapid`, lalu isi `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` di `.env` (`VAPID_SUBJECT` wajib untuk Safari/iOS, format `mailto:...` atau URL aplikasi).
+- Service worker (`public/sw.js`) hanya cache asset statis; halaman dinamis sengaja network-only karena bergantung pada session.
+- Ikon PWA ada di `public/icons/` (192/512/maskable) — regenerasi dari logo jika logo berubah.
 
 ### Catatan Vite
 

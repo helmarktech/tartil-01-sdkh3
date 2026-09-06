@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Carbon\Carbon;
+use App\Exports\RekapNilaiExport;
 use App\Models\JurnalHarian;
 use App\Models\JurnalKelas;
 use App\Models\Kelas;
 use App\Models\KelasLibur;
 use App\Models\KelasReguler;
 use App\Models\RekapJurnalBulanan;
+use App\Models\RekapR2Akhir;
 use App\Models\Semester;
-use App\Models\SemesterKelas;
 use App\Models\SemesterSiswa;
 use App\Models\Siswa;
 use App\Models\Surat;
+use App\Notifications\SiswaNotifikasi;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class JurnalController extends Controller
 {
@@ -25,7 +28,7 @@ class JurnalController extends Controller
     {
         $guru = auth()->guard('web')->user()?->guru ?? null;
         $semesterAktif = Semester::aktif()->first();
-        if (!$semesterAktif) {
+        if (! $semesterAktif) {
             return view('guru.jurnal.index', ['noSemester' => true]);
         }
 
@@ -95,7 +98,7 @@ class JurnalController extends Controller
         ]);
 
         $semesterAktif = Semester::aktif()->first();
-        if (!$semesterAktif) {
+        if (! $semesterAktif) {
             return response()->json(['error' => 'Tidak ada semester aktif.'], 422);
         }
 
@@ -109,7 +112,7 @@ class JurnalController extends Controller
         // Validasi wali kelas
         if ($guru) {
             $isWaliKelas = Kelas::where('id', $kelasId)->where('guru_id', $guru->id)->exists();
-            if (!$isWaliKelas) {
+            if (! $isWaliKelas) {
                 return response()->json(['error' => 'Anda bukan wali kelas untuk kelas ini.'], 403);
             }
         }
@@ -131,7 +134,7 @@ class JurnalController extends Controller
         // Validasi tanggal tidak sebelum awal hitung kelas
         $awalHitungCarbon = Carbon::parse($awalHitung);
         if ($tanggalCarbon->lt($awalHitungCarbon)) {
-            return response()->json(['error' => 'Tanggal sebelum kelas ini aktif (' . $awalHitungCarbon->format('d/m/Y') . ').'], 422);
+            return response()->json(['error' => 'Tanggal sebelum kelas ini aktif ('.$awalHitungCarbon->format('d/m/Y').').'], 422);
         }
 
         // Auto-increment pertemuan_ke: urutkan berdasarkan tanggal aktif di bulan ini.
@@ -197,8 +200,9 @@ class JurnalController extends Controller
             $rencana = $validated['rencana'] ?? null;
 
             foreach ($entriesBySiswa as $siswaId => $e) {
+                // whereDate agar kompatibel lintas driver (SQLite menyimpan datetime lengkap).
                 $existing = JurnalHarian::where('kelas_id', $kelasId)
-                    ->where('tanggal', $tanggal)
+                    ->whereDate('tanggal', $tanggal)
                     ->where('siswa_id', $siswaId)
                     ->first();
 
@@ -245,8 +249,9 @@ class JurnalController extends Controller
                 ->pluck('id')
                 ->toArray();
 
+            // whereDate agar kompatibel lintas driver (SQLite menyimpan datetime lengkap).
             $existingSiswaIds = JurnalHarian::where('kelas_id', $kelasId)
-                ->where('tanggal', $tanggal)
+                ->whereDate('tanggal', $tanggal)
                 ->pluck('siswa_id')
                 ->toArray();
 
@@ -274,10 +279,29 @@ class JurnalController extends Controller
             $this->updateRekapBulanan($semesterAktif->id, $kelasId, $tanggal);
 
             // 5. Invalidate cache R2 untuk semua siswa di kelas ini
-            \App\Models\RekapR2Akhir::whereIn('siswa_id', array_unique($siswaAktifIds))->delete();
+            RekapR2Akhir::whereIn('siswa_id', array_unique($siswaAktifIds))->delete();
 
             DB::commit();
             Cache::forget("rekap_kelas:{$kelasId}:{$bulan}");
+
+            // 6. Kirim notifikasi ke siswa yang mendapat nilai (setelah commit)
+            $siswaDinilaiIds = collect($entriesBySiswa)
+                ->filter(fn ($e) => ($e['penilaian'] ?? null) !== null)
+                ->keys()
+                ->all();
+
+            if (! empty($siswaDinilaiIds)) {
+                $tanggalIndo = $tanggalCarbon->copy()->locale('id')->translatedFormat('d F Y');
+                Siswa::whereIn('id', $siswaDinilaiIds)->get()
+                    ->each(function ($siswa) use ($tanggalIndo) {
+                        $siswa->notify(new SiswaNotifikasi(
+                            'jurnal',
+                            'Jurnal Harian Diperbarui',
+                            "{$tanggalIndo} — nilai Anda telah diinput guru",
+                            '/siswa/nilai'
+                        ));
+                    });
+            }
 
             return response()->json([
                 'success' => true,
@@ -288,7 +312,8 @@ class JurnalController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Gagal menyimpan: '.$e->getMessage()], 500);
         }
     }
 
@@ -320,7 +345,7 @@ class JurnalController extends Controller
         $bulan = $request->get('bulan', now()->format('Y-m'));
         if (strlen($bulan) === 6 && ctype_digit($bulan)) {
             // Format lama: Ym → YYYY-MM
-            $bulan = substr($bulan, 0, 4) . '-' . substr($bulan, 4, 2);
+            $bulan = substr($bulan, 0, 4).'-'.substr($bulan, 4, 2);
         }
         $semesterId = $request->get('semester_id');
 
@@ -335,7 +360,7 @@ class JurnalController extends Controller
         if ($kelasAktif) {
             // Parse YYYY-MM ke year/month
             try {
-                $date = \Carbon\Carbon::parse($bulan . '-01');
+                $date = Carbon::parse($bulan.'-01');
                 $year = $date->year;
                 $month = $date->month;
             } catch (\Exception $e) {
@@ -363,7 +388,7 @@ class JurnalController extends Controller
             // Kemudian gunakan snapshot semester_siswa untuk kelas_reguler historis.
             $siswaIdsDariJurnal = $jurnals->pluck('siswa_id')->unique()->filter()->values()->toArray();
 
-            if (!empty($siswaIdsDariJurnal)) {
+            if (! empty($siswaIdsDariJurnal)) {
                 // Ambil data siswa (nama, NIS, status) — tanpa filter status
                 $siswaRaw = Siswa::whereIn('id', $siswaIdsDariJurnal)
                     ->select('id', 'nis', 'nama', 'status', 'kelas_reguler_id')
@@ -399,6 +424,7 @@ class JurnalController extends Controller
                         $s->kelas_reguler_snapshot = $s->kelasReguler?->nama ?? '-';
                         $s->status_snapshot = $s->status;
                     }
+
                     return $s;
                 });
             }
@@ -463,25 +489,27 @@ class JurnalController extends Controller
 
         // Handle Export Excel
         if ($request->has('export') && $request->export === 'excel') {
-            $bulanLabel = \Carbon\Carbon::parse($bulan . '-01')->locale('id')->isoFormat('MMMM YYYY');
+            $bulanLabel = Carbon::parse($bulan.'-01')->locale('id')->isoFormat('MMMM YYYY');
 
-            $export = new \App\Exports\RekapNilaiExport(
+            $export = new RekapNilaiExport(
                 $siswaList, $tanggalList, $rekapData, $summaryPerTanggal,
                 $kelasAktif->nama ?? 'Kelas', $bulanLabel
             );
             $spreadsheet = $export->export();
 
-            $filename = 'rekap_nilai_' . str_replace(' ', '_', strtolower($kelasAktif->nama ?? 'kelas')) . '_' . $bulan . '.xlsx';
+            $filename = 'rekap_nilai_'.str_replace(' ', '_', strtolower($kelasAktif->nama ?? 'kelas')).'_'.$bulan.'.xlsx';
 
             // Clear any output buffers to prevent corrupt XLSX
-            while (ob_get_level()) { ob_end_clean(); }
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
 
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Disposition: attachment; filename="'.$filename.'"');
             header('Cache-Control: max-age=0');
             header('Pragma: public');
 
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
             exit;
         }
@@ -533,11 +561,11 @@ class JurnalController extends Controller
                     $bulanValid = ($bulanInt >= $blnMulai || $bulanInt <= $blnSelesai);
                 }
 
-                if (!$bulanValid) {
-                    $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni',
-                                  'Juli','Agustus','September','Oktober','November','Desember'];
-                    $warningBulan = 'Bulan ' . $namaBulan[$bulanInt] . ' tidak termasuk dalam ' . $semester->nama 
-                        . ' (' . $semester->tanggal_mulai->format('M Y') . ' - ' . $semester->tanggal_selesai->format('M Y') . ').';
+                if (! $bulanValid) {
+                    $namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    $warningBulan = 'Bulan '.$namaBulan[$bulanInt].' tidak termasuk dalam '.$semester->nama
+                        .' ('.$semester->tanggal_mulai->format('M Y').' - '.$semester->tanggal_selesai->format('M Y').').';
                     $bulan = null; // Reset, tampilkan semua bulan
                 }
             }
@@ -551,7 +579,7 @@ class JurnalController extends Controller
             // Jika tidak, tampilkan SEMUA bulan di semester.
             if ($bulan) {
                 $query->whereYear('tanggal', $tahunSemester)
-                      ->whereMonth('tanggal', (int) $bulan);
+                    ->whereMonth('tanggal', (int) $bulan);
             }
 
             // Filter hanya hari aktif (Senin-Kamis) dan bukan hari libur kelas
@@ -564,7 +592,8 @@ class JurnalController extends Controller
             $rows = $query->select('siswa_id', 'tanggal', 'penilaian')->get();
             $filteredRows = $rows->filter(function ($row) use ($hariLiburList) {
                 $t = Carbon::parse($row->tanggal);
-                return $this->isHariAktif($t) && !in_array($t->format('Y-m-d'), $hariLiburList);
+
+                return $this->isHariAktif($t) && ! in_array($t->format('Y-m-d'), $hariLiburList);
             });
 
             // Ambil data siswa (termasuk yang sudah lulus/nonaktif)
@@ -584,7 +613,7 @@ class JurnalController extends Controller
                 $total = $items->count();
                 $rataRata = $total > 0 ? round((($b * 100) + ($c * 67) + ($k * 33)) / $total, 2) : 0;
 
-                return [$siswaId => collect([(object)[
+                return [$siswaId => collect([(object) [
                     'siswa_id' => $siswaId,
                     'siswa' => $siswa,
                     'total_hadir' => $total,
@@ -629,7 +658,8 @@ class JurnalController extends Controller
 
             $jurnals = $rawJurnals->filter(function ($jk) use ($hariLiburList) {
                 $t = Carbon::parse($jk->tanggal);
-                return $this->isHariAktif($t) && !in_array($t->format('Y-m-d'), $hariLiburList);
+
+                return $this->isHariAktif($t) && ! in_array($t->format('Y-m-d'), $hariLiburList);
             })->values();
         }
 
@@ -651,8 +681,9 @@ class JurnalController extends Controller
     public function guruJurnalBulanan(Request $request)
     {
         $guru = auth()->user()?->guru;
-        if (!$guru) {
+        if (! $guru) {
             \Log::warning('Akses jurnal bulanan tanpa data guru', ['user_id' => auth()->id()]);
+
             return redirect()->route('guru.dashboard')->with('error', 'Data guru tidak ditemukan. Hubungi admin.');
         }
 
@@ -684,12 +715,13 @@ class JurnalController extends Controller
             $kelasAktif = $kelasQuery->first();
 
             // Security: log & redirect jika guru akses kelas bukan miliknya
-            if (!$kelasAktif) {
+            if (! $kelasAktif) {
                 if ($guruId) {
                     \Log::warning('Guru mencoba akses kelas bukan miliknya', [
-                        'guru_id' => $guruId, 'kelas_id' => $kelasId
+                        'guru_id' => $guruId, 'kelas_id' => $kelasId,
                     ]);
                 }
+
                 return redirect()->back()->with('error', 'Akses tidak diizinkan.');
             }
 
@@ -710,11 +742,11 @@ class JurnalController extends Controller
                     $bulanValid = ($bulanInt >= $blnMulai || $bulanInt <= $blnSelesai);
                 }
 
-                if (!$bulanValid) {
-                    $namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni',
-                                  'Juli','Agustus','September','Oktober','November','Desember'];
-                    $warningBulan = 'Bulan ' . $namaBulan[$bulanInt] . ' tidak termasuk dalam ' . $semester->nama
-                        . ' (' . $semester->tanggal_mulai->format('M Y') . ' - ' . $semester->tanggal_selesai->format('M Y') . '). Menampilkan semua bulan.';
+                if (! $bulanValid) {
+                    $namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    $warningBulan = 'Bulan '.$namaBulan[$bulanInt].' tidak termasuk dalam '.$semester->nama
+                        .' ('.$semester->tanggal_mulai->format('M Y').' - '.$semester->tanggal_selesai->format('M Y').'). Menampilkan semua bulan.';
                     $bulan = null; // Reset, tampilkan semua bulan
                 }
             }
@@ -744,7 +776,7 @@ class JurnalController extends Controller
             $hariLiburList = $this->getHariLiburList($kelasId, Carbon::parse($semesterMulai), $batasAkhir);
 
             $tanggalUnik = $tanggalUnik->filter(function ($tgl) use ($hariLiburList) {
-                return $this->isHariAktif($tgl) && !in_array($tgl->format('Y-m-d'), $hariLiburList);
+                return $this->isHariAktif($tgl) && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
             })->values();
 
             // Ambil detail jurnal kelas jika ada (materi, rencana, catatan)
@@ -756,7 +788,7 @@ class JurnalController extends Controller
             }
             $jurnalKelasMap = $jurnalKelasQuery->with('surat')
                 ->get()
-                ->keyBy(fn($jk) => $jk->tanggal->format('Y-m-d'));
+                ->keyBy(fn ($jk) => $jk->tanggal->format('Y-m-d'));
 
             // Fix N+1: Single query GROUP BY untuk semua penilaian
             $allPenilaianQuery = JurnalHarian::where('kelas_id', $kelasId)
@@ -769,12 +801,12 @@ class JurnalController extends Controller
             }
 
             $allPenilaian = $allPenilaianQuery->select('tanggal',
-                    DB::raw("SUM(CASE WHEN penilaian='B' THEN 1 ELSE 0 END) as count_b"),
-                    DB::raw("SUM(CASE WHEN penilaian='C' THEN 1 ELSE 0 END) as count_c"),
-                    DB::raw("SUM(CASE WHEN penilaian='K' THEN 1 ELSE 0 END) as count_k"))
+                DB::raw("SUM(CASE WHEN penilaian='B' THEN 1 ELSE 0 END) as count_b"),
+                DB::raw("SUM(CASE WHEN penilaian='C' THEN 1 ELSE 0 END) as count_c"),
+                DB::raw("SUM(CASE WHEN penilaian='K' THEN 1 ELSE 0 END) as count_k"))
                 ->groupBy('tanggal')
                 ->get()
-                ->keyBy(fn($p) => $p->tanggal->format('Y-m-d'));
+                ->keyBy(fn ($p) => $p->tanggal->format('Y-m-d'));
 
             // Build rows dari tanggal unik (dari jurnal_harians)
             $pertemuanKe = 1;
@@ -795,7 +827,7 @@ class JurnalController extends Controller
                     'tgl_short' => $tgl->format('d/m'),
                     'pertemuan_ke' => $jk?->pertemuan_ke ?? $pertemuanKe++,
                     'hal' => $jk?->surat
-                        ? ($jk->surat->nama . ($jk->ayat ? ' (' . $jk->ayat . ')' : ''))
+                        ? ($jk->surat->nama.($jk->ayat ? ' ('.$jk->ayat.')' : ''))
                         : ($jk->halaman_juz ?? '-'),
                     'materi' => $jk?->materi_pembelajaran ?? ($jk?->topik ?? '-'),
                     'b' => $b, 'c' => $c, 'k' => $k,
@@ -816,10 +848,15 @@ class JurnalController extends Controller
     private function updateRekapBulanan(int $semesterId, int $kelasId, string $tanggal): void
     {
         $bulan = (int) date('Ym', strtotime($tanggal));
+        $tanggalCarbon = Carbon::parse($tanggal);
 
+        // whereBetween portabel lintas driver (whereRaw YEAR/MONTH hanya ada di MySQL).
         $aggregasi = JurnalHarian::where('semester_id', $semesterId)
             ->where('kelas_id', $kelasId)
-            ->whereRaw("YEAR(tanggal) * 100 + MONTH(tanggal) = ?", [$bulan])
+            ->whereBetween('tanggal', [
+                $tanggalCarbon->copy()->startOfMonth()->toDateString(),
+                $tanggalCarbon->copy()->endOfMonth()->toDateTimeString(),
+            ])
             ->select(
                 'siswa_id',
                 DB::raw('SUM(CASE WHEN penilaian IS NOT NULL THEN 1 ELSE 0 END) as total_hadir'),

@@ -7,6 +7,12 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#0c8a5f">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="tartil-vapid-key" content="@js(config('webpush.vapid.public_key') ?? env('VAPID_PUBLIC_KEY'))">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -434,6 +440,123 @@
             .btn-tartil { min-height: 44px; }
             select, input, textarea { font-size: 16px !important; }
         }
+
+        /* ═══ Lonceng Notifikasi ═══ */
+        .notifikasi-wrap { position: relative; }
+        .notifikasi-tombol {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--ink-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .notifikasi-tombol:hover {
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+            border-color: var(--accent);
+        }
+        .notifikasi-tombol svg { width: 17px; height: 17px; }
+        .notifikasi-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 17px;
+            height: 17px;
+            padding: 0 4px;
+            border-radius: 999px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 17px;
+            text-align: center;
+        }
+        .notifikasi-panel {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 300px;
+            max-width: calc(100vw - 32px);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+            z-index: 60;
+            overflow: hidden;
+        }
+        .notifikasi-list {
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        .notifikasi-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 10px 14px;
+            text-decoration: none;
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.15s;
+        }
+        .notifikasi-item:hover { background: var(--border-light); }
+        .notifikasi-judul {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+        .notifikasi-waktu {
+            font-size: 10px;
+            color: var(--ink-muted);
+        }
+        .notifikasi-kosong {
+            padding: 16px 14px;
+            font-size: 12px;
+            color: var(--ink-muted);
+            text-align: center;
+        }
+        .notifikasi-panel-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+            border-top: 1px solid var(--border);
+            background: var(--border-light);
+        }
+        .notifikasi-panel-footer a,
+        .notifikasi-panel-footer button {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            padding: 4px 6px;
+        }
+        .notifikasi-panel-footer button { color: var(--ink-muted); }
+        .notifikasi-panel-footer a:hover { color: var(--accent-dark); }
+        .notifikasi-panel-footer button:hover { color: var(--ink); }
+        .notifikasi-aktifkan {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .notifikasi-aktifkan:hover { background: var(--accent); color: #fff; }
     </style>
     @stack('styles')
 </head>
@@ -449,6 +572,20 @@
                     </div>
                 </div>
                 <div class="topbar-actions">
+                    <div class="notifikasi-wrap" id="notifikasi-bell">
+                        <button type="button" class="notifikasi-tombol" id="notifikasi-tombol" aria-label="Notifikasi">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            <span class="notifikasi-badge" id="notifikasi-badge" hidden>0</span>
+                        </button>
+                        <div class="notifikasi-panel" id="notifikasi-panel" hidden>
+                            <div class="notifikasi-list" id="notifikasi-list"></div>
+                            <div class="notifikasi-panel-footer">
+                                <a href="/siswa/notifikasi">Lihat semua</a>
+                                <button type="button" id="notifikasi-read-all">Tandai semua dibaca</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="notifikasi-aktifkan" id="notifikasi-aktifkan" hidden>Aktifkan Notifikasi</button>
                     <a href="{{ route('siswa.no-hp.edit') }}" class="btn-topbar btn-topbar-profil">&#128100; Profil</a>
                     <form method="POST" action="{{ route('siswa.logout') }}" style="margin:0;">
                         @csrf
@@ -489,6 +626,11 @@
             </main>
         </div>
     </div>
+    <script>
+        // Sediakan kunci VAPID publik untuk JS (push subscription siswa)
+        window.tartilVapidKey = document.querySelector('meta[name="tartil-vapid-key"]')?.content || null;
+    </script>
+    @vite(['resources/js/app.js'])
     @stack('scripts')
 </body>
 </html>

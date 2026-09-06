@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LaporanPendampinganOrtu;
 use App\Models\Semester;
 use App\Models\Surat;
+use App\Notifications\SiswaNotifikasi;
 use Illuminate\Http\Request;
 
 class PendampinganOrtuController extends Controller
@@ -103,6 +104,8 @@ class PendampinganOrtuController extends Controller
             'tanggal_konfirmasi' => now(),
         ]);
 
+        $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+
         return back()->with('success', 'Laporan pendampingan berhasil dikonfirmasi.');
     }
 
@@ -118,16 +121,23 @@ class PendampinganOrtuController extends Controller
             'laporan_ids.*' => 'integer|exists:laporan_pendampingan_ortus,id',
         ]);
 
-        $updated = LaporanPendampinganOrtu::where('guru_id', $guru->id)
+        $laporans = LaporanPendampinganOrtu::with('siswa')
+            ->where('guru_id', $guru->id)
             ->where('status', 'pengajuan_konfirmasi')
             ->whereIn('id', $validated['laporan_ids'])
-            ->update([
+            ->get();
+
+        foreach ($laporans as $laporan) {
+            $laporan->update([
                 'status' => 'telah_dikonfirmasi',
                 'dikonfirmasi_oleh' => $guru->id,
                 'tanggal_konfirmasi' => now(),
             ]);
 
-        return back()->with('success', "{$updated} laporan pendampingan berhasil dikonfirmasi.");
+            $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+        }
+
+        return back()->with('success', "{$laporans->count()} laporan pendampingan berhasil dikonfirmasi.");
     }
 
     // ==================== ADMIN: MONITORING SEMUA LAPORAN ====================
@@ -164,6 +174,8 @@ class PendampinganOrtuController extends Controller
             'tanggal_konfirmasi' => now(),
         ]);
 
+        $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+
         return back()->with('success', 'Laporan pendampingan berhasil dikonfirmasi.');
     }
 
@@ -181,15 +193,33 @@ class PendampinganOrtuController extends Controller
 
         $guruId = $user->guru_id;
 
-        $updated = LaporanPendampinganOrtu::where('status', 'pengajuan_konfirmasi')
+        $laporans = LaporanPendampinganOrtu::with('siswa')
+            ->where('status', 'pengajuan_konfirmasi')
             ->whereIn('id', $validated['laporan_ids'])
             ->when($guruId, fn ($q) => $q->where('guru_id', $guruId))
-            ->update([
+            ->get();
+
+        foreach ($laporans as $laporan) {
+            $laporan->update([
                 'status' => 'telah_dikonfirmasi',
                 'dikonfirmasi_oleh' => $guruId,
                 'tanggal_konfirmasi' => now(),
             ]);
 
-        return back()->with('success', "{$updated} laporan pendampingan berhasil dikonfirmasi.");
+            $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+        }
+
+        return back()->with('success', "{$laporans->count()} laporan pendampingan berhasil dikonfirmasi.");
+    }
+
+    // Notifikasi konfirmasi laporan pendampingan untuk siswa pemilik laporan
+    private function notifikasiKonfirmasi(): SiswaNotifikasi
+    {
+        return new SiswaNotifikasi(
+            'pendampingan',
+            'Pendampingan Dikonfirmasi',
+            'Laporan pendampingan Anda telah dikonfirmasi guru',
+            '/siswa/pendampingan-ortu'
+        );
     }
 }

@@ -1,14 +1,32 @@
 <?php
 
+use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Pulse\Support\PulseMigration;
+
+// Package laravel/pulse bersifat opsional di environment tertentu;
+// jika tidak terinstall, migration ini menjadi no-op agar migrate/test tetap jalan.
+if (! class_exists(PulseMigration::class)) {
+    return new class extends Migration
+    {
+        public function up(): void
+        {
+            // laravel/pulse tidak terinstall, tidak ada tabel yang dibuat.
+        }
+
+        public function down(): void
+        {
+            // Tidak ada yang dihapus.
+        }
+    };
+}
 
 return new class extends PulseMigration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('pulse_values')) {
+        if (! Schema::hasTable('pulse_values')) {
             Schema::create('pulse_values', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedInteger('timestamp');
@@ -24,7 +42,7 @@ return new class extends PulseMigration
             });
         }
 
-        if (!Schema::hasTable('pulse_entries')) {
+        if (! Schema::hasTable('pulse_entries')) {
             Schema::create('pulse_entries', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedInteger('timestamp');
@@ -42,7 +60,7 @@ return new class extends PulseMigration
             });
         }
 
-        if (!Schema::hasTable('pulse_aggregates')) {
+        if (! Schema::hasTable('pulse_aggregates')) {
             Schema::create('pulse_aggregates', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedInteger('bucket');

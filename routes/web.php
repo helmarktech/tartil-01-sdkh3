@@ -17,6 +17,7 @@ use App\Http\Controllers\PerpindahanTartilController;
 use App\Http\Controllers\ProgressJurnalController;
 use App\Http\Controllers\RaporController;
 use App\Http\Controllers\SiswaDashboardController;
+use App\Http\Controllers\SiswaNotifikasiController;
 use App\Http\Controllers\SystemSetupController;
 use App\Http\Controllers\TahfidzController;
 use App\Http\Controllers\TrackRecordController;
@@ -361,6 +362,14 @@ Route::middleware(['auth:siswa'])->prefix('siswa')->name('siswa.')->group(functi
     Route::post('/pendampingan-ortu', [PendampinganOrtuController::class, 'siswaStore'])->name('pendampingan-ortu.store');
     Route::get('/no-hp/edit', [SiswaDashboardController::class, 'editNoHp'])->name('no-hp.edit');
     Route::put('/no-hp/update', [SiswaDashboardController::class, 'updateNoHp'])->name('no-hp.update');
+
+    // ===== NOTIFIKASI (database + web push) =====
+    Route::get('/notifikasi', [SiswaNotifikasiController::class, 'index'])->name('notifikasi');
+    Route::get('/notifikasi/unread-count', [SiswaNotifikasiController::class, 'unreadCount'])->name('notifikasi.unread');
+    Route::post('/notifikasi/read-all', [SiswaNotifikasiController::class, 'readAll'])->name('notifikasi.read-all');
+    Route::post('/notifikasi/{id}/read', [SiswaNotifikasiController::class, 'markRead'])->name('notifikasi.read');
+    Route::post('/notifikasi/push/subscribe', [SiswaNotifikasiController::class, 'subscribe'])->name('notifikasi.subscribe');
+    Route::delete('/notifikasi/push/unsubscribe', [SiswaNotifikasiController::class, 'unsubscribe'])->name('notifikasi.unsubscribe');
 });
 
 // ════════════════════════════════════════════

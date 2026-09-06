@@ -10,6 +10,7 @@ use App\Models\SemesterSiswa;
 use App\Models\Siswa;
 use App\Models\Surat;
 use App\Models\TahunAjaran;
+use App\Notifications\SiswaNotifikasi;
 use Illuminate\Http\Request;
 
 class TahfidzController extends Controller
@@ -254,6 +255,12 @@ class TahfidzController extends Controller
 
         HafalanTahfidz::forgetRekapKelasCache($hafalan->kelas_id, $hafalan->semester_id);
 
+        // Notifikasi ke siswa
+        $siswa = Siswa::find($request->siswa_id);
+        if ($siswa) {
+            $siswa->notify($this->notifikasiHafalan($hafalan));
+        }
+
         return redirect()->route('admin.tahfidz.detail-siswa', $request->siswa_id)
             ->with('success', "Hafalan Juz {$hafalan->juz} berhasil dicatat.");
     }
@@ -408,7 +415,28 @@ class TahfidzController extends Controller
 
         HafalanTahfidz::forgetRekapKelasCache($hafalan->kelas_id, $hafalan->semester_id);
 
+        // Notifikasi ke siswa
+        if ($siswa) {
+            $siswa->notify($this->notifikasiHafalan($hafalan));
+        }
+
         return back()->with('success', 'Hafalan berhasil dicatat.');
+    }
+
+    // Notifikasi setoran hafalan untuk siswa terkait
+    private function notifikasiHafalan(HafalanTahfidz $hafalan): SiswaNotifikasi
+    {
+        $ayat = "Juz {$hafalan->juz} ayat {$hafalan->ayat_mulai}";
+        if ($hafalan->ayat_selesai) {
+            $ayat .= "-{$hafalan->ayat_selesai}";
+        }
+
+        return new SiswaNotifikasi(
+            'hafalan',
+            'Setoran Hafalan Ditambahkan',
+            "{$ayat} tercatat",
+            '/siswa/hafalan'
+        );
     }
 
     // ==================== STATISTIK: DATA TAHFIDZ & HAFALAN ====================
