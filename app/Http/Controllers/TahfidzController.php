@@ -417,7 +417,12 @@ class TahfidzController extends Controller
 
         // Notifikasi ke siswa
         if ($siswa) {
-            $siswa->notify($this->notifikasiHafalan($hafalan));
+            try {
+                $siswa->notify($this->notifikasiHafalan($hafalan));
+            } catch (\Throwable $e) {
+                // Gagal kirim push tidak boleh menggagalkan pencatatan hafalan
+                report($e);
+            }
         }
 
         return back()->with('success', 'Hafalan berhasil dicatat.');

@@ -104,7 +104,12 @@ class PendampinganOrtuController extends Controller
             'tanggal_konfirmasi' => now(),
         ]);
 
-        $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+        try {
+            $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+        } catch (\Throwable $e) {
+            // Gagal kirim push tidak boleh menggagalkan konfirmasi
+            report($e);
+        }
 
         return back()->with('success', 'Laporan pendampingan berhasil dikonfirmasi.');
     }
@@ -134,7 +139,12 @@ class PendampinganOrtuController extends Controller
                 'tanggal_konfirmasi' => now(),
             ]);
 
-            $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+            try {
+                $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+            } catch (\Throwable $e) {
+                // Gagal kirim push tidak boleh membatalkan konfirmasi siswa lain
+                report($e);
+            }
         }
 
         return back()->with('success', "{$laporans->count()} laporan pendampingan berhasil dikonfirmasi.");
@@ -174,7 +184,12 @@ class PendampinganOrtuController extends Controller
             'tanggal_konfirmasi' => now(),
         ]);
 
-        $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+        try {
+            $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+        } catch (\Throwable $e) {
+            // Gagal kirim push tidak boleh menggagalkan konfirmasi
+            report($e);
+        }
 
         return back()->with('success', 'Laporan pendampingan berhasil dikonfirmasi.');
     }
@@ -206,7 +221,12 @@ class PendampinganOrtuController extends Controller
                 'tanggal_konfirmasi' => now(),
             ]);
 
-            $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+            try {
+                $laporan->siswa?->notify($this->notifikasiKonfirmasi());
+            } catch (\Throwable $e) {
+                // Gagal kirim push tidak boleh membatalkan konfirmasi siswa lain
+                report($e);
+            }
         }
 
         return back()->with('success', "{$laporans->count()} laporan pendampingan berhasil dikonfirmasi.");

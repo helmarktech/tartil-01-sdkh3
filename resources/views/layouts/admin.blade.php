@@ -498,6 +498,7 @@
         if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
         if (overlay) overlay.addEventListener('click', closeSidebar);
     </script>
+    @vite(['resources/js/app.js'])
     @stack('scripts')
 
     {{-- Precalculate Reminder Modal --}}

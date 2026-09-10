@@ -216,6 +216,53 @@ class NotifikasiSiswaTest extends TestCase
         $this->assertDatabaseMissing('push_subscriptions', ['endpoint' => $endpoint]);
     }
 
+    public function test_notifikasi_tetap_terkirim_setelah_siswa_logout(): void
+    {
+        // 1. Siswa login dan subscribe push
+        $this->actingAs($this->siswa, 'siswa');
+        $endpoint = 'http://127.0.0.1:9/sub/push-tetap-ada';
+        $this->postJson(route('siswa.notifikasi.subscribe'), [
+            'endpoint' => $endpoint,
+            'keys' => [
+                'p256dh' => 'BPdiWfjWR0bDIBLk1zXWf0oXq0dPdFnX6Gv8Qz8xQ1c',
+                'auth' => 'tEstAuThSeCrEt123',
+            ],
+        ])->assertOk();
+
+        // 2. Siswa logout — subscription TIDAK ikut terhapus
+        $this->post(route('siswa.logout'))->assertRedirect();
+        $this->assertGuest('siswa');
+        $this->assertDatabaseHas('push_subscriptions', [
+            'endpoint' => $endpoint,
+            'subscribable_id' => $this->siswa->id,
+            'subscribable_type' => Siswa::class,
+        ]);
+
+        // 3. Guru input jurnal: notifikasi tetap dibuat & push tetap dikirim ke endpoint tersimpan
+        $this->actingAs($this->userGuru, 'web');
+        $response = $this->postJson(route('guru.jurnal.batch-store'), [
+            'tanggal' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+            'kelas_id' => $this->kelas->id,
+            'entries' => [
+                ['siswa_id' => $this->siswa->id, 'penilaian' => 'B'],
+            ],
+        ]);
+        if ($response->getStatusCode() !== 200) {
+            fwrite(STDERR, "\nDEBUG RESPONSE: ".$response->getContent()."\n");
+        }
+        $response->assertOk();
+
+        $notifikasi = $this->siswa->notifications()->get();
+        $this->assertCount(1, $notifikasi);
+        $this->assertEquals('jurnal', $notifikasi->first()->data['tipe']);
+
+        // 4. Kegagalan kirim push (endpoint tidak terjangkau) tidak menghapus subscription
+        $this->assertDatabaseHas('push_subscriptions', [
+            'endpoint' => $endpoint,
+            'subscribable_id' => $this->siswa->id,
+        ]);
+    }
+
     public function test_siswa_buka_halaman_notifikasi_dan_unread_count(): void
     {
         $this->siswa->notify(new SiswaNotifikasi('jurnal', 'Judul Tes', 'Pesan tes', '/siswa/nilai'));
