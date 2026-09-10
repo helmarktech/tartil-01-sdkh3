@@ -35,7 +35,7 @@ Fitur inti meliputi:
 
 - **Framework Backend:** Laravel 13.x (PHP ^8.3).
 - **Frontend:** Blade templates, Tailwind CSS v4, Vite.
-  - File entry Vite (`resources/css/app.css` dan `resources/js/app.js`) sudah tersedia; hasil build (`public/build`) di-generate saat `npm run build` dan di-gitignore.
+  - File entry Vite (`resources/css/app.css` dan `resources/js/app.js`) sudah tersedia; hasil build (`public/build`) **di-commit ke repo** karena server production tidak menjalankan `npm run build`. Setelah mengubah `resources/css`/`resources/js`, wajib jalankan `npm run build` dan commit ulang `public/build`.
 - **Database:** MySQL/MariaDB (default `.env`), SQLite untuk testing.
 - **Dependensi Utama:**
   - `laravel/framework` ^13.0
@@ -466,7 +466,7 @@ Saat semester ditutup, sistem dapat membuat snapshot di tabel berikut (data asli
 
 ### Catatan Vite
 
-File entry Vite (`resources/css/app.css` dan `resources/js/app.js`) sudah tersedia. Jalankan `npm install && npm run build` saat deploy; hasil build (`public/build`) di-generate dan di-gitignore.
+File entry Vite (`resources/css/app.css` dan `resources/js/app.js`) sudah tersedia. Hasil build (`public/build`) **di-commit ke repo** (tidak di-gitignore) karena server production tidak menjalankan `npm run build`. Setiap perubahan pada `resources/css`/`resources/js` wajib diikuti `npm run build` dan commit ulang `public/build` sebelum push; di server cukup `git pull`.
 
 ---
 
