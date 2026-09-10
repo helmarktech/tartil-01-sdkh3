@@ -279,8 +279,6 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     Route::middleware('semester')->group(function () {
         Route::get('/jurnal', [JurnalController::class, 'index'])->name('jurnal.index');
         Route::post('/jurnal/batch-store', [JurnalController::class, 'batchStore'])->name('jurnal.batch-store');
-        Route::post('/jurnal/copy-yesterday', [JurnalController::class, 'copyFromYesterday'])->name('jurnal.copy-yesterday');
-        Route::post('/jurnal/hadir-semua', [JurnalController::class, 'hadirSemua'])->name('jurnal.hadir-semua');
     });
     // Rekap bulanan (tanpa semester check)
     Route::get('/jurnal/rekap', [JurnalController::class, 'rekapBulanan'])->name('jurnal.rekap');

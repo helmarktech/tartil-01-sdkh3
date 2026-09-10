@@ -103,8 +103,14 @@ class JurnalController extends Controller
         }
 
         $guru = auth()->guard('web')->user()?->guru ?? null;
-        $guruId = $guru?->id ?? auth()->guard('web')->user()?->id;
         $kelasId = $validated['kelas_id'];
+
+        // guru_id merujuk guru_tartils.id — jangan pernah diisi users.id.
+        // User tanpa relasi guru (misal admin) dicatat atas nama guru wali kelas.
+        $guruId = $guru?->id ?? Kelas::whereKey($kelasId)->value('guru_id');
+        if (! $guruId) {
+            return response()->json(['error' => 'Kelas ini belum memiliki guru pengampu. Tetapkan wali kelas terlebih dahulu.'], 422);
+        }
         $tanggal = $validated['tanggal'];
         $tanggalCarbon = Carbon::parse($tanggal);
         $bulan = (int) date('Ym', strtotime($tanggal));
@@ -294,12 +300,18 @@ class JurnalController extends Controller
                 $tanggalIndo = $tanggalCarbon->copy()->locale('id')->translatedFormat('d F Y');
                 Siswa::whereIn('id', $siswaDinilaiIds)->get()
                     ->each(function ($siswa) use ($tanggalIndo) {
-                        $siswa->notify(new SiswaNotifikasi(
-                            'jurnal',
-                            'Jurnal Harian Diperbarui',
-                            "{$tanggalIndo} — nilai Anda telah diinput guru",
-                            '/siswa/nilai'
-                        ));
+                        try {
+                            $siswa->notify(new SiswaNotifikasi(
+                                'jurnal',
+                                'Jurnal Harian Diperbarui',
+                                "{$tanggalIndo} — nilai Anda telah diinput guru",
+                                '/siswa/nilai'
+                            ));
+                        } catch (\Throwable $e) {
+                            // Gagal kirim push (endpoint mati/jaringan) tidak boleh
+                            // membatalkan notifikasi siswa lain atau mengaburkan hasil simpan
+                            report($e);
+                        }
                     });
             }
 

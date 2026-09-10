@@ -13,7 +13,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::GhZCMTNsiXP1eI22',
+            '_route' => 'generated::O77Sztu2LPNBcEwa',
           ),
           1 => NULL,
           2 => 
@@ -33,7 +33,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::FqesyzGEnJJG44p9',
+            '_route' => 'generated::uHdOt1Cg7uuEsfFC',
           ),
           1 => NULL,
           2 => 
@@ -53,7 +53,7 @@ app('router')->setCompiledRoutes(
         array (
           0 => 
           array (
-            '_route' => 'generated::nO2IqvpPfIawo0PO',
+            '_route' => 'generated::nC37uLlqRELK3qZl',
           ),
           1 => NULL,
           2 => 
@@ -1892,44 +1892,6 @@ app('router')->setCompiledRoutes(
           0 => 
           array (
             '_route' => 'guru.jurnal.batch-store',
-          ),
-          1 => NULL,
-          2 => 
-          array (
-            'POST' => 0,
-          ),
-          3 => NULL,
-          4 => false,
-          5 => false,
-          6 => NULL,
-        ),
-      ),
-      '/guru/jurnal/copy-yesterday' => 
-      array (
-        0 => 
-        array (
-          0 => 
-          array (
-            '_route' => 'guru.jurnal.copy-yesterday',
-          ),
-          1 => NULL,
-          2 => 
-          array (
-            'POST' => 0,
-          ),
-          3 => NULL,
-          4 => false,
-          5 => false,
-          6 => NULL,
-        ),
-      ),
-      '/guru/jurnal/hadir-semua' => 
-      array (
-        0 => 
-        array (
-          0 => 
-          array (
-            '_route' => 'guru.jurnal.hadir-semua',
           ),
           1 => NULL,
           2 => 
@@ -4605,7 +4567,7 @@ app('router')->setCompiledRoutes(
   ),
   'attributes' => 
   array (
-    'generated::GhZCMTNsiXP1eI22' => 
+    'generated::O77Sztu2LPNBcEwa' => 
     array (
       'methods' => 
       array (
@@ -4619,13 +4581,13 @@ app('router')->setCompiledRoutes(
         array (
           0 => 'api',
         ),
-        'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:26:"fn() => [\'status\' => \'ok\']";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"000000000000041b0000000000000000";}}',
+        'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:26:"fn() => [\'status\' => \'ok\']";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"00000000000003300000000000000000";}}',
         'namespace' => NULL,
         'prefix' => 'api',
         'where' => 
         array (
         ),
-        'as' => 'generated::GhZCMTNsiXP1eI22',
+        'as' => 'generated::O77Sztu2LPNBcEwa',
       ),
       'fallback' => false,
       'defaults' => 
@@ -4641,7 +4603,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::FqesyzGEnJJG44p9' => 
+    'generated::uHdOt1Cg7uuEsfFC' => 
     array (
       'methods' => 
       array (
@@ -4677,8 +4639,8 @@ app('router')->setCompiledRoutes(
                     return response(\\Illuminate\\Support\\Facades\\View::file(\'E:\\\\laragon\\\\www\\\\tartil-assessment\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Configuration\'.\'/../resources/health-up.blade.php\', [
                         \'exception\' => $exception,
                     ]), status: $status);
-                }";s:5:"scope";s:54:"Illuminate\\Foundation\\Configuration\\ApplicationBuilder";s:4:"this";N;s:4:"self";s:32:"000000000000041d0000000000000000";}}',
-        'as' => 'generated::FqesyzGEnJJG44p9',
+                }";s:5:"scope";s:54:"Illuminate\\Foundation\\Configuration\\ApplicationBuilder";s:4:"this";N;s:4:"self";s:32:"00000000000003320000000000000000";}}',
+        'as' => 'generated::uHdOt1Cg7uuEsfFC',
       ),
       'fallback' => false,
       'defaults' => 
@@ -4694,7 +4656,7 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'generated::nO2IqvpPfIawo0PO' => 
+    'generated::nC37uLlqRELK3qZl' => 
     array (
       'methods' => 
       array (
@@ -4716,13 +4678,13 @@ app('router')->setCompiledRoutes(
     }
 
     return \\view(\'landing\');
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"00000000000004220000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"00000000000003370000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
         array (
         ),
-        'as' => 'generated::nO2IqvpPfIawo0PO',
+        'as' => 'generated::nC37uLlqRELK3qZl',
       ),
       'fallback' => false,
       'defaults' => 
@@ -4754,7 +4716,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:42:"function () {
     return \\redirect(\'/\');
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"00000000000004240000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"00000000000003390000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -5939,7 +5901,7 @@ app('router')->setCompiledRoutes(
           1 => 'auth',
           2 => 'role:admin',
         ),
-        'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:48:"fn () => \\redirect()->route(\'admin.kelas.index\')";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"00000000000004460000000000000000";}}',
+        'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:48:"fn () => \\redirect()->route(\'admin.kelas.index\')";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"000000000000035b0000000000000000";}}',
         'as' => 'admin.kelastartil.index',
         'namespace' => NULL,
         'prefix' => '/admin',
@@ -11002,84 +10964,6 @@ app('router')->setCompiledRoutes(
       'waitSeconds' => NULL,
       'withTrashed' => false,
     ),
-    'guru.jurnal.copy-yesterday' => 
-    array (
-      'methods' => 
-      array (
-        0 => 'POST',
-      ),
-      'uri' => 'guru/jurnal/copy-yesterday',
-      'action' => 
-      array (
-        'middleware' => 
-        array (
-          0 => 'web',
-          1 => 'auth',
-          2 => 'role:guru',
-          3 => 'semester',
-        ),
-        'uses' => 'App\\Http\\Controllers\\JurnalController@copyFromYesterday',
-        'controller' => 'App\\Http\\Controllers\\JurnalController@copyFromYesterday',
-        'as' => 'guru.jurnal.copy-yesterday',
-        'namespace' => NULL,
-        'prefix' => '/guru',
-        'where' => 
-        array (
-        ),
-      ),
-      'fallback' => false,
-      'defaults' => 
-      array (
-      ),
-      'wheres' => 
-      array (
-      ),
-      'bindingFields' => 
-      array (
-      ),
-      'lockSeconds' => NULL,
-      'waitSeconds' => NULL,
-      'withTrashed' => false,
-    ),
-    'guru.jurnal.hadir-semua' => 
-    array (
-      'methods' => 
-      array (
-        0 => 'POST',
-      ),
-      'uri' => 'guru/jurnal/hadir-semua',
-      'action' => 
-      array (
-        'middleware' => 
-        array (
-          0 => 'web',
-          1 => 'auth',
-          2 => 'role:guru',
-          3 => 'semester',
-        ),
-        'uses' => 'App\\Http\\Controllers\\JurnalController@hadirSemua',
-        'controller' => 'App\\Http\\Controllers\\JurnalController@hadirSemua',
-        'as' => 'guru.jurnal.hadir-semua',
-        'namespace' => NULL,
-        'prefix' => '/guru',
-        'where' => 
-        array (
-        ),
-      ),
-      'fallback' => false,
-      'defaults' => 
-      array (
-      ),
-      'wheres' => 
-      array (
-      ),
-      'bindingFields' => 
-      array (
-      ),
-      'lockSeconds' => NULL,
-      'waitSeconds' => NULL,
-      'withTrashed' => false,
-    ),
     'guru.jurnal.rekap' => 
     array (
       'methods' => 
@@ -13174,7 +13058,7 @@ app('router')->setCompiledRoutes(
         ),
         'uses' => 'O:55:"Laravel\\SerializableClosure\\UnsignedSerializableClosure":1:{s:12:"serializable";O:46:"Laravel\\SerializableClosure\\Serializers\\Native":5:{s:3:"use";a:0:{}s:8:"function";s:53:"function () {
     return \\view(\'pulse::dashboard\');
-}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"000000000000042b0000000000000000";}}',
+}";s:5:"scope";s:37:"Illuminate\\Routing\\RouteFileRegistrar";s:4:"this";N;s:4:"self";s:32:"00000000000003400000000000000000";}}',
         'namespace' => NULL,
         'prefix' => '',
         'where' => 
@@ -13212,7 +13096,7 @@ app('router')->setCompiledRoutes(
                         $config,
                         $isProduction
                     ))($request, $path);
-                }";s:5:"scope";s:47:"Illuminate\\Filesystem\\FilesystemServiceProvider";s:4:"this";N;s:4:"self";s:32:"00000000000005030000000000000000";}}',
+                }";s:5:"scope";s:47:"Illuminate\\Filesystem\\FilesystemServiceProvider";s:4:"this";N;s:4:"self";s:32:"00000000000004160000000000000000";}}',
         'as' => 'storage.local',
       ),
       'fallback' => false,
@@ -13245,7 +13129,7 @@ app('router')->setCompiledRoutes(
                         $config,
                         $isProduction
                     ))($request, $path);
-                }";s:5:"scope";s:47:"Illuminate\\Filesystem\\FilesystemServiceProvider";s:4:"this";N;s:4:"self";s:32:"00000000000005050000000000000000";}}',
+                }";s:5:"scope";s:47:"Illuminate\\Filesystem\\FilesystemServiceProvider";s:4:"this";N;s:4:"self";s:32:"00000000000004180000000000000000";}}',
         'as' => 'storage.local.upload',
       ),
       'fallback' => false,
