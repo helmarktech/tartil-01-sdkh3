@@ -52,8 +52,8 @@
             <div style="padding: 14px 20px; border-bottom: 1px solid var(--border);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <div style="font-weight: 500;">{{ $p->kelasLama->nama }} → {{ $p->kelasBaru->nama }}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">{{ $p->semester->tahun_ajaran }} {{ ucfirst($p->semester->jenis) }}</div>
+                        <div style="font-weight: 500;">{{ $p->kelasLama->nama ?? '-' }} → {{ $p->kelasBaru->nama ?? '-' }}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">{{ $p->semester?->tahun_ajaran }} {{ ucfirst($p->semester?->jenis ?? '') }}</div>
                     </div>
                     <span class="badge-subject" style="background: {{ $p->status == 'disetujui' ? '#E9F0E9' : ($p->status == 'pending' ? '#F0ECE9' : '#F0E9E9') }}; color: {{ $p->status == 'disetujui' ? '#5A7D5A' : ($p->status == 'pending' ? '#8A7A6B' : '#A85A52') }};">
                         {{ ucfirst($p->status) }}
