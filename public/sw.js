@@ -2,7 +2,7 @@
    Service Worker TARTIL — cache aset statis & push notifikasi
    ══════════════════════════════════════════════════════ */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE_ASSETS = `tartil-assets-${VERSION}`;
 const CACHE_CORE = `tartil-core-${VERSION}`;
 

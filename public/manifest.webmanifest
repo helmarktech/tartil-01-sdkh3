@@ -1,8 +1,10 @@
 {
     "name": "TARTIL — Sistem Penilaian Tartil",
     "short_name": "TARTIL",
+    "id": "/",
     "description": "Sistem penilaian bacaan tartil Al-Quran SD Khadijah 3.",
     "lang": "id",
+    "categories": ["education"],
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
