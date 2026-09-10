@@ -11,6 +11,10 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#0c8a5f">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TARTIL">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="{{ asset('css/tartil.css') }}" rel="stylesheet">
     @stack('styles')
