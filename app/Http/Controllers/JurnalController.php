@@ -305,7 +305,7 @@ class JurnalController extends Controller
                                 'jurnal',
                                 'Jurnal Harian Diperbarui',
                                 "{$tanggalIndo} — nilai Anda telah diinput guru",
-                                '/siswa/nilai'
+                                SiswaNotifikasi::urlDefault('jurnal')
                             ));
                         } catch (\Throwable $e) {
                             // Gagal kirim push (endpoint mati/jaringan) tidak boleh

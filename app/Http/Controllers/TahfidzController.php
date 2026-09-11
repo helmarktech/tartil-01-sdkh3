@@ -440,7 +440,7 @@ class TahfidzController extends Controller
             'hafalan',
             'Setoran Hafalan Ditambahkan',
             "{$ayat} tercatat",
-            '/siswa/hafalan'
+            SiswaNotifikasi::urlDefault('hafalan')
         );
     }
 

@@ -239,7 +239,7 @@ class PendampinganOrtuController extends Controller
             'pendampingan',
             'Pendampingan Dikonfirmasi',
             'Laporan pendampingan Anda telah dikonfirmasi guru',
-            '/siswa/pendampingan-ortu'
+            SiswaNotifikasi::urlDefault('pendampingan')
         );
     }
 }

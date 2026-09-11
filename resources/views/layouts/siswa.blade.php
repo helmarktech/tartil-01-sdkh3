@@ -15,7 +15,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="TARTIL">
+    <meta name="apple-mobile-web-app-title" content="TartilPro">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -111,6 +111,12 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-shrink: 0;
+        }
+        .tartil-topbar .btn-topbar svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
         }
         .tartil-topbar .btn-topbar {
             display: inline-flex;
@@ -433,11 +439,24 @@
         /* ═══ Mobile ═══ */
         @media (max-width: 640px) {
             .tartil-content { padding: 16px; }
-            .tartil-topbar { padding: 10px 16px; }
+            .tartil-topbar { padding: 8px 12px; gap: 8px; }
+            .tartil-topbar .brand { gap: 6px; min-width: 0; }
+            .tartil-topbar .brand-title { font-size: 14px; white-space: nowrap; }
+            .tartil-topbar .brand-subtitle { font-size: 9px; white-space: nowrap; }
             .tartil-topbar .topbar-actions { gap: 6px; }
-            .tartil-topbar .btn-topbar { padding: 6px 10px; font-size: 11px; }
+            .tartil-topbar .btn-topbar { padding: 6px 9px; font-size: 11px; gap: 5px; }
+            .notifikasi-aktifkan { padding: 6px 8px; font-size: 10px; white-space: nowrap; }
             .siswa-nav { gap: 5px; }
             .siswa-nav a { padding: 7px 12px; font-size: 11px; }
+        }
+        /* Layar sangat kecil: tombol Profil/Keluar jadi ikon saja */
+        @media (max-width: 480px) {
+            .tartil-topbar .btn-topbar .btn-label { display: none; }
+            .tartil-topbar .btn-topbar { padding: 7px 9px; }
+            .tartil-topbar .btn-topbar svg { width: 16px; height: 16px; }
+        }
+        @media (max-width: 380px) {
+            .tartil-topbar .brand-subtitle { display: none; }
         }
         @media (hover: none) and (pointer: coarse) {
             .btn-tartil { min-height: 44px; }
@@ -589,10 +608,10 @@
                         </div>
                     </div>
                     <button type="button" class="notifikasi-aktifkan" id="notifikasi-aktifkan" hidden>Aktifkan Notifikasi</button>
-                    <a href="{{ route('siswa.no-hp.edit') }}" class="btn-topbar btn-topbar-profil">&#128100; Profil</a>
+                    <a href="{{ route('siswa.no-hp.edit') }}" class="btn-topbar btn-topbar-profil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="btn-label">Profil</span></a>
                     <form method="POST" action="{{ route('siswa.logout') }}" style="margin:0;">
                         @csrf
-                        <button type="submit" class="btn-topbar btn-topbar-logout">Keluar</button>
+                        <button type="submit" class="btn-topbar btn-topbar-logout" aria-label="Keluar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="btn-label">Keluar</span></button>
                     </form>
                 </div>
             </header>

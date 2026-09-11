@@ -283,7 +283,7 @@
 
     {{-- Jurnal Terbaru — Ringkas + Detail Modal --}}
     @if($jurnals->count() > 0)
-    <div class="sd-section">
+    <div class="sd-section" id="jurnal-terbaru">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
             <h2 class="sd-section-title" style="margin:0;">Jurnal Terbaru</h2>
             <div style="display:flex;align-items:center;gap:8px;">
@@ -484,6 +484,8 @@
 
 <style>
 .sd-wrap { max-width: 960px; margin: 0 auto; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+/* Anchor dari notifikasi: beri ruang agar tidak tertutup topbar sticky */
+#jurnal-terbaru { scroll-margin-top: 72px; }
 
 .sd-btn-cetak {
     display: inline-flex; align-items: center; gap: 8px;

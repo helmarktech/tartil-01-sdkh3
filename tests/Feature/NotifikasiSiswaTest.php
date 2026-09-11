@@ -127,7 +127,7 @@ class NotifikasiSiswaTest extends TestCase
         $this->assertCount(1, $notifikasi);
         $this->assertEquals('jurnal', $notifikasi->first()->data['tipe']);
         $this->assertEquals('Jurnal Harian Diperbarui', $notifikasi->first()->data['judul']);
-        $this->assertEquals('/siswa/nilai', $notifikasi->first()->data['url']);
+        $this->assertEquals('/siswa/dashboard#jurnal-terbaru', $notifikasi->first()->data['url']);
     }
 
     public function test_guru_tambah_setoran_hafalan_mengirim_notifikasi_tipe_hafalan(): void

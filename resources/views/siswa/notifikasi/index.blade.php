@@ -32,7 +32,8 @@
         @foreach($notifications as $n)
         @php
             $ikon = $ikonTipe[$n->data['tipe'] ?? ''] ?? ['simbol' => '&#128276;', 'warna' => 'linear-gradient(135deg, #57534e, #292524)'];
-            $url = $n->data['url'] ?? '#';
+            $url = \App\Notifications\SiswaNotifikasi::urlDefault($n->data['tipe'] ?? null)
+                ?? ($n->data['url'] ?? '#');
         @endphp
         <a href="{{ $url }}" class="sn-item {{ $n->read_at ? '' : 'sn-unread' }}"
            data-notif-id="{{ $n->id }}" data-url="{{ $url }}">

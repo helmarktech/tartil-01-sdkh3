@@ -1,8 +1,8 @@
 /* ══════════════════════════════════════════════════════
-   Service Worker TARTIL — cache aset statis & push notifikasi
+   Service Worker TartilPro — cache aset statis & push notifikasi
    ══════════════════════════════════════════════════════ */
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE_ASSETS = `tartil-assets-${VERSION}`;
 const CACHE_CORE = `tartil-core-${VERSION}`;
 
@@ -71,7 +71,7 @@ self.addEventListener('push', (event) => {
         payload = {};
     }
 
-    const title = payload.title || 'TARTIL';
+    const title = payload.title || 'TartilPro';
     const options = {
         body: payload.body || '',
         icon: payload.icon || '/icons/icon-192.png',

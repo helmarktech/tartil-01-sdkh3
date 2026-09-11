@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Notifications\SiswaNotifikasi;
 use Illuminate\Http\Request;
 
 class SiswaNotifikasiController extends Controller
@@ -37,7 +38,8 @@ class SiswaNotifikasiController extends Controller
                 'tipe' => $n->data['tipe'] ?? null,
                 'judul' => $n->data['judul'] ?? null,
                 'pesan' => $n->data['pesan'] ?? null,
-                'url' => $n->data['url'] ?? null,
+                'url' => SiswaNotifikasi::urlDefault($n->data['tipe'] ?? null)
+                    ?? ($n->data['url'] ?? null),
                 'waktu' => $n->created_at->diffForHumans(),
             ])->values(),
         ]);

@@ -21,6 +21,21 @@ class SiswaNotifikasi extends Notification
         return ['database', WebPushChannel::class];
     }
 
+    /**
+     * URL tujuan per tipe notifikasi (satu sumber kebenaran).
+     * Dipakai saat render agar notifikasi lama yang menyimpan
+     * url usang tetap mengarah ke halaman yang sesuai tipenya.
+     */
+    public static function urlDefault(?string $tipe): ?string
+    {
+        return match ($tipe) {
+            'jurnal' => '/siswa/dashboard#jurnal-terbaru',
+            'hafalan' => '/siswa/hafalan',
+            'pendampingan' => '/siswa/pendampingan-ortu',
+            default => null,
+        };
+    }
+
     public function toArray($notifiable): array
     {
         return [
