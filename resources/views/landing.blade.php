@@ -880,6 +880,8 @@
 </head>
 <body>
 
+    @include('layouts.partials.splash')
+
     <!-- ===== HERO ===== -->
     <section class="hero">
         <div class="hero-left">

@@ -122,6 +122,7 @@
     </style>
 </head>
 <body>
+    @include('layouts.partials.splash')
     <div class="tartil-wrapper">
         {{-- Sidebar --}}
         <aside class="tartil-sidebar" id="sidebar">

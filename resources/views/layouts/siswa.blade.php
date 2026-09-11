@@ -583,6 +583,7 @@
     @stack('styles')
 </head>
 <body>
+    @include('layouts.partials.splash')
     <div class="tartil-wrapper">
         <div class="tartil-main">
             <header class="tartil-topbar">

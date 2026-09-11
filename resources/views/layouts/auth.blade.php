@@ -196,6 +196,7 @@
     @stack('styles')
 </head>
 <body>
+    @include('layouts.partials.splash')
     @yield('content')
     @vite(['resources/js/app.js'])
     @stack('scripts')
