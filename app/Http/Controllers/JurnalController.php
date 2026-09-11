@@ -160,25 +160,36 @@ class JurnalController extends Controller
         DB::beginTransaction();
         try {
             // 1. Simpan/Update Jurnal Kelas (info umum)
-            JurnalKelas::updateOrCreate(
-                ['kelas_id' => $kelasId, 'tanggal' => $tanggal],
-                [
-                    'semester_id' => $semesterAktif->id,
-                    'guru_id' => $guruId,
-                    'pertemuan_ke' => $pertemuanKe,
-                    'halaman_juz' => $validated['halaman_juz'] ?? null,
-                    'surat_id' => $validated['surat_id'] ?? null,
-                    'ayat' => $validated['ayat'] ?? null,
-                    'materi_pembelajaran' => $validated['materi_pembelajaran'] ?? null,
-                    'topik' => $validated['topik'] ?? null,
-                    'rencana' => $validated['rencana'] ?? null,
-                    'catatan_kelas' => $validated['catatan_kelas'] ?? null,
-                ]
-            );
+            // whereDate agar kompatibel lintas driver (SQLite menyimpan datetime lengkap,
+            // sehingga where('tanggal', ...) tidak menemukan baris lama → duplikat UNIQUE).
+            $dataJurnalKelas = [
+                'semester_id' => $semesterAktif->id,
+                'guru_id' => $guruId,
+                'pertemuan_ke' => $pertemuanKe,
+                'halaman_juz' => $validated['halaman_juz'] ?? null,
+                'surat_id' => $validated['surat_id'] ?? null,
+                'ayat' => $validated['ayat'] ?? null,
+                'materi_pembelajaran' => $validated['materi_pembelajaran'] ?? null,
+                'topik' => $validated['topik'] ?? null,
+                'rencana' => $validated['rencana'] ?? null,
+                'catatan_kelas' => $validated['catatan_kelas'] ?? null,
+            ];
+            $jurnalKelas = JurnalKelas::where('kelas_id', $kelasId)
+                ->whereDate('tanggal', $tanggal)
+                ->first();
+            if ($jurnalKelas) {
+                $jurnalKelas->update($dataJurnalKelas);
+            } else {
+                JurnalKelas::create(array_merge(
+                    ['kelas_id' => $kelasId, 'tanggal' => $tanggal],
+                    $dataJurnalKelas
+                ));
+            }
 
             // 2. Simpan/Update Penilaian per Siswa
             $inserted = 0;
             $updated = 0;
+            $siswaBerubahIds = []; // siswa yang nilainya baru diisi atau berubah (untuk notifikasi)
 
             // Deduplicate entries per siswa_id
             $entriesBySiswa = [];
@@ -212,11 +223,14 @@ class JurnalController extends Controller
                     ->where('siswa_id', $siswaId)
                     ->first();
 
+                $penilaianBaru = $e['penilaian'] ?? null;
+
                 if ($existing) {
+                    $penilaianLama = $existing->penilaian;
                     $existing->update([
                         'guru_id' => $guruId,
                         'semester_id' => $semesterAktif->id,
-                        'penilaian' => $e['penilaian'] ?? null,
+                        'penilaian' => $penilaianBaru,
                         'catatan' => $e['catatan'] ?? null,
                         'surat_id' => $suratId,
                         'ayat_mulai' => $ayatMulai,
@@ -227,6 +241,9 @@ class JurnalController extends Controller
                         'rencana' => $rencana,
                     ]);
                     $updated++;
+                    if ($penilaianBaru !== null && $penilaianBaru !== $penilaianLama) {
+                        $siswaBerubahIds[] = $siswaId;
+                    }
                 } else {
                     JurnalHarian::create([
                         'semester_id' => $semesterAktif->id,
@@ -234,7 +251,7 @@ class JurnalController extends Controller
                         'guru_id' => $guruId,
                         'siswa_id' => $siswaId,
                         'tanggal' => $tanggal,
-                        'penilaian' => $e['penilaian'] ?? null,
+                        'penilaian' => $penilaianBaru,
                         'catatan' => $e['catatan'] ?? null,
                         'surat_id' => $suratId,
                         'ayat_mulai' => $ayatMulai,
@@ -245,6 +262,9 @@ class JurnalController extends Controller
                         'rencana' => $rencana,
                     ]);
                     $inserted++;
+                    if ($penilaianBaru !== null) {
+                        $siswaBerubahIds[] = $siswaId;
+                    }
                 }
             }
 
@@ -290,15 +310,10 @@ class JurnalController extends Controller
             DB::commit();
             Cache::forget("rekap_kelas:{$kelasId}:{$bulan}");
 
-            // 6. Kirim notifikasi ke siswa yang mendapat nilai (setelah commit)
-            $siswaDinilaiIds = collect($entriesBySiswa)
-                ->filter(fn ($e) => ($e['penilaian'] ?? null) !== null)
-                ->keys()
-                ->all();
-
-            if (! empty($siswaDinilaiIds)) {
+            // 6. Kirim notifikasi hanya ke siswa yang nilainya baru diisi atau berubah (setelah commit)
+            if (! empty($siswaBerubahIds)) {
                 $tanggalIndo = $tanggalCarbon->copy()->locale('id')->translatedFormat('d F Y');
-                Siswa::whereIn('id', $siswaDinilaiIds)->get()
+                Siswa::whereIn('id', $siswaBerubahIds)->get()
                     ->each(function ($siswa) use ($tanggalIndo) {
                         try {
                             $siswa->notify(new SiswaNotifikasi(

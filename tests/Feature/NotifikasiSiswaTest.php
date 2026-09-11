@@ -130,6 +130,54 @@ class NotifikasiSiswaTest extends TestCase
         $this->assertEquals('/siswa/dashboard#jurnal-terbaru', $notifikasi->first()->data['url']);
     }
 
+    public function test_update_jurnal_tanpa_perubahan_nilai_tidak_mengirim_notifikasi_ulang(): void
+    {
+        $this->actingAs($this->userGuru);
+
+        $tanggal = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $payload = [
+            'tanggal' => $tanggal,
+            'kelas_id' => $this->kelas->id,
+            'entries' => [
+                ['siswa_id' => $this->siswa->id, 'penilaian' => 'B'],
+            ],
+        ];
+
+        // Input pertama: notifikasi terkirim
+        $this->postJson(route('guru.jurnal.batch-store'), $payload)->assertOk();
+        $this->assertEquals(1, $this->siswa->notifications()->count());
+
+        // Simpan ulang tanggal yang sama dengan nilai yang sama: tidak ada notifikasi baru
+        $this->postJson(route('guru.jurnal.batch-store'), $payload)->assertOk();
+        $this->assertEquals(1, $this->siswa->notifications()->count());
+    }
+
+    public function test_update_jurnal_dengan_nilai_berubah_mengirim_notifikasi(): void
+    {
+        $this->actingAs($this->userGuru);
+
+        $tanggal = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
+
+        $this->postJson(route('guru.jurnal.batch-store'), [
+            'tanggal' => $tanggal,
+            'kelas_id' => $this->kelas->id,
+            'entries' => [
+                ['siswa_id' => $this->siswa->id, 'penilaian' => 'B'],
+            ],
+        ])->assertOk();
+
+        // Nilai berubah B → C: notifikasi baru terkirim
+        $this->postJson(route('guru.jurnal.batch-store'), [
+            'tanggal' => $tanggal,
+            'kelas_id' => $this->kelas->id,
+            'entries' => [
+                ['siswa_id' => $this->siswa->id, 'penilaian' => 'C'],
+            ],
+        ])->assertOk();
+
+        $this->assertEquals(2, $this->siswa->notifications()->count());
+    }
+
     public function test_guru_tambah_setoran_hafalan_mengirim_notifikasi_tipe_hafalan(): void
     {
         $this->actingAs($this->userGuru);
