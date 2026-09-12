@@ -206,36 +206,54 @@
             <div class="sd-section">
                 <h2 class="sd-section-title">Info Kelas</h2>
                 <div class="sd-info-list">
-                    <div class="sd-info-item">
-                        <span class="sd-info-label">Kelas Reguler</span>
-                        <span class="sd-info-value">{{ $siswa->kelasReguler->nama ?? '-' }}</span>
+                    {{-- Data Kelas --}}
+                    <div class="sd-info-group">
+                        <div class="sd-info-subtitle">Kelas</div>
+                        <div class="sd-info-item">
+                            <span class="sd-info-label">Kelas Reguler</span>
+                            <span class="sd-info-value">{{ $siswa->kelasReguler->nama ?? '-' }}</span>
+                        </div>
+                        <div class="sd-info-item">
+                            <span class="sd-info-label">Kelas Tartil</span>
+                            <span class="sd-info-value">{{ $siswa->kelasTartil->nama ?? '-' }}</span>
+                        </div>
+                        @if($siswa->tanggal_masuk_kelas_tartil)
+                        <div class="sd-info-item">
+                            <span class="sd-info-label">Masuk Kelas Tartil</span>
+                            <span class="sd-info-value">{{ $siswa->tanggal_masuk_kelas_tartil->format('d M Y') }}</span>
+                        </div>
+                        @endif
                     </div>
-                    <div class="sd-info-item">
-                        <span class="sd-info-label">Kelas Tartil</span>
-                        <span class="sd-info-value">{{ $siswa->kelasTartil->nama ?? '-' }}</span>
+
+                    {{-- Data Guru Tartil --}}
+                    <div class="sd-info-group">
+                        <div class="sd-info-subtitle">Guru Tartil</div>
+                        <div class="sd-info-item">
+                            <span class="sd-info-label">Nama Guru</span>
+                            <span class="sd-info-value">{{ $siswa->kelasTartil->guru->nama ?? '-' }}</span>
+                        </div>
+                        <div class="sd-info-item">
+                            <span class="sd-info-label">No. HP Guru</span>
+                            <span class="sd-info-value sd-info-mono">{{ $siswa->kelasTartil->guru->no_hp ?? '-' }}</span>
+                        </div>
                     </div>
-                    <div class="sd-info-item">
-                        <span class="sd-info-label">Guru Tartil</span>
-                        <span class="sd-info-value">{{ $siswa->kelasTartil->guru->nama ?? '-' }}</span>
+
+                    {{-- Data Siswa --}}
+                    <div class="sd-info-group">
+                        <div class="sd-info-subtitle">Siswa</div>
+                        <div class="sd-info-item">
+                            <span class="sd-info-label">NIS</span>
+                            <span class="sd-info-value sd-info-mono">{{ $siswa->nis }}</span>
+                        </div>
+                        <div class="sd-info-item">
+                            <span class="sd-info-label">No. HP</span>
+                            <span class="sd-info-value sd-info-mono">{{ $siswa->no_hp ?? '-' }}</span>
+                        </div>
+                        <div class="sd-info-item">
+                            <span class="sd-info-label">Status</span>
+                            <span class="sd-info-badge {{ $siswa->status == 'aktif' ? 'active' : '' }}">{{ ucfirst($siswa->status) }}</span>
+                        </div>
                     </div>
-                    <div class="sd-info-item">
-                        <span class="sd-info-label">NIS</span>
-                        <span class="sd-info-value sd-info-mono">{{ $siswa->nis }}</span>
-                    </div>
-                    <div class="sd-info-item">
-                        <span class="sd-info-label">No. HP</span>
-                        <span class="sd-info-value">{{ $siswa->no_hp ?? '-' }}</span>
-                    </div>
-                    <div class="sd-info-item">
-                        <span class="sd-info-label">Status</span>
-                        <span class="sd-info-badge {{ $siswa->status == 'aktif' ? 'active' : '' }}">{{ ucfirst($siswa->status) }}</span>
-                    </div>
-                    @if($siswa->tanggal_masuk_kelas_tartil)
-                    <div class="sd-info-item">
-                        <span class="sd-info-label">Masuk Kelas Tartil</span>
-                        <span class="sd-info-value">{{ $siswa->tanggal_masuk_kelas_tartil->format('d M Y') }}</span>
-                    </div>
-                    @endif
                 </div>
             </div>
 
@@ -629,6 +647,12 @@
 .sd-monthly-change.dash { color: #d4d4d4; }
 
 .sd-info-list { display: flex; flex-direction: column; gap: 2px; }
+.sd-info-group { padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #e7e5e4; }
+.sd-info-group:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: none; }
+.sd-info-subtitle {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: #a8a29e; margin-bottom: 2px;
+}
 .sd-info-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f4; }
 .sd-info-item:last-child { border-bottom: none; }
 .sd-info-label { font-size: 12px; color: #78716c; }
