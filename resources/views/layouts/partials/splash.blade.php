@@ -1,7 +1,11 @@
 {{-- ═══ Splash Screen: TartilPro → SD Khadijah 3 ═══
-     Tampil sekali per sesi browser (sessionStorage).
+     Hanya tampil saat TIDAK ada sesi login aktif (guest),
+     dan sekali per sesi browser (sessionStorage).
      Layar 1: TartilPro (motion 1 detik) → transisi smooth →
      Layar 2: logo SD Khadijah 3 → fade out ke konten aplikasi. --}}
+@if(auth()->check() || auth('siswa')->check())
+<script>window.tartilSplashDone = true;</script>
+@else
 <div id="tartil-splash" class="tartil-splash" role="presentation" aria-hidden="true">
     <div class="splash-stage">
         <div class="splash-screen" data-screen="1">
@@ -131,3 +135,4 @@
         }, 3400);
     })();
 </script>
+@endif
