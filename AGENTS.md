@@ -383,6 +383,7 @@ Saat semester ditutup, sistem dapat membuat snapshot di tabel berikut (data asli
 - Batch action tersedia: copy dari kemarin, set hadir semua, batch store.
 - Middleware `semester` melindungi rute ini — hanya bisa diakses saat semester aktif.
 - Informasi umum per kelas per tanggal disimpan di `jurnal_kelas` (surat, ayat, halaman, materi, topik, rencana).
+- **Hitungan hari jurnal siswa WAJIB melalui satu sumber kebenaran: `App\Services\JurnalSiswaService`.** Aturannya: 1 tanggal = 1 hari; hanya hari aktif (Senin–Kamis); bukan hari libur kelas; tidak menghitung jurnal sebelum tanggal mulai resmi kelas (`Kelas::getAwalHitungHari`); dalam rentang semester (semester berjalan dibatasi sampai hari ini). Dipakai oleh dashboard siswa, track record, snapshot tutup semester (`RekapJurnalSemester::snapshot`), dan jalur R2 (`RekapR2Akhir::calculateAndSave`). Jangan menghitung ulang manual dari `jurnal_harians` di controller/view.
 
 ### 8.3 R2 (Rata-Rata Akhir)
 

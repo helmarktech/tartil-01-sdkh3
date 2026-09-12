@@ -230,4 +230,22 @@ class KonsistensiJurnalTest extends TestCase
         $ringkasan = JurnalSiswaService::ringkasan($this->siswa->id, $this->semester->fresh());
         $this->assertEquals(3, $ringkasan['total']);
     }
+
+    public function test_jurnal_sebelum_tanggal_mulai_resmi_kelas_tidak_dihitung(): void
+    {
+        $senin = now()->startOfWeek(Carbon::MONDAY)->subWeek();
+        $selasa = $senin->copy()->addDay();
+        $rabu = $senin->copy()->addDays(2);
+        $this->buatJurnal($senin, 'B');
+        $this->buatJurnal($selasa, 'C');
+        $this->buatJurnal($rabu, 'K');
+
+        // Kelas resmi dimulai Rabu — jurnal Senin & Selasa sebelum itu diabaikan,
+        // selaras dengan monitoring admin/guru (getAwalHitungHari)
+        $this->kelas->update(['tanggal_dimulai' => $rabu->toDateString()]);
+
+        $ringkasan = JurnalSiswaService::ringkasan($this->siswa->id, $this->semester);
+        $this->assertEquals(1, $ringkasan['total']);
+        $this->assertEquals(1, $ringkasan['k']); // Rabu penilaian K
+    }
 }

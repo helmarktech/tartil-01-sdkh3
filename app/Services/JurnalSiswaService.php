@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\JurnalHarian;
+use App\Models\Kelas;
 use App\Models\KelasLibur;
 use App\Models\Semester;
 use Carbon\Carbon;
@@ -16,6 +17,8 @@ use Illuminate\Support\Collection;
  *   diambil satu (baris terbaru / id terbesar).
  * - Hanya hari aktif pembelajaran: Senin–Kamis.
  * - Bukan hari libur kelas (kelas_liburs) pada kelas tempat jurnal tercatat.
+ * - Tidak menghitung jurnal sebelum tanggal mulai resmi kelasnya
+ *   (Kelas::getAwalHitungHari) — selaras dengan monitoring admin/guru.
  * - Berada dalam rentang tanggal semester.
  *
  * Digunakan oleh dashboard siswa dan track record agar angka konsisten
@@ -56,9 +59,11 @@ class JurnalSiswaService
             ->groupBy(fn ($j) => $j->tanggal->format('Y-m-d'))
             ->map(fn ($grup) => $grup->sortByDesc('id')->first());
 
-        // Daftar libur per kelas yang muncul di jurnal siswa
+        // Daftar libur + tanggal mulai resmi per kelas yang muncul di jurnal siswa
         // (siswa bisa punya jurnal di lebih dari satu kelas saat perpindahan)
-        $liburPerKelas = KelasLibur::whereIn('kelas_id', $perTanggal->pluck('kelas_id')->unique()->values()->all() ?: [0])
+        $kelasIds = $perTanggal->pluck('kelas_id')->unique()->values()->all() ?: [0];
+
+        $liburPerKelas = KelasLibur::whereIn('kelas_id', $kelasIds)
             ->whereBetween('tanggal', [
                 Carbon::parse($semester->tanggal_mulai)->toDateString(),
                 Carbon::parse($semester->tanggal_selesai)->toDateString().' 23:59:59',
@@ -69,10 +74,22 @@ class JurnalSiswaService
                 ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
                 ->all());
 
+        $semesterMulai = Carbon::parse($semester->tanggal_mulai);
+        $kelasMap = Kelas::whereIn('id', $kelasIds)->get()->keyBy('id');
+
         return $perTanggal
-            ->filter(function ($j) use ($liburPerKelas) {
+            ->filter(function ($j) use ($liburPerKelas, $kelasMap, $semesterMulai) {
                 if (! static::isHariAktif($j->tanggal)) {
                     return false;
+                }
+
+                // Jurnal sebelum tanggal mulai resmi kelas tidak dihitung
+                $kelas = $kelasMap->get($j->kelas_id);
+                if ($kelas) {
+                    $awalKelas = $kelas->getAwalHitungHari($semesterMulai)->max($semesterMulai);
+                    if ($j->tanggal->lt($awalKelas)) {
+                        return false;
+                    }
                 }
 
                 return ! in_array($j->tanggal->format('Y-m-d'), $liburPerKelas->get($j->kelas_id, []));
