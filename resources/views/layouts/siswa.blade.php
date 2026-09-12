@@ -227,31 +227,84 @@
             color: #fff;
             border-color: var(--accent);
         }
-        /* Dropdown nav: hanya tampil di mobile (style custom, picker tetap native) */
-        .siswa-nav-select {
+        /* Dropdown nav custom: hanya tampil di mobile */
+        .siswa-nav-dropdown {
             display: none;
-            width: 100%;
-            padding: 12px 42px 12px 14px;
+            position: relative;
             margin-bottom: 16px;
+        }
+        .siswa-nav-dropdown-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            padding: 12px 14px;
             border-radius: 12px;
             border: 1px solid var(--border);
-            background: var(--bg-card) url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 14px center / 15px;
+            background: var(--bg-card);
             color: var(--ink);
             font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 16px; /* cegah auto-zoom iOS saat fokus */
+            font-size: 14px;
             font-weight: 600;
-            letter-spacing: 0.1px;
-            appearance: none;
-            -webkit-appearance: none;
             cursor: pointer;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .siswa-nav-select:focus {
-            outline: none;
+        .siswa-nav-dropdown-btn svg {
+            width: 16px;
+            height: 16px;
+            color: var(--ink-muted);
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+        .siswa-nav-dropdown.open .siswa-nav-dropdown-btn {
             border-color: var(--accent);
             box-shadow: 0 0 0 3px var(--accent-soft);
         }
+        .siswa-nav-dropdown.open .siswa-nav-dropdown-btn svg { transform: rotate(180deg); }
+        .siswa-nav-dropdown-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 60;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+            padding: 6px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-6px) scale(0.98);
+            transform-origin: top center;
+            transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+        }
+        .siswa-nav-dropdown-panel.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+        .siswa-nav-dropdown-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 12px;
+            border-radius: 9px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink-secondary);
+            text-decoration: none;
+            transition: background 0.12s;
+        }
+        .siswa-nav-dropdown-item:hover { background: var(--border-light); }
+        .siswa-nav-dropdown-item.active {
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+        }
+        .siswa-nav-dropdown-item svg { width: 15px; height: 15px; flex-shrink: 0; }
 
         /* ═══ Alerts ═══ */
         .alert-tartil {
@@ -476,7 +529,7 @@
             .tartil-topbar .btn-topbar { padding: 6px 9px; font-size: 11px; gap: 5px; }
             .notifikasi-aktifkan { padding: 6px 8px; font-size: 10px; white-space: nowrap; }
             .siswa-nav { display: none; }
-            .siswa-nav-select { display: block; }
+            .siswa-nav-dropdown { display: block; }
         }
         /* Layar sangat kecil: tombol Profil/Keluar jadi ikon saja */
         @media (max-width: 480px) {
@@ -655,29 +708,44 @@
                     </div>
                 </div>
 
-                {{-- Navigasi mobile: dropdown (konsisten di semua halaman) --}}
-                <select class="siswa-nav-select" onchange="if (this.value) window.location.href = this.value;" aria-label="Menu navigasi">
-                    <option value="{{ route('siswa.dashboard') }}" @selected(request()->routeIs('siswa.dashboard'))>&#127968; Dashboard</option>
-                    <option value="{{ route('siswa.nilai') }}" @selected(request()->routeIs('siswa.nilai'))>&#128196; Rapor</option>
-                    @if(auth('siswa')->user()?->kelas_tartil_id)
-                    <option value="{{ route('siswa.hafalan') }}" @selected(request()->routeIs('siswa.hafalan'))>&#128218; Hafalan</option>
-                    <option value="{{ route('siswa.pendampingan-ortu.index') }}" @selected(request()->routeIs('siswa.pendampingan-ortu.*'))>&#128106; Pendampingan Ortu</option>
-                    @endif
-                    <option value="{{ route('siswa.perpindahan') }}" @selected(request()->routeIs('siswa.perpindahan'))>&#128260; Riwayat Kelas</option>
-                    <option value="{{ route('siswa.track-record') }}" @selected(request()->routeIs('siswa.track-record'))>&#128099; Track Record</option>
-                    <option value="{{ route('siswa.munaqosyah') }}" @selected(request()->routeIs('siswa.munaqosyah'))>&#127942; Riwayat Munaqosyah</option>
-                </select>
+                @php
+                    // Satu daftar navigasi untuk pills (desktop) & dropdown (mobile)
+                    $siswaNavItems = [
+                        ['route' => 'siswa.dashboard', 'patterns' => 'siswa.dashboard', 'label' => '🏠 Dashboard'],
+                        ['route' => 'siswa.nilai', 'patterns' => 'siswa.nilai', 'label' => '📄 Rapor'],
+                    ];
+                    if (auth('siswa')->user()?->kelas_tartil_id) {
+                        $siswaNavItems[] = ['route' => 'siswa.hafalan', 'patterns' => 'siswa.hafalan', 'label' => '📚 Hafalan'];
+                        $siswaNavItems[] = ['route' => 'siswa.pendampingan-ortu.index', 'patterns' => 'siswa.pendampingan-ortu.*', 'label' => '👪 Pendampingan Ortu'];
+                    }
+                    $siswaNavItems[] = ['route' => 'siswa.perpindahan', 'patterns' => 'siswa.perpindahan', 'label' => '🔄 Riwayat Kelas'];
+                    $siswaNavItems[] = ['route' => 'siswa.track-record', 'patterns' => 'siswa.track-record', 'label' => '👣 Track Record'];
+                    $siswaNavItems[] = ['route' => 'siswa.munaqosyah', 'patterns' => 'siswa.munaqosyah', 'label' => '🏆 Riwayat Munaqosyah'];
+                    $navAktif = collect($siswaNavItems)->first(fn ($i) => request()->routeIs($i['patterns']));
+                @endphp
+
+                {{-- Navigasi mobile: dropdown custom (panel bisa di-style penuh) --}}
+                <div class="siswa-nav-dropdown" id="siswaNavDropdown">
+                    <button type="button" class="siswa-nav-dropdown-btn" aria-haspopup="true" aria-expanded="false">
+                        <span>{{ $navAktif['label'] ?? 'Menu' }}</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="siswa-nav-dropdown-panel">
+                        @foreach($siswaNavItems as $item)
+                        <a href="{{ route($item['route']) }}" class="siswa-nav-dropdown-item {{ request()->routeIs($item['patterns']) ? 'active' : '' }}">
+                            <span>{{ $item['label'] }}</span>
+                            @if(request()->routeIs($item['patterns']))
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            @endif
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
 
                 <nav class="siswa-nav">
-                    <a href="{{ route('siswa.dashboard') }}" class="{{ request()->routeIs('siswa.dashboard') ? 'active' : '' }}">&#127968; Dashboard</a>
-                    <a href="{{ route('siswa.nilai') }}" class="{{ request()->routeIs('siswa.nilai') ? 'active' : '' }}">&#128196; Rapor</a>
-                    @if(auth('siswa')->user()?->kelas_tartil_id)
-                    <a href="{{ route('siswa.hafalan') }}" class="{{ request()->routeIs('siswa.hafalan') ? 'active' : '' }}">&#128218; Hafalan</a>
-                    <a href="{{ route('siswa.pendampingan-ortu.index') }}" class="{{ request()->routeIs('siswa.pendampingan-ortu.*') ? 'active' : '' }}">&#128106; Pendampingan Ortu</a>
-                    @endif
-                    <a href="{{ route('siswa.perpindahan') }}" class="{{ request()->routeIs('siswa.perpindahan') ? 'active' : '' }}">&#128260; Riwayat Kelas</a>
-                    <a href="{{ route('siswa.track-record') }}" class="{{ request()->routeIs('siswa.track-record') ? 'active' : '' }}">&#128099; Track Record</a>
-                    <a href="{{ route('siswa.munaqosyah') }}" class="{{ request()->routeIs('siswa.munaqosyah') ? 'active' : '' }}">&#127942; Riwayat Munaqosyah</a>
+                    @foreach($siswaNavItems as $item)
+                    <a href="{{ route($item['route']) }}" class="{{ request()->routeIs($item['patterns']) ? 'active' : '' }}">{{ $item['label'] }}</a>
+                    @endforeach
                 </nav>
 
                 @if(session('success'))
@@ -694,6 +762,31 @@
     <script>
         // Sediakan kunci VAPID publik untuk JS (push subscription siswa)
         window.tartilVapidKey = document.querySelector('meta[name="tartil-vapid-key"]')?.content || null;
+    </script>
+    <script>
+        // Dropdown nav mobile: buka/tutup panel
+        (function () {
+            var dd = document.getElementById('siswaNavDropdown');
+            if (!dd) return;
+            var btn = dd.querySelector('.siswa-nav-dropdown-btn');
+            var panel = dd.querySelector('.siswa-nav-dropdown-panel');
+
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var buka = !panel.classList.contains('open');
+                panel.classList.toggle('open', buka);
+                dd.classList.toggle('open', buka);
+                btn.setAttribute('aria-expanded', buka ? 'true' : 'false');
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!dd.contains(e.target)) {
+                    panel.classList.remove('open');
+                    dd.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        })();
     </script>
     @vite(['resources/js/app.js'])
     @stack('scripts')
