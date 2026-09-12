@@ -425,7 +425,7 @@
 
     {{-- Popup Konfirmasi Monitoring Orang Tua --}}
     @if($hafalanBelumDikonfirmasi->isNotEmpty())
-    <div id="konfirmasiOrtuModal" class="sd-modal" style="display: flex;" onclick="closeKonfirmasiOrtu(event)">
+    <div id="konfirmasiOrtuModal" class="sd-modal" onclick="closeKonfirmasiOrtu(event)">
         <div class="sd-modal-content" style="max-width: 520px;" onclick="event.stopPropagation()">
             <div class="sd-modal-header">
                 <h3 class="sd-modal-title">&#128100; Konfirmasi Monitoring Orang Tua</h3>
@@ -469,6 +469,24 @@
     </div>
 
     <script>
+    // Popup tampil setelah motion splash selesai (event dari partial splash).
+    // Fallback 5 detik bila event tidak pernah terkirim.
+    (function () {
+        var modal = document.getElementById('konfirmasiOrtuModal');
+        var sudahTampil = false;
+        function tampilkanPopup() {
+            if (sudahTampil) return;
+            sudahTampil = true;
+            modal.style.display = 'flex';
+        }
+        if (window.tartilSplashDone) {
+            tampilkanPopup();
+        } else {
+            document.addEventListener('tartil:splash-done', tampilkanPopup, { once: true });
+            setTimeout(tampilkanPopup, 5000);
+        }
+    })();
+
     function closeKonfirmasiOrtu(e) {
         if (!e || e.target === document.getElementById('konfirmasiOrtuModal')) {
             document.getElementById('konfirmasiOrtuModal').style.display = 'none';

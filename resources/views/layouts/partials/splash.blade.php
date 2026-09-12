@@ -93,10 +93,16 @@
         var splash = document.getElementById('tartil-splash');
         if (!splash) return;
 
+        function tandaiSelesai() {
+            window.tartilSplashDone = true;
+            document.dispatchEvent(new CustomEvent('tartil:splash-done'));
+        }
+
         // Tampil sekali per sesi browser
         try {
             if (sessionStorage.getItem('tartil_splash_shown')) {
                 splash.remove();
+                tandaiSelesai();
                 return;
             }
             sessionStorage.setItem('tartil_splash_shown', '1');
@@ -118,7 +124,10 @@
         // Fade out ke konten aplikasi
         setTimeout(function () {
             splash.classList.add('splash-exit');
-            setTimeout(function () { splash.remove(); }, 600);
+            setTimeout(function () {
+                splash.remove();
+                tandaiSelesai();
+            }, 600);
         }, 3400);
     })();
 </script>
