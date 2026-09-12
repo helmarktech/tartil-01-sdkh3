@@ -123,8 +123,10 @@ class SiswaDashboardController extends Controller
                 $tahun = $current->year;
                 $bln = $current->month;
                 $jB = $jurnalsFiltered->filter(fn ($j) => $j->tanggal->year == $tahun && $j->tanggal->month == $bln && $j->penilaian == 'B')->count();
+                $jC = $jurnalsFiltered->filter(fn ($j) => $j->tanggal->year == $tahun && $j->tanggal->month == $bln && $j->penilaian == 'C')->count();
                 $jTotal = $jurnalsFiltered->filter(fn ($j) => $j->tanggal->year == $tahun && $j->tanggal->month == $bln)->count();
-                $pct = $jTotal > 0 ? round(($jB / $jTotal) * 100) : 0;
+                // Persentase berbasis poin B/C/K (B=2, C=1, K=0) — selaras R2 Harian
+                $pct = $jTotal > 0 ? round((($jB * 2 + $jC) / ($jTotal * 2)) * 100) : 0;
 
                 // Hitung keterangan perubahan vs bulan sebelumnya
                 $perubahan = null;
@@ -144,6 +146,7 @@ class SiswaDashboardController extends Controller
                     'label' => $current->format('M Y'),
                     'pct' => $pct,
                     'b' => $jB,
+                    'c' => $jC,
                     'total' => $jTotal,
                     'perubahan' => $perubahan,
                     'selisih' => $prevPct !== null ? $pct - $prevPct : null,

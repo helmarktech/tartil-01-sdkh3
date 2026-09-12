@@ -176,7 +176,7 @@
             {{-- Progress Bulanan --}}
             @if(count($bulanData) > 0)
             <div class="sd-section">
-                <h2 class="sd-section-title">Progress Bulanan (% B)</h2>
+                <h2 class="sd-section-title">Progress Bulanan (B/C/K)</h2>
                 <div class="sd-monthly">
                     @foreach($bulanData as $bd)
                     <div class="sd-monthly-item">
@@ -193,7 +193,7 @@
                         @else
                         <div class="sd-monthly-change dash">&mdash;</div>
                         @endif
-                        <div class="sd-monthly-count">{{ $bd['b'] }}/{{ $bd['total'] }}</div>
+                        <div class="sd-monthly-count">B{{ $bd['b'] }} &middot; C{{ $bd['c'] }} &middot; {{ $bd['total'] }} hari</div>
                     </div>
                     @endforeach
                 </div>

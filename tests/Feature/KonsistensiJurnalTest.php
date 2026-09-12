@@ -178,6 +178,28 @@ class KonsistensiJurnalTest extends TestCase
         $response->assertViewHas('bCount', 1);
         $response->assertViewHas('cCount', 1);
         $response->assertViewHas('kCount', 1);
+
+        // Progress bulanan berbasis poin B/C/K (B=2, C=1, K=0).
+        // Data uji: Senin=B, Selasa=C, Rabu=K — bisa terbelah dua bulan
+        // bila minggunya melintasi batas bulan.
+        $senin = now()->startOfWeek(Carbon::MONDAY)->subWeek();
+        $selasa = $senin->copy()->addDay();
+        $response->assertViewHas('bulanData', function ($bulanData) use ($senin, $selasa) {
+            $data = collect($bulanData)->keyBy('label');
+
+            if ($senin->isSameMonth($selasa)) {
+                $bulan = $data->get($senin->format('M Y'));
+
+                return $bulan && (int) $bulan['pct'] === 50 && $bulan['total'] === 3;
+            }
+
+            $mSenin = $data->get($senin->format('M Y'));
+            $mSelasa = $data->get($selasa->format('M Y'));
+
+            return $mSenin && $mSelasa
+                && (int) $mSenin['pct'] === 100 && $mSenin['total'] === 1
+                && (int) $mSelasa['pct'] === 25 && $mSelasa['total'] === 2;
+        });
     }
 
     public function test_track_record_konsisten_dengan_ssot(): void
