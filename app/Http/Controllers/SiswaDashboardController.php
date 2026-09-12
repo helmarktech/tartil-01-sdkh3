@@ -118,7 +118,10 @@ class SiswaDashboardController extends Controller
         if ($semesterId && $siswa->kelas_tartil_id) {
             $start = $semester->tanggal_mulai ?? now()->startOfYear();
             $end = min($semester->tanggal_selesai ?? now(), now());
-            $current = $start->copy();
+            // Iterasi dari awal bulan: bila tanggal_mulai jatuh di tengah bulan
+            // (misal 13 Jul), bulan berjalan tidak akan terlewat saat hari ini
+            // lebih awal dari tanggal tersebut (Sep 13 > Sep 11 → Sep hilang).
+            $current = $start->copy()->startOfMonth();
             while ($current <= $end) {
                 $tahun = $current->year;
                 $bln = $current->month;

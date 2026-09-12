@@ -202,6 +202,25 @@ class KonsistensiJurnalTest extends TestCase
         });
     }
 
+    public function test_progress_bulanan_menampilkan_bulan_berjalan(): void
+    {
+        // Regresi: tanggal_mulai semester jatuh di akhir bulan (hari 28).
+        // Tanpa startOfMonth pada iterasi, bulan berjalan terlewat bila
+        // hari ini lebih awal dari tanggal mulai (misal mulai 13 Jul, kini 11 Sep).
+        $this->semester->update([
+            'tanggal_mulai' => now()->subMonths(3)->startOfMonth()->addDays(27)->toDateString(),
+        ]);
+
+        $this->isiDataJurnal();
+
+        $response = $this->actingAs($this->siswa, 'siswa')->get(route('siswa.dashboard'));
+
+        $response->assertOk();
+        $response->assertViewHas('bulanData', function ($bulanData) {
+            return collect($bulanData)->contains('label', now()->format('M Y'));
+        });
+    }
+
     public function test_track_record_konsisten_dengan_ssot(): void
     {
         $this->isiDataJurnal();
