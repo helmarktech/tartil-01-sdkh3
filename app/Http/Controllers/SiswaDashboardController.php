@@ -3,15 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\HafalanTahfidz;
-use App\Models\JurnalHarian;
-use App\Models\KelasLibur;
 use App\Models\MunaqosyahPendaftaran;
 use App\Models\PerpindahanKelas;
 use App\Models\RekapJurnalSemester;
 use App\Models\RekapMunaqosyahSemester;
 use App\Models\RekapR2Akhir;
 use App\Models\Semester;
-use Carbon\Carbon;
+use App\Services\JurnalSiswaService;
 use Illuminate\Http\Request;
 
 class SiswaDashboardController extends Controller
@@ -33,9 +31,8 @@ class SiswaDashboardController extends Controller
 
         $semesterId = $semester?->id;
 
-        // Jurnal data
-        // Note: 1 jurnal = 1 hari mengaji (1 entri per siswa per hari)
-        // Hanya tampilkan jurnal di hari efektif (Senin-Kamis) dan bukan hari libur kelas.
+        // Jurnal data — via SSOT (JurnalSiswaService):
+        // 1 tanggal = 1 hari mengaji, hanya hari efektif (Senin-Kamis) dan bukan hari libur kelas.
         $jurnals = collect();
         $totalJurnal = 0;
         $bCount = 0;
@@ -44,32 +41,13 @@ class SiswaDashboardController extends Controller
         $jurnalsFiltered = collect();
 
         if ($semesterId && $siswa->kelas_tartil_id) {
-            $semuaJurnal = JurnalHarian::where('siswa_id', $siswa->id)
-                ->where('semester_id', $semesterId)
-                ->with('surat')
-                ->get();
-
-            $start = $semester->tanggal_mulai ?? now()->startOfYear();
-            $end = min($semester->tanggal_selesai ?? now(), now());
-
-            $hariLiburList = KelasLibur::where('kelas_id', $siswa->kelas_tartil_id)
-                ->whereBetween('tanggal', [$start, $end])
-                ->pluck('tanggal')
-                ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
-                ->toArray();
-
-            $jurnalsFiltered = $semuaJurnal->filter(function ($j) use ($hariLiburList) {
-                $tgl = $j->tanggal;
-
-                return $tgl->dayOfWeek >= 1 && $tgl->dayOfWeek <= 4
-                    && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
-            });
-
+            $rekapJurnal = JurnalSiswaService::ringkasan($siswa->id, $semester);
+            $jurnalsFiltered = $rekapJurnal['jurnal'];
             $jurnals = $jurnalsFiltered->sortByDesc('tanggal')->take(30)->values();
-            $totalJurnal = $jurnalsFiltered->count();
-            $bCount = $jurnalsFiltered->where('penilaian', 'B')->count();
-            $cCount = $jurnalsFiltered->where('penilaian', 'C')->count();
-            $kCount = $jurnalsFiltered->where('penilaian', 'K')->count();
+            $totalJurnal = $rekapJurnal['total'];
+            $bCount = $rekapJurnal['b'];
+            $cCount = $rekapJurnal['c'];
+            $kCount = $rekapJurnal['k'];
         }
 
         // 1 jurnal = 1 hari mengaji (1 entri = 1 kali pertemuan/hari)

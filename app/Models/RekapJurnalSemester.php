@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Services\JurnalSiswaService;
 use Illuminate\Database\Eloquent\Model;
 
 class RekapJurnalSemester extends Model
 {
     protected $table = 'rekap_jurnal_semesters';
+
     protected $fillable = [
         'semester_id', 'kelas_id', 'siswa_id', 'guru_id',
         'total_hari', 'count_b', 'count_c', 'count_k',
@@ -21,24 +23,38 @@ class RekapJurnalSemester extends Model
         'locked_at' => 'datetime',
     ];
 
-    public function semester() { return $this->belongsTo(Semester::class); }
-    public function kelas() { return $this->belongsTo(Kelas::class); }
-    public function siswa() { return $this->belongsTo(Siswa::class); }
-    public function guru() { return $this->belongsTo(GuruTartil::class, 'guru_id'); }
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class);
+    }
+
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class);
+    }
+
+    public function siswa()
+    {
+        return $this->belongsTo(Siswa::class);
+    }
+
+    public function guru()
+    {
+        return $this->belongsTo(GuruTartil::class, 'guru_id');
+    }
 
     /**
      * Snapshot jurnal harian untuk 1 siswa di 1 semester.
      * Dipanggil otomatis saat semester ditutup.
+     *
+     * Perhitungan via SSOT (JurnalSiswaService): 1 tanggal = 1 hari,
+     * hanya hari efektif (Senin-Kamis) dan bukan hari libur kelas —
+     * konsisten dengan dashboard siswa, track record, dan monitoring guru.
      */
     public static function snapshot(Siswa $siswa, Semester $semester, Kelas $kelas): self
     {
-        // Hitung data jurnal
-        $jurnals = JurnalHarian::where('siswa_id', $siswa->id)
-            ->where('semester_id', $semester->id)
-            ->where('kelas_id', $kelas->id)
-            ->with('surat')
-            ->orderBy('tanggal')
-            ->get();
+        // Hitung data jurnal (satu baris kanonik per tanggal, hari efektif & non-libur)
+        $jurnals = JurnalSiswaService::jurnalEfektif($siswa->id, $semester, $kelas->id);
 
         $total = $jurnals->count();
         $bCount = $jurnals->where('penilaian', 'B')->count();
@@ -56,7 +72,7 @@ class RekapJurnalSemester extends Model
         $persentaseB = $total > 0 ? round(($bCount / $total) * 100) : 0;
 
         // Detail surat yang dibaca
-        $detailSurat = $jurnals->whereNotNull('surat_id')->map(fn($j) => [
+        $detailSurat = $jurnals->whereNotNull('surat_id')->map(fn ($j) => [
             'tanggal' => $j->tanggal->format('Y-m-d'),
             'surat' => $j->surat?->nama_latin ?? '-',
             'ayat_mulai' => $j->ayat_mulai,
@@ -72,7 +88,7 @@ class RekapJurnalSemester extends Model
             while ($current <= $end) {
                 $th = $current->year;
                 $bl = $current->month;
-                $bulanJurnals = $jurnals->filter(fn($j) => $j->tanggal->year == $th && $j->tanggal->month == $bl);
+                $bulanJurnals = $jurnals->filter(fn ($j) => $j->tanggal->year == $th && $j->tanggal->month == $bl);
                 $b = $bulanJurnals->where('penilaian', 'B')->count();
                 $c = $bulanJurnals->where('penilaian', 'C')->count();
                 $k = $bulanJurnals->where('penilaian', 'K')->count();

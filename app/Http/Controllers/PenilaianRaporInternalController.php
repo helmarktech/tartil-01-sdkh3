@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\PenilaianRaporInternal;
-use App\Models\PenilaianRaporNilai;
+use App\Models\Guru;
 use App\Models\IndikatorPenilaian;
-use App\Models\Semester;
-use App\Models\Siswa;
 use App\Models\Kelas;
 use App\Models\KelasReguler;
-use App\Models\Guru;
-use Illuminate\Support\Facades\DB;
 use App\Models\KopSuratRapor;
-use App\Models\JurnalHarian;
+use App\Models\PenilaianRaporInternal;
+use App\Models\PenilaianRaporNilai;
 use App\Models\RekapR2Akhir;
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Services\JurnalSiswaService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PenilaianRaporInternalController extends Controller
 {
@@ -26,6 +27,7 @@ class PenilaianRaporInternalController extends Controller
     {
         $penilaians = PenilaianRaporInternal::with('semester')
             ->orderBy('created_at', 'desc')->paginate(20);
+
         return view('admin.penilaian-rapor-internal.index', compact('penilaians'));
     }
 
@@ -47,8 +49,9 @@ class PenilaianRaporInternalController extends Controller
                 'semester_id' => $request->semester_id,
                 'status' => 'aktif',
             ]);
+
             return back()->with('success', 'Penilaian rapor internal berhasil dibuat.');
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             if ($e->getCode() == 23000 || str_contains($e->getMessage(), 'Duplicate') || str_contains($e->getMessage(), 'unique')) {
                 return back()->with('error', 'Semester ini sudah memiliki penilaian rapor. Hanya 1 penilaian per semester.');
             }
@@ -63,8 +66,9 @@ class PenilaianRaporInternalController extends Controller
     {
         try {
             $penilaian->delete();
+
             return back()->with('success', 'Penilaian dihapus.');
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             if ($e->getCode() == 23000 || str_contains($e->getMessage(), 'foreign key')) {
                 return back()->with('error', 'Penilaian tidak dapat dihapus karena masih terkait dengan data lain.');
             }
@@ -80,6 +84,7 @@ class PenilaianRaporInternalController extends Controller
         $penilaians = PenilaianRaporInternal::with('semester')
             ->where('status', 'aktif')
             ->orderBy('created_at', 'desc')->get();
+
         return view('guru.penilaian-rapor-internal.index', compact('penilaians'));
     }
 
@@ -89,7 +94,9 @@ class PenilaianRaporInternalController extends Controller
     public function guruPilihKelas(PenilaianRaporInternal $penilaian)
     {
         $guru = auth()->user()?->guru;
-        if (!$guru) return back()->with('error', 'Data guru tidak ditemukan.');
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan.');
+        }
 
         $kelasList = Kelas::where('guru_id', $guru->id)
             ->where('status', 'aktif')
@@ -127,7 +134,9 @@ class PenilaianRaporInternalController extends Controller
                     ->where('siswa_id', $sid)
                     ->whereNotNull('nilai')
                     ->count();
-                if ($diisi >= $indikatorCount) $siswaLengkap++;
+                if ($diisi >= $indikatorCount) {
+                    $siswaLengkap++;
+                }
             }
 
             $kelas->total_siswa = $total;
@@ -146,16 +155,20 @@ class PenilaianRaporInternalController extends Controller
     public function guruIsiNilai(PenilaianRaporInternal $penilaian, $kelasId)
     {
         $guru = auth()->user()?->guru;
-        if (!$guru) return back()->with('error', 'Data guru tidak ditemukan.');
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan.');
+        }
 
         $kelas = Kelas::where('id', $kelasId)->where('guru_id', $guru->id)->first();
-        if (!$kelas) return back()->with('error', 'Kelas tidak ditemukan atau bukan kelas Anda.');
+        if (! $kelas) {
+            return back()->with('error', 'Kelas tidak ditemukan atau bukan kelas Anda.');
+        }
 
         // Ambil indikator sesuai jenis kelas (byJenis sudah return get())
         $indikators = IndikatorPenilaian::byJenis($kelas->jenis);
 
         if ($indikators->isEmpty()) {
-            return back()->with('error', 'Belum ada indikator untuk jenis kelas "' . $kelas->jenis . '". Hubungi admin.');
+            return back()->with('error', 'Belum ada indikator untuk jenis kelas "'.$kelas->jenis.'". Hubungi admin.');
         }
 
         // Ambil siswa kelas ini
@@ -189,7 +202,9 @@ class PenilaianRaporInternalController extends Controller
                     $diisi++;
                 }
             }
-            if ($diisi >= $indikators->count()) $siswaLengkap++;
+            if ($diisi >= $indikators->count()) {
+                $siswaLengkap++;
+            }
         }
         $progress = $totalSiswa > 0 ? round(($siswaLengkap / $totalSiswa) * 100) : 0;
 
@@ -204,7 +219,9 @@ class PenilaianRaporInternalController extends Controller
     public function guruSimpanNilai(Request $request, PenilaianRaporInternal $penilaian, $kelasId)
     {
         $guru = auth()->user()?->guru;
-        if (!$guru) return back()->with('error', 'Data guru tidak ditemukan.');
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan.');
+        }
 
         $request->validate([
             'nilai' => 'required|array',
@@ -215,7 +232,9 @@ class PenilaianRaporInternalController extends Controller
             $now = now();
             foreach ($request->nilai as $siswaId => $indikatorNilais) {
                 foreach ($indikatorNilais as $indikatorId => $nilai) {
-                    if ($nilai === null || $nilai === '') continue;
+                    if ($nilai === null || $nilai === '') {
+                        continue;
+                    }
 
                     PenilaianRaporNilai::updateOrCreate(
                         [
@@ -258,12 +277,12 @@ class PenilaianRaporInternalController extends Controller
 
             // Hanya hitung progress kalau ada penilaian yang dipilih
             $gurus = Guru::whereHas('kelas', function ($q) {
-                    $q->where('status', 'aktif');
-                })
+                $q->where('status', 'aktif');
+            })
                 ->with(['kelas' => function ($q) {
                     $q->where('status', 'aktif')
-                      ->orderByRaw("FIELD(jenis, 'BQ 1', 'BQ 2', 'BQ 3', 'BQ 4', 'Tartil', 'Tahfidz')")
-                      ->orderBy('nama');
+                        ->orderByRaw("FIELD(jenis, 'BQ 1', 'BQ 2', 'BQ 3', 'BQ 4', 'Tartil', 'Tahfidz')")
+                        ->orderBy('nama');
                 }])
                 ->orderBy('nama')
                 ->paginate(50); // paging 50 per halaman
@@ -278,7 +297,7 @@ class PenilaianRaporInternalController extends Controller
 
                     // Cache hitungan indikator per jenis
                     $jenis = $kelas->jenis;
-                    if (!isset($indikatorCountMap[$jenis])) {
+                    if (! isset($indikatorCountMap[$jenis])) {
                         $indikatorCountMap[$jenis] = IndikatorPenilaian::byJenis($jenis)->count();
                     }
                     $indikatorCount = $indikatorCountMap[$jenis];
@@ -289,7 +308,9 @@ class PenilaianRaporInternalController extends Controller
                             ->where('siswa_id', $sid)
                             ->whereNotNull('nilai')
                             ->count();
-                        if ($diisi >= $indikatorCount) $siswaLengkap++;
+                        if ($diisi >= $indikatorCount) {
+                            $siswaLengkap++;
+                        }
                     }
 
                     $kelas->total_siswa = $total;
@@ -314,7 +335,9 @@ class PenilaianRaporInternalController extends Controller
     public function guruRekapNilai(Request $request)
     {
         $guru = auth()->user()?->guru;
-        if (!$guru) return back()->with('error', 'Data guru tidak ditemukan.');
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan.');
+        }
 
         // Ambil 1 penilaian aktif (hanya 1 per semester)
         $penilaian = PenilaianRaporInternal::with('semester')
@@ -336,7 +359,9 @@ class PenilaianRaporInternalController extends Controller
 
         if ($kelasId && $penilaian) {
             $kelasTerpilih = $kelasList->firstWhere('id', $kelasId);
-            if (!$kelasTerpilih) return back()->with('error', 'Kelas tidak ditemukan.');
+            if (! $kelasTerpilih) {
+                return back()->with('error', 'Kelas tidak ditemukan.');
+            }
 
             $siswaList = Siswa::where('kelas_tartil_id', $kelasId)
                 ->where('status', 'aktif')
@@ -354,9 +379,6 @@ class PenilaianRaporInternalController extends Controller
                 ->get()
                 ->groupBy(['siswa_id', 'indikator_penilaian_id']);
 
-            // Jurnal stats
-            $jurnalStats = $this->getJurnalR2Harian($siswaList->pluck('id'));
-
             foreach ($siswaList as $siswa) {
                 // 1. Nilai per indikator
                 $nilaiPerIndikator = [];
@@ -366,11 +388,14 @@ class PenilaianRaporInternalController extends Controller
                 }
 
                 // 2. R2 Penilaian = rata-rata nilai indikator saja
-                $nilaiFilled = array_filter($nilaiPerIndikator, fn($v) => $v !== null);
+                $nilaiFilled = array_filter($nilaiPerIndikator, fn ($v) => $v !== null);
                 $r2Penilaian = count($nilaiFilled) > 0 ? round(array_sum($nilaiFilled) / count($nilaiFilled)) : 0;
 
-                // 3. R2 Harian = sistem poin B=2, C=1, K=0
-                $r2Harian = $jurnalStats[$siswa->id] ?? 0;
+                // 3. R2 Harian = sistem poin B=2, C=1, K=0 — via SSOT
+                // (filter semester, hari aktif Senin-Kamis, bukan libur kelas)
+                $r2Harian = $penilaian->semester
+                    ? JurnalSiswaService::r2Harian($siswa->id, $penilaian->semester, $kelasTerpilih->id)
+                    : 0;
 
                 // 4. R2 Akhir = (R2 Harian + R2 Penilaian) / 2
                 $r2Akhir = round(($r2Harian + $r2Penilaian) / 2);
@@ -387,32 +412,6 @@ class PenilaianRaporInternalController extends Controller
         return view('guru.penilaian-rapor-internal.rekap-nilai', compact(
             'kelasList', 'kelasTerpilih', 'siswaList', 'penilaian', 'indikators', 'rekapData'
         ));
-    }
-
-    // ═══════════════════════════════════════════════
-    // HELPER: Persentase B dari jurnal harian
-    // ═══════════════════════════════════════════════
-    /**
-     * Hitung R2 Harian dengan sistem poin: B=2, C=1, K=0
-     * R2 Harian = ((B×2) + (C×1) + (K×0)) / (Total Jurnal × 2) × 100
-     */
-    private function getJurnalR2Harian($siswaIds)
-    {
-        $result = [];
-        foreach ($siswaIds as $sid) {
-            $total = \App\Models\JurnalHarian::where('siswa_id', $sid)->count();
-            if ($total == 0) {
-                $result[$sid] = 0;
-                continue;
-            }
-            $bCount = \App\Models\JurnalHarian::where('siswa_id', $sid)->where('penilaian', 'B')->count();
-            $cCount = \App\Models\JurnalHarian::where('siswa_id', $sid)->where('penilaian', 'C')->count();
-            // K tidak perlu dihitung karena poinnya 0
-            $totalPoin = ($bCount * 2) + ($cCount * 1);
-            $maxPoin = $total * 2;
-            $result[$sid] = $maxPoin > 0 ? round(($totalPoin / $maxPoin) * 100) : 0;
-        }
-        return $result;
     }
 
     // ═══════════════════════════════════════════════
@@ -446,7 +445,7 @@ class PenilaianRaporInternalController extends Controller
 
             $kelasId = $request->get('kelas_id');
             $kelasTerpilih = $kelasId
-                ? KelasReguler::with(['siswas' => fn($q) => $q->where('status', 'aktif')->with(['kelasTartil'])->orderBy('nama')])->find($kelasId)
+                ? KelasReguler::with(['siswas' => fn ($q) => $q->where('status', 'aktif')->with(['kelasTartil'])->orderBy('nama')])->find($kelasId)
                 : null;
 
             // Ambil kelas tartil untuk setiap siswa (diperlukan untuk R2)
@@ -462,14 +461,14 @@ class PenilaianRaporInternalController extends Controller
         } else {
             $kelasList = Kelas::where('status', 'aktif')
                 ->with('guru')
-                ->withCount(['siswas' => fn($q) => $q->where('status', 'aktif')])
+                ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
                 ->orderByRaw("FIELD(jenis, 'BQ 1', 'BQ 2', 'BQ 3', 'BQ 4', 'Tartil', 'Tahfidz')")
                 ->orderBy('nama')
                 ->get();
 
             $kelasId = $request->get('kelas_id');
             $kelasTerpilih = $kelasId
-                ? Kelas::with(['siswas' => fn($q) => $q->where('status', 'aktif')->with('kelasReguler')->orderBy('nama')])->find($kelasId)
+                ? Kelas::with(['siswas' => fn ($q) => $q->where('status', 'aktif')->with('kelasReguler')->orderBy('nama')])->find($kelasId)
                 : null;
 
             $rekapSiswa = [];
@@ -493,12 +492,12 @@ class PenilaianRaporInternalController extends Controller
     public function adminCetakRaporPdf(Request $request, Siswa $siswa)
     {
         $penilaian = PenilaianRaporInternal::where('status', 'aktif')->with('semester')->first();
-        if (!$penilaian) {
+        if (! $penilaian) {
             return back()->with('error', 'Tidak ada penilaian aktif.');
         }
 
         $kelas = Kelas::find($siswa->kelas_tartil_id);
-        if (!$kelas) {
+        if (! $kelas) {
             return back()->with('error', 'Siswa tidak memiliki kelas tartil.');
         }
 
@@ -508,7 +507,8 @@ class PenilaianRaporInternalController extends Controller
         $pdf = Pdf::loadView('pdf.rapor-tartil', compact('siswa', 'penilaian', 'kelas', 'kop', 'rekap'))
             ->setPaper('A4', 'portrait');
 
-        $filename = 'rapor_' . preg_replace('/[^a-zA-Z0-9]/', '_', $siswa->nama) . '_' . date('Ymd') . '.pdf';
+        $filename = 'rapor_'.preg_replace('/[^a-zA-Z0-9]/', '_', $siswa->nama).'_'.date('Ymd').'.pdf';
+
         return $pdf->download($filename);
     }
 
@@ -518,17 +518,17 @@ class PenilaianRaporInternalController extends Controller
     public function adminCetakRaporKelasPdf(Request $request)
     {
         $kelasId = $request->get('kelas_id');
-        if (!$kelasId) {
+        if (! $kelasId) {
             return back()->with('error', 'Pilih kelas terlebih dahulu.');
         }
 
         $penilaian = PenilaianRaporInternal::where('status', 'aktif')->with('semester')->first();
-        if (!$penilaian) {
+        if (! $penilaian) {
             return back()->with('error', 'Tidak ada penilaian aktif.');
         }
 
-        $kelas = Kelas::with(['siswas' => fn($q) => $q->where('status', 'aktif')->orderBy('nama')])->find($kelasId);
-        if (!$kelas || $kelas->siswas->count() === 0) {
+        $kelas = Kelas::with(['siswas' => fn ($q) => $q->where('status', 'aktif')->orderBy('nama')])->find($kelasId);
+        if (! $kelas || $kelas->siswas->count() === 0) {
             return back()->with('error', 'Kelas tidak ditemukan atau tidak ada siswa aktif.');
         }
 
@@ -549,7 +549,8 @@ class PenilaianRaporInternalController extends Controller
             ->setOption('enable_remote', true)
             ->setOption('enable_php', false);
 
-        $filename = 'rapor_' . preg_replace('/[^a-zA-Z0-9]/', '_', $kelas->nama) . '_' . date('Ymd') . '.pdf';
+        $filename = 'rapor_'.preg_replace('/[^a-zA-Z0-9]/', '_', $kelas->nama).'_'.date('Ymd').'.pdf';
+
         return $pdf->download($filename);
     }
 
@@ -559,17 +560,17 @@ class PenilaianRaporInternalController extends Controller
     public function adminCetakRaporKelasRegulerPdf(Request $request)
     {
         $kelasId = $request->get('kelas_id');
-        if (!$kelasId) {
+        if (! $kelasId) {
             return back()->with('error', 'Pilih kelas reguler terlebih dahulu.');
         }
 
         $penilaian = PenilaianRaporInternal::where('status', 'aktif')->with('semester')->first();
-        if (!$penilaian) {
+        if (! $penilaian) {
             return back()->with('error', 'Tidak ada penilaian aktif.');
         }
 
-        $kelasReguler = KelasReguler::with(['siswas' => fn($q) => $q->where('status', 'aktif')->orderBy('nama')])->find($kelasId);
-        if (!$kelasReguler || $kelasReguler->siswas->count() === 0) {
+        $kelasReguler = KelasReguler::with(['siswas' => fn ($q) => $q->where('status', 'aktif')->orderBy('nama')])->find($kelasId);
+        if (! $kelasReguler || $kelasReguler->siswas->count() === 0) {
             return back()->with('error', 'Kelas tidak ditemukan atau tidak ada siswa aktif.');
         }
 
@@ -594,7 +595,8 @@ class PenilaianRaporInternalController extends Controller
             ->setOption('enable_remote', true)
             ->setOption('enable_php', false);
 
-        $filename = 'rapor_' . preg_replace('/[^a-zA-Z0-9]/', '_', $kelasReguler->nama) . '_' . date('Ymd') . '.pdf';
+        $filename = 'rapor_'.preg_replace('/[^a-zA-Z0-9]/', '_', $kelasReguler->nama).'_'.date('Ymd').'.pdf';
+
         return $pdf->download($filename);
     }
 
@@ -646,56 +648,45 @@ class PenilaianRaporInternalController extends Controller
             }
         }
 
-        // Cache miss — hitung ulang
+        // Cache miss — hitung ulang via jalur resmi (RekapR2Akhir::calculateAndSave)
+        // agar filter semester/kelas/hari aktif (Senin-Kamis)/libur konsisten
+        // dengan r2:precalculate dan cache tidak terkontaminasi angka tanpa filter.
         $indikators = IndikatorPenilaian::byJenis($kelas->jenis);
 
-        // Ambil nilai siswa
         $nilaiRows = PenilaianRaporNilai::where('penilaian_id', $penilaian->id)
             ->where('siswa_id', $siswa->id)
             ->whereIn('indikator_penilaian_id', $indikators->pluck('id'))
             ->whereNotNull('nilai')
-            ->get()
-            ->keyBy('indikator_penilaian_id');
+            ->pluck('nilai', 'indikator_penilaian_id');
 
         $nilaiPerIndikator = [];
         foreach ($indikators as $ind) {
             $nilaiPerIndikator[$ind->id] = [
                 'nama' => $ind->nama_indikator,
-                'nilai' => $nilaiRows->has($ind->id) ? $nilaiRows[$ind->id]->nilai : null,
+                'nilai' => $nilaiRows[$ind->id] ?? null,
             ];
         }
 
+        if ($semester) {
+            $rekap = RekapR2Akhir::calculateAndSave($siswa, $semester, $kelas);
+
+            return [
+                'nilai_per_indikator' => $nilaiPerIndikator,
+                'r2_penilaian' => $rekap->r2_penilaian,
+                'r2_harian' => $rekap->r2_harian,
+                'r2_akhir' => $rekap->r2_akhir,
+                'jumlah_indikator' => $rekap->jumlah_indikator,
+                'jumlah_terisi' => $rekap->jumlah_terisi,
+                'is_mutasi' => $rekap->is_mutasi,
+                'tanggal_masuk_kelas_tartil' => $siswa->tanggal_masuk_kelas_tartil,
+            ];
+        }
+
+        // Fallback langka: penilaian tanpa semester — hitung manual tanpa cache
         $nilaiFilled = collect($nilaiPerIndikator)->whereNotNull('nilai')->pluck('nilai');
         $r2Penilaian = $nilaiFilled->count() > 0 ? round($nilaiFilled->avg()) : 0;
-
-        // R2 Harian — sistem poin: B=2, C=1, K=0
-        $totalJurnal = JurnalHarian::where('siswa_id', $siswa->id)->count();
         $r2Harian = 0;
-        if ($totalJurnal > 0) {
-            $bCount = JurnalHarian::where('siswa_id', $siswa->id)->where('penilaian', 'B')->count();
-            $cCount = JurnalHarian::where('siswa_id', $siswa->id)->where('penilaian', 'C')->count();
-            $totalPoin = ($bCount * 2) + ($cCount * 1);
-            $maxPoin = $totalJurnal * 2;
-            $r2Harian = round(($totalPoin / $maxPoin) * 100);
-        }
-
         $r2Akhir = round(($r2Harian + $r2Penilaian) / 2);
-
-        // Simpan ke cache
-        if ($semester) {
-            RekapR2Akhir::updateOrCreate(
-                ['semester_id' => $semester->id, 'kelas_id' => $kelas->id, 'siswa_id' => $siswa->id],
-                [
-                    'r2_harian' => $r2Harian,
-                    'r2_penilaian' => $r2Penilaian,
-                    'r2_akhir' => $r2Akhir,
-                    'jumlah_indikator' => $indikators->count(),
-                    'jumlah_terisi' => $nilaiFilled->count(),
-                    'is_mutasi' => $siswa->isMutasi,
-                    'last_calculated' => now(),
-                ]
-            );
-        }
 
         return [
             'nilai_per_indikator' => $nilaiPerIndikator,

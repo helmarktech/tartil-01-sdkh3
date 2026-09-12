@@ -2,25 +2,38 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
+use App\Services\JurnalSiswaService;
 use Illuminate\Database\Eloquent\Model;
 
 class RekapR2Akhir extends Model
 {
     protected $table = 'rekap_r2_akhirs';
+
     protected $fillable = [
         'semester_id', 'kelas_id', 'siswa_id',
         'r2_harian', 'r2_penilaian', 'r2_akhir',
         'jumlah_indikator', 'jumlah_terisi', 'is_mutasi', 'last_calculated',
     ];
+
     protected $casts = [
         'is_mutasi' => 'boolean',
         'last_calculated' => 'datetime',
     ];
 
-    public function siswa()  { return $this->belongsTo(Siswa::class); }
-    public function kelas()  { return $this->belongsTo(Kelas::class); }
-    public function semester() { return $this->belongsTo(Semester::class); }
+    public function siswa()
+    {
+        return $this->belongsTo(Siswa::class);
+    }
+
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class);
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class);
+    }
 
     /**
      * Ambil atau buat rekap R2 untuk siswa.
@@ -66,27 +79,10 @@ class RekapR2Akhir extends Model
         $r2Penilaian = $nilaiFilled->count() > 0 ? round($nilaiFilled->avg()) : 0;
 
         // R2 Harian — sistem poin: B=2, C=1, K=0
-        // Hanya hitung jurnal di semester dan kelas yang bersangkutan
-        // serta hanya pada hari aktif (Senin-Kamis) dan bukan hari libur kelas.
-        $endDate = min($semester->tanggal_selesai, now());
-        $hariLiburList = KelasLibur::where('kelas_id', $kelas->id)
-            ->whereBetween('tanggal', [$semester->tanggal_mulai, $endDate])
-            ->pluck('tanggal')
-            ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
-            ->toArray();
-
-        $jurnals = JurnalHarian::where('siswa_id', $siswa->id)
-            ->where('semester_id', $semester->id)
-            ->where('kelas_id', $kelas->id)
-            ->whereNotNull('penilaian')
-            ->get()
-            ->filter(function ($j) use ($semester, $endDate, $hariLiburList) {
-                $tgl = Carbon::parse($j->tanggal);
-
-                return $tgl->between($semester->tanggal_mulai, $endDate)
-                    && $tgl->dayOfWeek >= 1 && $tgl->dayOfWeek <= 4
-                    && ! in_array($tgl->format('Y-m-d'), $hariLiburList);
-            });
+        // Via SSOT (JurnalSiswaService): 1 tanggal = 1 hari, hanya hari aktif
+        // (Senin-Kamis), bukan hari libur kelas, dalam rentang semester.
+        $jurnals = JurnalSiswaService::jurnalEfektif($siswa->id, $semester, $kelas->id)
+            ->whereNotNull('penilaian');
 
         $totalJurnal = $jurnals->count();
         $r2Harian = 0;

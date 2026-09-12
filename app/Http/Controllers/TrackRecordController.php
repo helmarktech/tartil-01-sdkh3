@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Kelas;
-use App\Models\Siswa;
-use App\Models\RiwayatMutasi;
+use App\Models\PerpindahanKelas;
 use App\Models\Semester;
-use App\Models\JurnalHarian;
-use App\Models\RekapJurnalBulanan;
+use App\Models\Siswa;
+use App\Services\JurnalSiswaService;
+use Illuminate\Http\Request;
 
 class TrackRecordController extends Controller
 {
@@ -41,7 +40,9 @@ class TrackRecordController extends Controller
     public function guruIndex(Request $request)
     {
         $guru = auth()->user()?->guru;
-        if (!$guru) return back()->with('error', 'Data guru tidak ditemukan.');
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan.');
+        }
 
         // Hanya kelas yang diajar guru ini
         $kelasList = Kelas::where('status', 'aktif')->where('guru_id', $guru->id)->orderBy('nama')->get();
@@ -70,7 +71,9 @@ class TrackRecordController extends Controller
     public function siswaIndex()
     {
         $siswa = auth()->guard('siswa')->user();
-        if (!$siswa) return redirect()->route('siswa.login');
+        if (! $siswa) {
+            return redirect()->route('siswa.login');
+        }
 
         return redirect()->route('siswa.track-record.detail', ['siswa' => $siswa->id]);
     }
@@ -91,39 +94,41 @@ class TrackRecordController extends Controller
             // Guru hanya bisa lihat siswa di kelasnya
             $guru = auth()->user()->guru;
             $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id')->toArray();
-            if (!in_array($siswa->kelas_tartil_id, $kelasIds)) {
+            if (! in_array($siswa->kelas_tartil_id, $kelasIds)) {
                 return back()->with('error', 'Siswa ini tidak berada di kelas yang Anda ajar.');
             }
         }
 
         // Perpindahan kelas tartil yang sudah disetujui
-        $perpindahans = \App\Models\PerpindahanKelas::where('siswa_id', $siswa->id)
+        $perpindahans = PerpindahanKelas::where('siswa_id', $siswa->id)
             ->where('jenis', 'tartil')
             ->where('status', 'disetujui')
             ->with('semester', 'kelasLama', 'kelasBaru')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Rekap jurnal per semester
+        // Rekap jurnal per semester — via SSOT (JurnalSiswaService):
+        // 1 tanggal = 1 hari, hanya hari efektif & non-libur.
+        // Konsisten untuk semester aktif maupun yang sudah ditutup
+        // karena jurnal_harians tidak pernah dihapus saat tutup semester/TA.
         $rekapPerSemester = [];
         $semesters = Semester::orderBy('tanggal_mulai', 'desc')->get();
         foreach ($semesters as $semester) {
-            $rekap = RekapJurnalBulanan::where('siswa_id', $siswa->id)
-                ->where('semester_id', $semester->id)
-                ->orderBy('bulan')
-                ->get();
-            if ($rekap->count() > 0) {
-                $totalHadir = $rekap->sum('total_hadir');
-                $totalB = $rekap->sum('count_b');
-                $totalC = $rekap->sum('count_c');
-                $totalK = $rekap->sum('count_k');
-                $totalNilai = $totalB + $totalC + $totalK;
+            $ringkasan = JurnalSiswaService::ringkasan($siswa->id, $semester);
+            if ($ringkasan['total'] > 0) {
+                $totalB = $ringkasan['b'];
+                $totalC = $ringkasan['c'];
+                $totalK = $ringkasan['k'];
+                $totalNilai = $ringkasan['dinilai'];
                 $rataRata = $totalNilai > 0 ? round((($totalB * 1.0 + $totalC * 0.67 + $totalK * 0.33) / $totalNilai) * 100) : 0;
 
                 $rekapPerSemester[] = [
                     'semester' => $semester,
-                    'bulan_count' => $rekap->count(),
-                    'total_hadir' => $totalHadir,
+                    'bulan_count' => $ringkasan['jurnal']
+                        ->map(fn ($j) => $j->tanggal->format('Ym'))
+                        ->unique()
+                        ->count(),
+                    'total_hadir' => $totalNilai,
                     'count_b' => $totalB,
                     'count_c' => $totalC,
                     'count_k' => $totalK,
