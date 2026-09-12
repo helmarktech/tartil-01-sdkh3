@@ -133,7 +133,12 @@
         <div class="sd-col-left">
             {{-- Penilaian B/C/K --}}
             <div class="sd-section">
-                <h2 class="sd-section-title">Penilaian B/C/K</h2>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h2 class="sd-section-title" style="margin:0;">Penilaian B/C/K</h2>
+                    @if($semester)
+                    <span style="font-size:11px;color:#78716c;background:#f5f5f4;padding:2px 10px;border-radius:999px;">{{ $semester->status === 'ditutup' ? 'Semester' : 'Semester Berjalan' }} &middot; {{ $semester->tahun_ajaran }} {{ ucfirst($semester->jenis) }}</span>
+                    @endif
+                </div>
                 <div class="sd-bck-grid">
                     <div class="sd-bck-card sd-bck-b">
                         <div class="sd-bck-num">{{ $bCount }}</div>
@@ -176,7 +181,12 @@
             {{-- Progress Bulanan --}}
             @if(count($bulanData) > 0)
             <div class="sd-section">
-                <h2 class="sd-section-title">Progress Bulanan (B/C/K)</h2>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h2 class="sd-section-title" style="margin:0;">Progress Bulanan (B/C/K)</h2>
+                    @if($semester)
+                    <span style="font-size:11px;color:#78716c;background:#f5f5f4;padding:2px 10px;border-radius:999px;">{{ $semester->status === 'ditutup' ? 'Semester' : 'Semester Berjalan' }} &middot; {{ $semester->tahun_ajaran }} {{ ucfirst($semester->jenis) }}</span>
+                    @endif
+                </div>
                 <div class="sd-monthly">
                     @foreach($bulanData as $bd)
                     <div class="sd-monthly-item">
