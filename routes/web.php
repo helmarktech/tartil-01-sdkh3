@@ -40,6 +40,12 @@ Route::get('/login', function () {
     return redirect('/');
 })->name('login');
 
+// Panduan pengguna (publik, tanpa login)
+Route::view('/panduan', 'panduan')->name('panduan');
+Route::get('/panduan/buku-siswa', function () {
+    return response()->file(base_path('Buku_Panduan_Siswa_TARTIL.pdf'));
+})->name('panduan.buku-siswa');
+
 // ==================== AUTH ADMIN/GURU (via landing page) ====================
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

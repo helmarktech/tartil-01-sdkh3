@@ -51,6 +51,8 @@
 
         <div class="login-footer">
             <a href="/">Login sebagai Admin / Guru</a>
+            <span style="color: var(--ink-faint); margin: 0 8px;">&middot;</span>
+            <a href="{{ route('panduan') }}">Panduan Pengguna</a>
         </div>
     </div>
 </div>

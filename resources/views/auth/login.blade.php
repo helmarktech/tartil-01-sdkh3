@@ -48,6 +48,8 @@
 
         <div style="margin-top: 20px; text-align: center;">
             <a href="{{ route('siswa.login') }}" class="link-tartil">Login sebagai Siswa</a>
+            <span style="color: var(--ink-faint, #a8a29e); margin: 0 8px;">&middot;</span>
+            <a href="{{ route('panduan') }}" class="link-tartil">Panduan Pengguna</a>
         </div>
     </div>
 </div>

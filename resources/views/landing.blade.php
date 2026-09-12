@@ -959,6 +959,9 @@
                     <div class="login-hint">
                         <strong>Lupa password?</strong> Hubungi administrator sistem.
                     </div>
+                    <div class="login-hint" style="margin-top: 10px;">
+                        <a href="{{ route('panduan') }}" style="color: var(--accent-dark); font-weight: 600; text-decoration: none;">Lihat Panduan Pengguna &rarr;</a>
+                    </div>
                 </div>
 
                 <div class="login-panel" id="panel-siswa">
@@ -984,6 +987,9 @@
                     <div class="login-divider">informasi</div>
                     <div class="login-hint">
                         Password Anda adalah <strong>nomor HP</strong> yang terdaftar.
+                    </div>
+                    <div class="login-hint" style="margin-top: 10px;">
+                        <a href="{{ route('panduan') }}" style="color: var(--accent-dark); font-weight: 600; text-decoration: none;">Lihat Panduan Pengguna &rarr;</a>
                     </div>
                 </div>
             </div>
@@ -1297,8 +1303,8 @@
             </div>
             <div class="footer-col">
                 <h4>Bantuan</h4>
-                <a href="#">Panduan Pengguna</a>
-                <a href="#">Hubungi Kami</a>
+                <a href="{{ route('panduan') }}">Panduan Pengguna</a>
+                <a href="{{ route('panduan.buku-siswa') }}" target="_blank">Buku Panduan Siswa (PDF)</a>
             </div>
         </div>
         <div class="footer-bottom">
