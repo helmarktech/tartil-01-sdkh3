@@ -947,7 +947,7 @@
                         @csrf
                         <div class="field">
                             <label>Alamat Email</label>
-                            <input type="email" name="email" placeholder="nama@sekolah.sch.id" required autofocus>
+                            <input type="email" name="email" placeholder="nama@sekolah.sch.id" required>
                         </div>
                         <div class="field">
                             <label>Password</label>
@@ -973,7 +973,7 @@
                         @csrf
                         <div class="field">
                             <label>Nomor Induk Siswa</label>
-                            <input type="text" name="nis" placeholder="Contoh: 2025001" required autofocus>
+                            <input type="text" name="nis" placeholder="Contoh: 2025001" required>
                         </div>
                         <div class="field">
                             <label>Nomor HP Terdaftar</label>
