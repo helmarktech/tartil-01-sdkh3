@@ -50,6 +50,9 @@
             color: var(--ink);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            /* Cegah halaman ikut tergeser horizontal saat ada konten lebar (tabel);
+               tabel tetap scroll di dalam .table-responsive */
+            overflow-x: clip;
         }
 
         /* ═══ Layout Structure ═══ */
@@ -62,6 +65,7 @@
             margin-left: 0;
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         /* ═══ Topbar ═══ */
@@ -223,6 +227,8 @@
             color: #fff;
             border-color: var(--accent);
         }
+        /* Dropdown nav: hanya tampil di mobile */
+        .siswa-nav-select { display: none; }
 
         /* ═══ Alerts ═══ */
         .alert-tartil {
@@ -446,8 +452,20 @@
             .tartil-topbar .topbar-actions { gap: 6px; }
             .tartil-topbar .btn-topbar { padding: 6px 9px; font-size: 11px; gap: 5px; }
             .notifikasi-aktifkan { padding: 6px 8px; font-size: 10px; white-space: nowrap; }
-            .siswa-nav { gap: 5px; }
-            .siswa-nav a { padding: 7px 12px; font-size: 11px; }
+            .siswa-nav { display: none; }
+            .siswa-nav-select {
+                display: block;
+                width: 100%;
+                padding: 10px 14px;
+                margin-bottom: 16px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                background: var(--bg-card);
+                color: var(--ink);
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                font-size: 16px; /* cegah auto-zoom iOS saat fokus */
+                font-weight: 600;
+            }
         }
         /* Layar sangat kecil: tombol Profil/Keluar jadi ikon saja */
         @media (max-width: 480px) {
@@ -625,6 +643,19 @@
                         <div class="student-nis">NIS: {{ auth('siswa')->user()->nis }}</div>
                     </div>
                 </div>
+
+                {{-- Navigasi mobile: dropdown (konsisten di semua halaman) --}}
+                <select class="siswa-nav-select" onchange="if (this.value) window.location.href = this.value;" aria-label="Menu navigasi">
+                    <option value="{{ route('siswa.dashboard') }}" @selected(request()->routeIs('siswa.dashboard'))>&#127968; Dashboard</option>
+                    <option value="{{ route('siswa.nilai') }}" @selected(request()->routeIs('siswa.nilai'))>&#128196; Rapor</option>
+                    @if(auth('siswa')->user()?->kelas_tartil_id)
+                    <option value="{{ route('siswa.hafalan') }}" @selected(request()->routeIs('siswa.hafalan'))>&#128218; Hafalan</option>
+                    <option value="{{ route('siswa.pendampingan-ortu.index') }}" @selected(request()->routeIs('siswa.pendampingan-ortu.*'))>&#128106; Pendampingan Ortu</option>
+                    @endif
+                    <option value="{{ route('siswa.perpindahan') }}" @selected(request()->routeIs('siswa.perpindahan'))>&#128260; Riwayat Kelas</option>
+                    <option value="{{ route('siswa.track-record') }}" @selected(request()->routeIs('siswa.track-record'))>&#128099; Track Record</option>
+                    <option value="{{ route('siswa.munaqosyah') }}" @selected(request()->routeIs('siswa.munaqosyah'))>&#127942; Riwayat Munaqosyah</option>
+                </select>
 
                 <nav class="siswa-nav">
                     <a href="{{ route('siswa.dashboard') }}" class="{{ request()->routeIs('siswa.dashboard') ? 'active' : '' }}">&#127968; Dashboard</a>
