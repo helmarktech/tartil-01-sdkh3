@@ -227,8 +227,31 @@
             color: #fff;
             border-color: var(--accent);
         }
-        /* Dropdown nav: hanya tampil di mobile */
-        .siswa-nav-select { display: none; }
+        /* Dropdown nav: hanya tampil di mobile (style custom, picker tetap native) */
+        .siswa-nav-select {
+            display: none;
+            width: 100%;
+            padding: 12px 42px 12px 14px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-card) url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 14px center / 15px;
+            color: var(--ink);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 16px; /* cegah auto-zoom iOS saat fokus */
+            font-weight: 600;
+            letter-spacing: 0.1px;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .siswa-nav-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
 
         /* ═══ Alerts ═══ */
         .alert-tartil {
@@ -453,19 +476,7 @@
             .tartil-topbar .btn-topbar { padding: 6px 9px; font-size: 11px; gap: 5px; }
             .notifikasi-aktifkan { padding: 6px 8px; font-size: 10px; white-space: nowrap; }
             .siswa-nav { display: none; }
-            .siswa-nav-select {
-                display: block;
-                width: 100%;
-                padding: 10px 14px;
-                margin-bottom: 16px;
-                border-radius: 10px;
-                border: 1px solid var(--border);
-                background: var(--bg-card);
-                color: var(--ink);
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: 16px; /* cegah auto-zoom iOS saat fokus */
-                font-weight: 600;
-            }
+            .siswa-nav-select { display: block; }
         }
         /* Layar sangat kecil: tombol Profil/Keluar jadi ikon saja */
         @media (max-width: 480px) {
