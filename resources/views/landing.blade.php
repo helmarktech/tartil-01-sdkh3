@@ -1317,6 +1317,7 @@
                 <h4>Bantuan</h4>
                 <a href="{{ route('panduan') }}">Panduan Pengguna</a>
                 <a href="{{ route('panduan.buku-siswa') }}" target="_blank">Buku Panduan Siswa (PDF)</a>
+                <a href="https://wa.me/62895342017004" target="_blank" rel="noopener">Kontak Admin (WhatsApp)</a>
             </div>
         </div>
         <div class="footer-bottom">
