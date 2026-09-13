@@ -665,7 +665,11 @@
 
     <!-- ===== FOOTER ===== -->
     <footer class="page-footer">
-        &copy; {{ date('Y') }} SD Khadijah 3 Surabaya &mdash; Sistem Penilaian Tartil Online
+        <a href="https://wa.me/62895342017004" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--accent-dark); margin-bottom: 10px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #25d366;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Kontak Admin (WhatsApp)
+        </a>
+        <div>&copy; {{ date('Y') }} SD Khadijah 3 Surabaya &mdash; Sistem Penilaian Tartil Online</div>
     </footer>
 
 </body>
