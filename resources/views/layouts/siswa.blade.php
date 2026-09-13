@@ -719,7 +719,7 @@
                         $siswaNavItems[] = ['route' => 'siswa.pendampingan-ortu.index', 'patterns' => 'siswa.pendampingan-ortu.*', 'label' => '👪 Pendampingan Ortu'];
                     }
                     $siswaNavItems[] = ['route' => 'siswa.perpindahan', 'patterns' => 'siswa.perpindahan', 'label' => '🔄 Riwayat Kelas'];
-                    $siswaNavItems[] = ['route' => 'siswa.track-record', 'patterns' => 'siswa.track-record', 'label' => '👣 Track Record'];
+                    $siswaNavItems[] = ['route' => 'siswa.track-record', 'patterns' => 'siswa.track-record*', 'label' => '👣 Track Record'];
                     $siswaNavItems[] = ['route' => 'siswa.munaqosyah', 'patterns' => 'siswa.munaqosyah', 'label' => '🏆 Riwayat Munaqosyah'];
                     $navAktif = collect($siswaNavItems)->first(fn ($i) => request()->routeIs($i['patterns']));
                 @endphp
