@@ -123,10 +123,38 @@ if ('serviceWorker' in navigator) {
         return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
     };
 
-    // Setup push: tombol "Aktifkan Notifikasi" muncul bila izin belum diminta
-    const setupPush = async () => {
+    // Kirim subscription push ke server; buat subscription baru bila belum ada
+    const sinkronPush = async () => {
+        const reg = await navigator.serviceWorker.ready;
+        let subscription = await reg.pushManager.getSubscription();
+        if (!subscription) {
+            subscription = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(window.tartilVapidKey),
+            });
+        }
+        const json = subscription.toJSON();
+        const res = await fetchJson('/siswa/notifikasi/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                endpoint: json.endpoint,
+                keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+            }),
+        });
+        if (!res.ok) throw new Error('Gagal menyimpan subscription push (HTTP ' + res.status + ')');
+    };
+
+    // Setup push: sinkron otomatis bila izin sudah granted; tombol bila izin belum diminta
+    const setupPush = () => {
         if (!window.tartilVapidKey) return;
-        if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+        if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+        // Izin sudah diberikan (misal saat install PWA): pastikan subscription tersimpan di server
+        if (Notification.permission === 'granted') {
+            sinkronPush().catch((e) => console.warn('Sinkronisasi push gagal:', e));
+            return;
+        }
         if (Notification.permission !== 'default') return;
 
         const tombolAktif = document.getElementById('notifikasi-aktifkan');
@@ -138,24 +166,10 @@ if ('serviceWorker' in navigator) {
                 const izin = await Notification.requestPermission();
                 if (izin !== 'granted') return;
                 tombolAktif.hidden = true;
-
-                const reg = await navigator.serviceWorker.ready;
-                const subscription = await reg.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(window.tartilVapidKey),
-                });
-                const json = subscription.toJSON();
-                await fetchJson('/siswa/notifikasi/push/subscribe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        endpoint: json.endpoint,
-                        keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-                        contentEncoding: 'aesgcm',
-                    }),
-                });
+                await sinkronPush();
             } catch (e) {
-                // Push tidak didukung/ditolak: polling lonceng tetap berjalan
+                console.warn('Aktivasi push gagal:', e);
+                tombolAktif.hidden = false;
             }
         });
     };
