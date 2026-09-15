@@ -38,8 +38,7 @@ class SiswaNotifikasiController extends Controller
                 'tipe' => $n->data['tipe'] ?? null,
                 'judul' => $n->data['judul'] ?? null,
                 'pesan' => $n->data['pesan'] ?? null,
-                'url' => SiswaNotifikasi::urlDefault($n->data['tipe'] ?? null)
-                    ?? ($n->data['url'] ?? null),
+                'url' => $n->data['url'] ?? SiswaNotifikasi::urlDefault($n->data['tipe'] ?? null),
                 'waktu' => $n->created_at->diffForHumans(),
             ])->values(),
         ]);

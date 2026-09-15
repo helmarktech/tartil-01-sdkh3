@@ -189,6 +189,7 @@ class JurnalController extends Controller
             // 2. Simpan/Update Penilaian per Siswa
             $inserted = 0;
             $updated = 0;
+            $unchanged = 0;
             $siswaBerubahIds = []; // siswa yang nilainya baru diisi atau berubah (untuk notifikasi)
 
             // Deduplicate entries per siswa_id
@@ -227,11 +228,13 @@ class JurnalController extends Controller
 
                 if ($existing) {
                     $penilaianLama = $existing->penilaian;
+                    $catatanBaru = ($e['catatan'] ?? null) === '' ? null : ($e['catatan'] ?? null);
+                    $berubah = $penilaianBaru !== $penilaianLama || $catatanBaru !== $existing->catatan;
                     $existing->update([
                         'guru_id' => $guruId,
                         'semester_id' => $semesterAktif->id,
                         'penilaian' => $penilaianBaru,
-                        'catatan' => $e['catatan'] ?? null,
+                        'catatan' => $catatanBaru,
                         'surat_id' => $suratId,
                         'ayat_mulai' => $ayatMulai,
                         'ayat_selesai' => $ayatSelesai,
@@ -240,7 +243,11 @@ class JurnalController extends Controller
                         'topik' => $topik,
                         'rencana' => $rencana,
                     ]);
-                    $updated++;
+                    if ($berubah) {
+                        $updated++;
+                    } else {
+                        $unchanged++;
+                    }
                     if ($penilaianBaru !== null && $penilaianBaru !== $penilaianLama) {
                         $siswaBerubahIds[] = $siswaId;
                     }
@@ -313,14 +320,16 @@ class JurnalController extends Controller
             // 6. Kirim notifikasi hanya ke siswa yang nilainya baru diisi atau berubah (setelah commit)
             if (! empty($siswaBerubahIds)) {
                 $tanggalIndo = $tanggalCarbon->copy()->locale('id')->translatedFormat('d F Y');
+                // URL membawa tanggal agar klik notifikasi membuka popup detail jurnal tersebut
+                $urlJurnal = '/siswa/dashboard?jurnal='.$tanggalCarbon->format('Y-m-d').'#jurnal-terbaru';
                 Siswa::whereIn('id', $siswaBerubahIds)->get()
-                    ->each(function ($siswa) use ($tanggalIndo) {
+                    ->each(function ($siswa) use ($tanggalIndo, $urlJurnal) {
                         try {
                             $siswa->notify(new SiswaNotifikasi(
                                 'jurnal',
                                 'Jurnal Harian Diperbarui',
                                 "{$tanggalIndo} — nilai Anda telah diinput guru",
-                                SiswaNotifikasi::urlDefault('jurnal')
+                                $urlJurnal
                             ));
                         } catch (\Throwable $e) {
                             // Gagal kirim push (endpoint mati/jaringan) tidak boleh
@@ -330,11 +339,17 @@ class JurnalController extends Controller
                     });
             }
 
+            $message = "Jurnal tersimpan. {$inserted} baru, {$updated} diperbarui.";
+            if ($unchanged > 0) {
+                $message = "Jurnal tersimpan. {$inserted} baru, {$updated} diperbarui, {$unchanged} tanpa perubahan.";
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => "Jurnal tersimpan. {$inserted} baru, {$updated} diperbarui.",
+                'message' => $message,
                 'inserted' => $inserted,
                 'updated' => $updated,
+                'unchanged' => $unchanged,
             ]);
 
         } catch (\Exception $e) {

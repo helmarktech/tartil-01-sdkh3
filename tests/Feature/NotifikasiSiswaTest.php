@@ -113,8 +113,10 @@ class NotifikasiSiswaTest extends TestCase
     {
         $this->actingAs($this->userGuru);
 
+        $tanggal = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
+
         $response = $this->postJson(route('guru.jurnal.batch-store'), [
-            'tanggal' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+            'tanggal' => $tanggal,
             'kelas_id' => $this->kelas->id,
             'entries' => [
                 ['siswa_id' => $this->siswa->id, 'penilaian' => 'B'],
@@ -127,7 +129,7 @@ class NotifikasiSiswaTest extends TestCase
         $this->assertCount(1, $notifikasi);
         $this->assertEquals('jurnal', $notifikasi->first()->data['tipe']);
         $this->assertEquals('Jurnal Harian Diperbarui', $notifikasi->first()->data['judul']);
-        $this->assertEquals('/siswa/dashboard#jurnal-terbaru', $notifikasi->first()->data['url']);
+        $this->assertEquals('/siswa/dashboard?jurnal='.$tanggal.'#jurnal-terbaru', $notifikasi->first()->data['url']);
     }
 
     public function test_update_jurnal_tanpa_perubahan_nilai_tidak_mengirim_notifikasi_ulang(): void

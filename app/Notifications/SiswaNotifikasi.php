@@ -22,9 +22,9 @@ class SiswaNotifikasi extends Notification
     }
 
     /**
-     * URL tujuan per tipe notifikasi (satu sumber kebenaran).
-     * Dipakai saat render agar notifikasi lama yang menyimpan
-     * url usang tetap mengarah ke halaman yang sesuai tipenya.
+     * URL tujuan per tipe notifikasi (fallback).
+     * URL yang tersimpan di data notifikasi lebih diutamakan; method ini
+     * dipakai untuk notifikasi lama yang tidak menyimpan url.
      */
     public static function urlDefault(?string $tipe): ?string
     {

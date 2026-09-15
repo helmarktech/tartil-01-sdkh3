@@ -369,6 +369,7 @@
     const journalData = {!! json_encode($jurnals->map(function($j) {
         return [
             'tanggal' => optional($j->tanggal)->format('d M Y'),
+            'tanggal_iso' => optional($j->tanggal)->format('Y-m-d'),
             'hari' => optional($j->tanggal)->translatedFormat('l'),
             'penilaian' => $j->penilaian,
             'penilaian_label' => $j->penilaian == 'B' ? 'Baik' : ($j->penilaian == 'C' ? 'Cukup' : 'Kurang'),
@@ -438,6 +439,14 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeJournalModal();
     });
+
+    // Datang dari klik notifikasi (?jurnal=YYYY-MM-DD): langsung buka popup detail jurnal tsb
+    (function () {
+        const target = new URLSearchParams(window.location.search).get('jurnal');
+        if (!target) return;
+        const idx = journalData.findIndex((d) => d.tanggal_iso === target);
+        if (idx >= 0) openJournalDetail(idx);
+    })();
     </script>
     @else
     @if($semester?->id && $siswa->kelas_tartil_id)
