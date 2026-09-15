@@ -10,7 +10,7 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#0c8a5f">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="tartil-vapid-key" content="@js(config('webpush.vapid.public_key') ?? env('VAPID_PUBLIC_KEY'))">
+    <meta name="tartil-vapid-key" content="{{ config('webpush.vapid.public_key') ?? env('VAPID_PUBLIC_KEY') }}">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
