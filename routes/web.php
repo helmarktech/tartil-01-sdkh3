@@ -275,6 +275,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/system/optimize', [SystemSetupController::class, 'optimize'])->name('system.optimize');
     Route::get('/system/status', [SystemSetupController::class, 'checkStatus'])->name('system.status');
     Route::post('/system/precalculate-dismiss', [SystemSetupController::class, 'dismissPrecalculate'])->name('system.precalculate-dismiss');
+    Route::get('/system/push-diagnostik', [SystemSetupController::class, 'diagnostikPush'])->name('system.push-diagnostik');
 });
 
 // ==================== GURU ====================

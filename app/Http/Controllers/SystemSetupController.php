@@ -227,4 +227,43 @@ class SystemSetupController extends Controller
         $redirectUrl = $request->headers->get('referer', route('admin.dashboard'));
         return redirect($redirectUrl);
     }
+
+    /**
+     * Diagnostik push notification siswa (read-only).
+     * Menampilkan status VAPID, subscription terdaftar, dan notifikasi terakhir.
+     */
+    public function diagnostikPush()
+    {
+        $vapid = [
+            'public_key_terisi' => ! empty(config('webpush.vapid.public_key') ?? env('VAPID_PUBLIC_KEY')),
+            'private_key_terisi' => ! empty(config('webpush.vapid.private_key') ?? env('VAPID_PRIVATE_KEY')),
+            'subject' => config('webpush.vapid.subject') ?? env('VAPID_SUBJECT'),
+        ];
+
+        $subscriptions = \Illuminate\Support\Facades\DB::table('push_subscriptions')
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'subscribable_type', 'subscribable_id', 'endpoint', 'created_at', 'updated_at'])
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'siswa_id' => $s->subscribable_id,
+                'tipe' => class_basename($s->subscribable_type),
+                'endpoint' => \Illuminate\Support\Str::limit($s->endpoint, 70),
+                'created_at' => $s->created_at,
+                'updated_at' => $s->updated_at,
+            ]);
+
+        $notifikasiTerakhir = \Illuminate\Support\Facades\DB::table('notifications')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get(['id', 'notifiable_id', 'data', 'read_at', 'created_at'])
+            ->map(fn ($n) => [
+                'siswa_id' => $n->notifiable_id,
+                'judul' => json_decode($n->data, true)['judul'] ?? '-',
+                'tipe' => json_decode($n->data, true)['tipe'] ?? '-',
+                'read_at' => $n->read_at,
+                'created_at' => $n->created_at,
+            ]);
+
+        return view('admin.system.push-diagnostik', compact('vapid', 'subscriptions', 'notifikasiTerakhir'));
+    }
 }
