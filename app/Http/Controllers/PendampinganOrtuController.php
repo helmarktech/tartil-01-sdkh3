@@ -124,8 +124,15 @@ class PendampinganOrtuController extends Controller
             $laporanPerBulan = $laporan->groupBy(fn ($l) => $l->tanggal?->format('Y-m'));
         }
 
+        // Mode per bulan: kelompokkan per siswa agar seluruh siswa kelas tetap tampil
+        $laporanPerSiswa = null;
+        if ($status === 'dikonfirmasi' && $mode === 'bulan'
+            && $request->filled('bulan') && preg_match('/^\d{4}-\d{2}$/', $request->bulan)) {
+            $laporanPerSiswa = $laporan->groupBy('siswa_id');
+        }
+
         return view('guru.pendampingan-ortu.index', compact(
-            'laporan', 'status', 'guru', 'mode', 'siswaList', 'filterSiswa', 'semesterAktif', 'laporanPerBulan'
+            'laporan', 'status', 'guru', 'mode', 'siswaList', 'filterSiswa', 'semesterAktif', 'laporanPerBulan', 'laporanPerSiswa'
         ));
     }
 

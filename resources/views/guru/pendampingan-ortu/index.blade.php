@@ -409,9 +409,12 @@
     @elseif($mode === 'siswa' && $filterSiswa)
         {{-- Tampilan konfirmasi per siswa, dipisah per bulan di semester berjalan --}}
         <div class="po-card" style="margin-bottom: 12px;">
-            <div style="font-size: 16px; font-weight: 700; color: #1a1a2e;">{{ $filterSiswa->nama }}</div>
+            <div style="font-size: 16px; font-weight: 700; color: #1a1a2e;">
+                {{ $filterSiswa->nama }}
+                <span style="display: inline-block; margin-left: 8px; padding: 3px 12px; border-radius: 999px; background: #e7f6ef; color: #0c8a5f; font-size: 12px; font-weight: 700; vertical-align: middle;">{{ $laporan->count() }} konfirmasi</span>
+            </div>
             <div style="font-size: 13px; color: #666; margin-top: 2px;">
-                Data konfirmasi pada semester berjalan{{ $semesterAktif ? ' ('.$semesterAktif->nama.')' : '' }}, dipisah per bulan.
+                Total {{ $laporan->count() }} data telah dikonfirmasi pada semester berjalan{{ $semesterAktif ? ' ('.$semesterAktif->nama.')' : '' }}, dipisah per bulan.
             </div>
         </div>
         @if($laporanPerBulan->isEmpty())
@@ -457,6 +460,59 @@
             </div>
             @endforeach
         @endif
+    @elseif($mode === 'bulan' && $laporanPerSiswa !== null)
+        {{-- Tampilan per bulan: seluruh siswa kelas tampil, dengan atau tanpa data --}}
+        <div class="po-card" style="margin-bottom: 12px;">
+            <div style="font-size: 16px; font-weight: 700; color: #1a1a2e;">
+                {{ \Carbon\Carbon::parse(request('bulan').'-01')->locale('id')->translatedFormat('F Y') }}
+            </div>
+            <div style="font-size: 13px; color: #666; margin-top: 2px;">
+                Data konfirmasi seluruh siswa pada bulan ini: {{ $laporan->count() }} konfirmasi dari {{ $laporanPerSiswa->count() }} siswa.
+            </div>
+        </div>
+        @foreach($siswaList as $s)
+            @php $items = $laporanPerSiswa->get($s->id, collect()); @endphp
+            <div class="po-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                    <h3 style="font-size: 15px; font-weight: 700; color: #1a1a2e; margin: 0;">
+                        {{ $s->nama }}
+                        <span style="font-weight: 400; color: #888; font-size: 12px;">({{ $items->count() }} konfirmasi)</span>
+                    </h3>
+                    <a href="{{ route('guru.pendampingan-ortu.index', ['status' => 'dikonfirmasi', 'mode' => 'siswa', 'siswa_id' => $s->id]) }}" class="po-btn" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">Detail</a>
+                </div>
+                @if($items->isEmpty())
+                    <p style="font-size: 13px; color: #a8a29e; margin: 0;">Belum ada data konfirmasi pada bulan ini.</p>
+                @else
+                <div style="overflow-x: auto;">
+                    <table class="po-table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Jenis</th>
+                                <th>Surat / Ayat</th>
+                                <th>Catatan</th>
+                                <th>Dikonfirmasi Oleh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($items as $l)
+                            <tr>
+                                <td>{{ $l->tanggal?->format('d/m/Y') }}</td>
+                                <td>{{ \App\Models\LaporanPendampinganOrtu::labelJenis($l->jenis) }}</td>
+                                <td>
+                                    <strong>{{ $l->surat?->nama_latin ?? '-' }}</strong>
+                                    <div class="po-ayat">Ayat {{ $l->ayat_mulai }}{{ $l->ayat_selesai ? '-'.$l->ayat_selesai : '' }}</div>
+                                </td>
+                                <td style="max-width: 200px; word-break: break-word;">{{ $l->catatan ?? '-' }}</td>
+                                <td class="po-ayat">{{ $l->guruKonfirmasi?->nama ?? '-' }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endif
+            </div>
+        @endforeach
     @elseif($laporan->isEmpty())
         <div class="po-card po-empty">
             <div style="font-size: 48px; margin-bottom: 16px;">&#128106;</div>
@@ -495,7 +551,6 @@
                         </span>
                     </td>
                     <td>
-                        <div class="po-ayat" style="margin-bottom: 6px;">{{ $l->guruKonfirmasi?->nama ?? '-' }}</div>
                         @if($l->siswa_id)
                         <a href="{{ route('guru.pendampingan-ortu.index', ['status' => 'dikonfirmasi', 'mode' => 'siswa', 'siswa_id' => $l->siswa_id]) }}" class="po-btn" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">Detail</a>
                         @endif
