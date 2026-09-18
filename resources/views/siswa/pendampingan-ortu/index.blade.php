@@ -68,6 +68,13 @@
     <h2 class="po-title">Form Laporan Pendampingan</h2>
     <form method="POST" action="{{ route('siswa.pendampingan-ortu.store') }}">
         @csrf
+        <div style="margin-bottom: 14px;">
+            <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #44403c; cursor: pointer; background: #f0faf5; border: 1px solid #d1eadd; border-radius: 10px; padding: 12px 14px;">
+                <input type="checkbox" name="is_jilid" id="cbJilid" value="1" {{ old('is_jilid') ? 'checked' : '' }} style="width: 17px; height: 17px; margin-top: 1px; accent-color: #0c8a5f; flex-shrink: 0;">
+                <span><strong>Kelas Jilid / Bilqolam</strong><br>
+                <span style="font-size: 12px; color: #78716c;">Centang jika pendampingan membaca jilid/bilqolam — tidak perlu mengisi surat dan ayat, cukup jenis kegiatan dan catatan.</span></span>
+            </label>
+        </div>
         <div class="po-form-grid">
             <div class="po-form-group">
                 <label class="po-label">Jenis Kegiatan *</label>
@@ -76,7 +83,7 @@
                     <option value="murajaah" {{ old('jenis') == 'murajaah' ? 'selected' : '' }}>Murajaah</option>
                 </select>
             </div>
-            <div class="po-form-group">
+            <div class="po-form-group" id="fieldSurat">
                 <label class="po-label">Surat *</label>
                 <select name="surat_id" class="po-select" required>
                     <option value="">-- Pilih Surat --</option>
@@ -87,11 +94,11 @@
                     @endforeach
                 </select>
             </div>
-            <div class="po-form-group">
+            <div class="po-form-group" id="fieldAyatMulai">
                 <label class="po-label">Ayat Mulai *</label>
                 <input type="number" name="ayat_mulai" class="po-input" min="1" value="{{ old('ayat_mulai', 1) }}" required>
             </div>
-            <div class="po-form-group">
+            <div class="po-form-group" id="fieldAyatSelesai">
                 <label class="po-label">Ayat Selesai</label>
                 <input type="number" name="ayat_selesai" class="po-input" min="1" placeholder="Opsional, jika hanya 1 ayat kosongkan">
             </div>
@@ -106,6 +113,22 @@
         </div>
         <button type="submit" class="po-btn" style="margin-top: 16px;">Kirim Laporan</button>
     </form>
+    <script>
+    (function() {
+        const cb = document.getElementById('cbJilid');
+        const groups = ['fieldSurat', 'fieldAyatMulai', 'fieldAyatSelesai'].map(id => document.getElementById(id));
+
+        function applyJilid() {
+            groups.forEach(g => {
+                g.style.opacity = cb.checked ? '0.45' : '';
+                g.querySelector('select, input').disabled = cb.checked;
+            });
+        }
+
+        cb.addEventListener('change', applyJilid);
+        applyJilid();
+    })();
+    </script>
 </div>
 
 {{-- Riwayat Laporan --}}
@@ -136,8 +159,8 @@
                         <td>{{ $l->tanggal?->format('d/m/Y') }}</td>
                         <td>{{ \App\Models\LaporanPendampinganOrtu::labelJenis($l->jenis) }}</td>
                         <td>
-                            <strong>{{ $l->surat?->nama_latin ?? '-' }}</strong>
-                            <div class="po-ayat">Ayat {{ $l->ayat_mulai }}{{ $l->ayat_selesai ? '-'.$l->ayat_selesai : '' }}</div>
+                            <strong>{{ $l->labelBacaan() }}</strong>
+                            <div class="po-ayat">{{ $l->labelAyat() }}</div>
                         </td>
                         <td style="max-width: 220px; word-break: break-word;">{{ $l->catatan ?? '-' }}</td>
                         <td>

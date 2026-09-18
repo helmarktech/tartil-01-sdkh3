@@ -17,6 +17,7 @@ class LaporanPendampinganOrtu extends Model
         'surat_id',
         'ayat_mulai',
         'ayat_selesai',
+        'is_jilid',
         'tanggal',
         'catatan',
         'status',
@@ -29,6 +30,7 @@ class LaporanPendampinganOrtu extends Model
         'tanggal_konfirmasi' => 'datetime',
         'ayat_mulai' => 'integer',
         'ayat_selesai' => 'integer',
+        'is_jilid' => 'boolean',
     ];
 
     public function siswa()
@@ -97,6 +99,25 @@ class LaporanPendampinganOrtu extends Model
             'murajaah' => 'Murajaah',
             default => $jenis,
         };
+    }
+
+    // Label bacaan: laporan jilid/bilqolam mendapat keterangan default dari sistem
+    public function labelBacaan(): string
+    {
+        if ($this->is_jilid) {
+            return 'Jilid / Bilqolam';
+        }
+
+        return $this->surat?->nama_latin ?? '-';
+    }
+
+    public function labelAyat(): string
+    {
+        if ($this->is_jilid) {
+            return 'Bacaan jilid / bilqolam';
+        }
+
+        return 'Ayat '.$this->ayat_mulai.($this->ayat_selesai ? '-'.$this->ayat_selesai : '');
     }
 
     public function isDikonfirmasi(): bool

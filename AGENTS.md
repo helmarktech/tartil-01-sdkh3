@@ -25,6 +25,7 @@ Fitur inti meliputi:
 - Manajemen tahun ajaran dan semester (ganjil/genap).
 - Hari libur per kelas.
 - Tahfidz: tracking hafalan siswa per juz 1–30 (tidak harus berurutan), dengan rekap per semester yang membedakan total siswa, siswa sudah hafal, dan siswa tuntas per juz.
+- Pendampingan ortu: siswa melaporkan tadarus/murajaah (surat + ayat) untuk dikonfirmasi guru. Tersedia mode **jilid/bilqolam** (checkbox `is_jilid` di form siswa) untuk siswa kelas jilid — surat & ayat tidak wajib, kolom bacaan ditampilkan sebagai "Jilid / Bilqolam" via `LaporanPendampinganOrtu::labelBacaan()`/`labelAyat()`.
 - Notifikasi siswa (database + push Web VAPID): siswa menerima notifikasi saat guru menginput jurnal harian, menambahkan setoran hafalan, dan mengkonfirmasi laporan pendampingan orangtua. Lonceng notifikasi di topbar siswa + halaman `/siswa/notifikasi`.
 - PWA: installable (manifest + service worker `public/sw.js`), caching cache-first hanya untuk asset statis (`/build/`, `/icons/`, `/images/`, `/css/`), halaman dinamis network-only.
 - Audit trail perubahan data via `activity_logs`.

@@ -36,12 +36,15 @@ class PendampinganOrtuController extends Controller
 
         $validated = $request->validate([
             'jenis' => 'required|in:tadarus,murajaah',
-            'surat_id' => 'required|exists:surats,id',
-            'ayat_mulai' => 'required|integer|min:1',
+            'is_jilid' => 'nullable|boolean',
+            'surat_id' => 'required_unless:is_jilid,1|nullable|exists:surats,id',
+            'ayat_mulai' => 'required_unless:is_jilid,1|nullable|integer|min:1',
             'ayat_selesai' => 'nullable|integer|min:1|gte:ayat_mulai',
             'tanggal' => 'required|date',
             'catatan' => 'nullable|string',
         ]);
+
+        $isJilid = $request->boolean('is_jilid');
 
         $kelas = $siswa->kelasTartil;
         if (! $kelas) {
@@ -56,11 +59,12 @@ class PendampinganOrtuController extends Controller
             'semester_id' => $semester?->id,
             'guru_id' => $kelas->guru_id,
             'jenis' => $validated['jenis'],
-            'surat_id' => $validated['surat_id'],
-            'ayat_mulai' => $validated['ayat_mulai'],
-            'ayat_selesai' => $validated['ayat_selesai'],
+            'surat_id' => $isJilid ? null : $validated['surat_id'],
+            'ayat_mulai' => $isJilid ? null : $validated['ayat_mulai'],
+            'ayat_selesai' => $isJilid ? null : ($validated['ayat_selesai'] ?? null),
+            'is_jilid' => $isJilid,
             'tanggal' => $validated['tanggal'],
-            'catatan' => $validated['catatan'],
+            'catatan' => $validated['catatan'] ?? null,
             'status' => 'pengajuan_konfirmasi',
         ]);
 

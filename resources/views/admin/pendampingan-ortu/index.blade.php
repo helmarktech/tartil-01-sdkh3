@@ -117,8 +117,8 @@
                     <td>{{ $l->kelas?->nama ?? '-' }}</td>
                     <td>{{ \App\Models\LaporanPendampinganOrtu::labelJenis($l->jenis) }}</td>
                     <td>
-                        <strong>{{ $l->surat?->nama_latin ?? '-' }}</strong>
-                        <div class="po-ayat">Ayat {{ $l->ayat_mulai }}{{ $l->ayat_selesai ? '-'.$l->ayat_selesai : '' }}</div>
+                        <strong>{{ $l->labelBacaan() }}</strong>
+                        <div class="po-ayat">{{ $l->labelAyat() }}</div>
                     </td>
                     <td style="max-width: 180px; word-break: break-word;">{{ $l->catatan ?? '-' }}</td>
                     <td>
@@ -164,8 +164,8 @@
             <div class="po-card-row">
                 <span class="po-card-label">Surat / Ayat</span>
                 <span class="po-card-value" style="text-align: right;">
-                    {{ $l->surat?->nama_latin ?? '-' }}<br>
-                    <span class="po-ayat">Ayat {{ $l->ayat_mulai }}{{ $l->ayat_selesai ? '-'.$l->ayat_selesai : '' }}</span>
+                    {{ $l->labelBacaan() }}<br>
+                    <span class="po-ayat">{{ $l->labelAyat() }}</span>
                 </span>
             </div>
             <div class="po-card-row">
