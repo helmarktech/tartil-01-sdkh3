@@ -71,9 +71,8 @@ class SiswaDashboardController extends Controller
                 ->first();
             $r2Harian = $snapJurnal?->r2_harian ?? $r2Data?->r2_harian ?? 0;
         } elseif ($totalJurnal > 0) {
-            $totalPoin = ($bCount * 2) + ($cCount * 1);
-            $maxPoin = $totalJurnal * 2;
-            $r2Harian = round(($totalPoin / $maxPoin) * 100);
+            // Via SSOT: poin B=2, C=1, K=0 dengan pembagi hari yang dinilai
+            $r2Harian = JurnalSiswaService::r2Harian($siswa->id, $semester);
         }
         $r2Penilaian = $r2Data?->r2_penilaian ?? 0;
         $r2Akhir = $r2Data?->r2_akhir ?? round(($r2Harian + $r2Penilaian) / 2);
@@ -127,9 +126,11 @@ class SiswaDashboardController extends Controller
                 $bln = $current->month;
                 $jB = $jurnalsFiltered->filter(fn ($j) => $j->tanggal->year == $tahun && $j->tanggal->month == $bln && $j->penilaian == 'B')->count();
                 $jC = $jurnalsFiltered->filter(fn ($j) => $j->tanggal->year == $tahun && $j->tanggal->month == $bln && $j->penilaian == 'C')->count();
+                $jK = $jurnalsFiltered->filter(fn ($j) => $j->tanggal->year == $tahun && $j->tanggal->month == $bln && $j->penilaian == 'K')->count();
                 $jTotal = $jurnalsFiltered->filter(fn ($j) => $j->tanggal->year == $tahun && $j->tanggal->month == $bln)->count();
-                // Persentase berbasis poin B/C/K (B=2, C=1, K=0) — selaras R2 Harian
-                $pct = $jTotal > 0 ? round((($jB * 2 + $jC) / ($jTotal * 2)) * 100) : 0;
+                $jDinilai = $jB + $jC + $jK;
+                // Persentase berbasis poin B/C/K (B=2, C=1, K=0), pembagi hari dinilai — selaras R2 Harian
+                $pct = $jDinilai > 0 ? round((($jB * 2 + $jC) / ($jDinilai * 2)) * 100) : 0;
 
                 // Hitung keterangan perubahan vs bulan sebelumnya
                 $perubahan = null;

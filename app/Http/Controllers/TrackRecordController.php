@@ -120,7 +120,9 @@ class TrackRecordController extends Controller
                 $totalC = $ringkasan['c'];
                 $totalK = $ringkasan['k'];
                 $totalNilai = $ringkasan['dinilai'];
-                $rataRata = $totalNilai > 0 ? round((($totalB * 1.0 + $totalC * 0.67 + $totalK * 0.33) / $totalNilai) * 100) : 0;
+                // Persentase via SSOT (poin B=2, C=1, K=0; pembagi hari dinilai)
+                // agar konsisten dengan dashboard siswa dan R2 Harian
+                $rataRata = JurnalSiswaService::r2Harian($siswa->id, $semester);
 
                 $rekapPerSemester[] = [
                     'semester' => $semester,
