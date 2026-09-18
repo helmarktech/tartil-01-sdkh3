@@ -49,10 +49,74 @@
 .po-btn:hover { background: #0a6b4a; }
 .po-btn:disabled { background: #ccc; cursor: not-allowed; }
 .po-checkbox { width: 18px; height: 18px; cursor: pointer; }
-.po-select {
-    padding: 8px 12px; border: 1px solid #d6d3d1; border-radius: 8px;
-    font-size: 13px; background: #fff; color: #1c1917; min-width: 220px;
+
+/* Custom dropdown (select siswa, kalender, pemilih bulan) */
+.po-dropdown { position: relative; min-width: 250px; }
+.po-dd-toggle {
+    width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 9px 14px; border: 1.5px solid #d6d3d1; border-radius: 10px; background: #fff;
+    font-size: 13px; color: #1c1917; cursor: pointer; text-align: left;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
+.po-dd-toggle:hover { border-color: #0c8a5f; }
+.po-dropdown.open .po-dd-toggle {
+    border-color: #0c8a5f; box-shadow: 0 0 0 3px rgba(12,138,95,0.15);
+}
+.po-dd-toggle.error { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.12); }
+.po-dd-toggle .po-dd-placeholder { color: #a8a29e; }
+.po-dd-toggle svg { flex-shrink: 0; color: #78716c; }
+.po-dd-panel {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 60;
+    background: #fff; border: 1px solid #e7e5e4; border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.14); min-width: 100%; overflow: hidden;
+}
+.po-dd-search { padding: 8px; border-bottom: 1px solid #f0f0f0; }
+.po-dd-search input {
+    width: 100%; padding: 7px 10px; border: 1px solid #e7e5e4; border-radius: 8px;
+    font-size: 13px; outline: none; box-sizing: border-box;
+}
+.po-dd-search input:focus { border-color: #0c8a5f; box-shadow: 0 0 0 3px rgba(12,138,95,0.12); }
+.po-dd-list { max-height: 230px; overflow-y: auto; }
+.po-dd-item {
+    display: block; width: 100%; text-align: left; padding: 9px 14px; font-size: 13px;
+    background: none; border: none; cursor: pointer; color: #1c1917;
+}
+.po-dd-item:hover { background: #f0faf5; }
+.po-dd-item.selected { background: #e7f6ef; color: #0c8a5f; font-weight: 600; }
+.po-dd-empty { padding: 14px; font-size: 12px; color: #a8a29e; text-align: center; }
+
+/* Kalender */
+.po-cal { padding: 12px; width: 264px; box-sizing: border-box; }
+.po-cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.po-cal-title { font-size: 13px; font-weight: 700; color: #1c1917; }
+.po-cal-nav {
+    width: 28px; height: 28px; border-radius: 8px; border: none; background: #f5f5f4;
+    cursor: pointer; font-size: 15px; line-height: 1; color: #44403c;
+    display: flex; align-items: center; justify-content: center;
+}
+.po-cal-nav:hover { background: #e7f6ef; color: #0c8a5f; }
+.po-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.po-cal-dow {
+    text-align: center; font-size: 10px; font-weight: 700; color: #a8a29e;
+    padding: 4px 0; text-transform: uppercase;
+}
+.po-cal-day {
+    text-align: center; padding: 6px 0; font-size: 12px; border-radius: 8px;
+    border: none; background: none; cursor: pointer; color: #1c1917;
+}
+.po-cal-day:hover { background: #e7f6ef; }
+.po-cal-day.muted { visibility: hidden; cursor: default; }
+.po-cal-day.today { border: 1.5px solid #0c8a5f; color: #0c8a5f; font-weight: 700; }
+.po-cal-day.selected { background: #0c8a5f; color: #fff; font-weight: 700; }
+
+/* Pemilih bulan */
+.po-month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0; }
+.po-month-item {
+    padding: 10px 4px; font-size: 12px; border: 1px solid #e7e5e4; border-radius: 8px;
+    background: #fff; cursor: pointer; color: #1c1917;
+}
+.po-month-item:hover { border-color: #0c8a5f; color: #0c8a5f; }
+.po-month-item.selected { background: #0c8a5f; border-color: #0c8a5f; color: #fff; font-weight: 700; }
 .po-empty { text-align: center; padding: 48px; color: #888; }
 
 /* Mobile cards */
@@ -95,23 +159,243 @@
         </div>
 
         @if($mode)
-        <form method="GET" action="{{ route('guru.pendampingan-ortu.index') }}" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <form method="GET" action="{{ route('guru.pendampingan-ortu.index') }}" id="formFilter" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
             <input type="hidden" name="status" value="dikonfirmasi">
             <input type="hidden" name="mode" value="{{ $mode }}">
             @if($mode === 'siswa')
-                <select name="siswa_id" class="po-select" required>
-                    <option value="">-- Pilih Siswa --</option>
-                    @foreach($siswaList as $s)
-                        <option value="{{ $s->id }}" {{ (string) request('siswa_id') === (string) $s->id ? 'selected' : '' }}>{{ $s->nama }}</option>
-                    @endforeach
-                </select>
+            <div class="po-dropdown" id="ddSiswa">
+                <input type="hidden" name="siswa_id" id="ddSiswaValue" value="{{ request('siswa_id') }}">
+                <button type="button" class="po-dd-toggle">
+                    <span class="po-dd-label {{ $filterSiswa ? '' : 'po-dd-placeholder' }}">{{ $filterSiswa?->nama ?? '-- Pilih Siswa --' }}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="po-dd-panel" hidden>
+                    <div class="po-dd-search">
+                        <input type="text" placeholder="Cari nama siswa..." autocomplete="off">
+                    </div>
+                    <div class="po-dd-list">
+                        @foreach($siswaList as $s)
+                        <button type="button" class="po-dd-item {{ (string) request('siswa_id') === (string) $s->id ? 'selected' : '' }}" data-value="{{ $s->id }}" data-label="{{ $s->nama }}">{{ $s->nama }}</button>
+                        @endforeach
+                        <div class="po-dd-empty" hidden>Tidak ada siswa yang cocok.</div>
+                    </div>
+                </div>
+            </div>
             @elseif($mode === 'tanggal')
-                <input type="date" name="tanggal" class="po-select" value="{{ request('tanggal') }}" required>
+            <div class="po-dropdown" id="ddTanggal">
+                <input type="hidden" name="tanggal" id="ddTanggalValue" value="{{ request('tanggal') }}">
+                <button type="button" class="po-dd-toggle">
+                    <span class="po-dd-label po-dd-placeholder">-- Pilih Tanggal --</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </button>
+                <div class="po-dd-panel" hidden></div>
+            </div>
             @elseif($mode === 'bulan')
-                <input type="month" name="bulan" class="po-select" value="{{ request('bulan') }}" required>
+            <div class="po-dropdown" id="ddBulan">
+                <input type="hidden" name="bulan" id="ddBulanValue" value="{{ request('bulan') }}">
+                <button type="button" class="po-dd-toggle">
+                    <span class="po-dd-label po-dd-placeholder">-- Pilih Bulan --</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </button>
+                <div class="po-dd-panel" hidden></div>
+            </div>
             @endif
             <button type="submit" class="po-btn" style="padding: 8px 16px;">Terapkan</button>
         </form>
+
+        <script>
+        (function() {
+            const MODE = @json($mode);
+            const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            const DOW = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+            const pad = n => String(n).padStart(2, '0');
+
+            function closeAllPanels() {
+                document.querySelectorAll('.po-dd-panel').forEach(p => p.hidden = true);
+                document.querySelectorAll('.po-dropdown.open').forEach(d => d.classList.remove('open'));
+            }
+            document.addEventListener('click', closeAllPanels);
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllPanels(); });
+
+            function setupToggle(dd) {
+                const toggle = dd.querySelector('.po-dd-toggle');
+                const panel = dd.querySelector('.po-dd-panel');
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const willOpen = panel.hidden;
+                    closeAllPanels();
+                    if (willOpen) {
+                        panel.hidden = false;
+                        dd.classList.add('open');
+                        const search = panel.querySelector('.po-dd-search input');
+                        if (search) search.focus();
+                        if (dd._onOpen) dd._onOpen();
+                    }
+                });
+                panel.addEventListener('click', e => e.stopPropagation());
+            }
+
+            // ===== Dropdown siswa dengan pencarian =====
+            if (MODE === 'siswa') {
+                const dd = document.getElementById('ddSiswa');
+                const value = document.getElementById('ddSiswaValue');
+                const label = dd.querySelector('.po-dd-label');
+                const search = dd.querySelector('.po-dd-search input');
+                const items = Array.from(dd.querySelectorAll('.po-dd-item'));
+                const emptyMsg = dd.querySelector('.po-dd-empty');
+
+                search.addEventListener('input', function() {
+                    const q = this.value.trim().toLowerCase();
+                    let visible = 0;
+                    items.forEach(item => {
+                        const show = item.dataset.label.toLowerCase().includes(q);
+                        item.hidden = !show;
+                        if (show) visible++;
+                    });
+                    emptyMsg.hidden = visible > 0;
+                });
+
+                items.forEach(item => item.addEventListener('click', function() {
+                    value.value = this.dataset.value;
+                    label.textContent = this.dataset.label;
+                    label.classList.remove('po-dd-placeholder');
+                    dd.querySelector('.po-dd-toggle').classList.remove('error');
+                    items.forEach(i => i.classList.toggle('selected', i === this));
+                    closeAllPanels();
+                }));
+
+                setupToggle(dd);
+            }
+
+            // ===== Kalender per tanggal =====
+            if (MODE === 'tanggal') {
+                const dd = document.getElementById('ddTanggal');
+                const value = document.getElementById('ddTanggalValue');
+                const label = dd.querySelector('.po-dd-label');
+                const panel = dd.querySelector('.po-dd-panel');
+                const today = new Date();
+                let viewY = today.getFullYear(), viewM = today.getMonth();
+
+                function validDate(str) {
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+                    const d = new Date(str + 'T00:00:00');
+                    return isNaN(d) ? null : d;
+                }
+
+                function syncFromValue() {
+                    const d = validDate(value.value);
+                    if (d) {
+                        label.textContent = d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear();
+                        label.classList.remove('po-dd-placeholder');
+                        viewY = d.getFullYear();
+                        viewM = d.getMonth();
+                    }
+                }
+
+                function render() {
+                    const firstDow = new Date(viewY, viewM, 1).getDay();
+                    const daysInMonth = new Date(viewY, viewM + 1, 0).getDate();
+                    let html = '<div class="po-cal">'
+                        + '<div class="po-cal-head">'
+                        + '<button type="button" class="po-cal-nav" data-nav="-1">&#8249;</button>'
+                        + '<div class="po-cal-title">' + BULAN[viewM] + ' ' + viewY + '</div>'
+                        + '<button type="button" class="po-cal-nav" data-nav="1">&#8250;</button>'
+                        + '</div><div class="po-cal-grid">';
+                    DOW.forEach(d => html += '<div class="po-cal-dow">' + d + '</div>');
+                    for (let i = 0; i < firstDow; i++) html += '<div class="po-cal-day muted"></div>';
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const ymd = viewY + '-' + pad(viewM + 1) + '-' + pad(day);
+                        let cls = 'po-cal-day';
+                        if (ymd === value.value) cls += ' selected';
+                        if (day === today.getDate() && viewM === today.getMonth() && viewY === today.getFullYear()) cls += ' today';
+                        html += '<button type="button" class="' + cls + '" data-ymd="' + ymd + '">' + day + '</button>';
+                    }
+                    html += '</div></div>';
+                    panel.innerHTML = html;
+
+                    panel.querySelectorAll('.po-cal-nav').forEach(btn => btn.addEventListener('click', function() {
+                        viewM += parseInt(this.dataset.nav, 10);
+                        if (viewM < 0) { viewM = 11; viewY--; }
+                        if (viewM > 11) { viewM = 0; viewY++; }
+                        render();
+                    }));
+                    panel.querySelectorAll('[data-ymd]').forEach(btn => btn.addEventListener('click', function() {
+                        value.value = this.dataset.ymd;
+                        dd.querySelector('.po-dd-toggle').classList.remove('error');
+                        syncFromValue();
+                        closeAllPanels();
+                    }));
+                }
+
+                syncFromValue();
+                dd._onOpen = render;
+                setupToggle(dd);
+            }
+
+            // ===== Pemilih bulan =====
+            if (MODE === 'bulan') {
+                const dd = document.getElementById('ddBulan');
+                const value = document.getElementById('ddBulanValue');
+                const label = dd.querySelector('.po-dd-label');
+                const panel = dd.querySelector('.po-dd-panel');
+                const today = new Date();
+                let viewY = today.getFullYear();
+
+                function syncFromValue() {
+                    if (/^\d{4}-\d{2}$/.test(value.value)) {
+                        const parts = value.value.split('-').map(Number);
+                        if (parts[1] >= 1 && parts[1] <= 12) {
+                            label.textContent = BULAN[parts[1] - 1] + ' ' + parts[0];
+                            label.classList.remove('po-dd-placeholder');
+                            viewY = parts[0];
+                        }
+                    }
+                }
+
+                function render() {
+                    let html = '<div class="po-cal">'
+                        + '<div class="po-cal-head">'
+                        + '<button type="button" class="po-cal-nav" data-nav="-1">&#8249;</button>'
+                        + '<div class="po-cal-title">' + viewY + '</div>'
+                        + '<button type="button" class="po-cal-nav" data-nav="1">&#8250;</button>'
+                        + '</div><div class="po-month-grid">';
+                    for (let m = 0; m < 12; m++) {
+                        const ym = viewY + '-' + pad(m + 1);
+                        html += '<button type="button" class="po-month-item' + (ym === value.value ? ' selected' : '') + '" data-ym="' + ym + '">' + BULAN[m] + '</button>';
+                    }
+                    html += '</div></div>';
+                    panel.innerHTML = html;
+
+                    panel.querySelectorAll('.po-cal-nav').forEach(btn => btn.addEventListener('click', function() {
+                        viewY += parseInt(this.dataset.nav, 10);
+                        render();
+                    }));
+                    panel.querySelectorAll('[data-ym]').forEach(btn => btn.addEventListener('click', function() {
+                        value.value = this.dataset.ym;
+                        dd.querySelector('.po-dd-toggle').classList.remove('error');
+                        syncFromValue();
+                        closeAllPanels();
+                    }));
+                }
+
+                syncFromValue();
+                dd._onOpen = render;
+                setupToggle(dd);
+            }
+
+            // ===== Validasi sebelum submit =====
+            document.getElementById('formFilter').addEventListener('submit', function(e) {
+                const map = { siswa: 'ddSiswa', tanggal: 'ddTanggal', bulan: 'ddBulan' };
+                const dd = document.getElementById(map[MODE]);
+                if (!dd.querySelector('input[type="hidden"]').value) {
+                    e.preventDefault();
+                    const toggle = dd.querySelector('.po-dd-toggle');
+                    toggle.classList.add('error');
+                    if (dd.querySelector('.po-dd-panel').hidden) toggle.click();
+                }
+            });
+        })();
+        </script>
         @else
         <p style="font-size: 13px; color: #666; margin: 0;">Menampilkan seluruh data konfirmasi. Gunakan filter untuk melihat data per siswa, per tanggal, atau per bulan.</p>
         @endif
