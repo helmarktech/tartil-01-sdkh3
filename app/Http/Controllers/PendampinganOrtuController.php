@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kelas;
 use App\Models\LaporanPendampinganOrtu;
 use App\Models\Semester;
+use App\Models\Siswa;
 use App\Models\Surat;
 use App\Notifications\SiswaNotifikasi;
 use Illuminate\Http\Request;
@@ -78,17 +80,53 @@ class PendampinganOrtuController extends Controller
         $query = LaporanPendampinganOrtu::where('guru_id', $guru->id)
             ->with(['siswa', 'surat', 'semester', 'guruKonfirmasi']);
 
+        $mode = null;
+        $siswaList = collect();
+        $filterSiswa = null;
+        $semesterAktif = null;
+
         if ($status === 'pengajuan') {
             $query->pengajuan();
         } elseif ($status === 'dikonfirmasi') {
             $query->dikonfirmasi();
+
+            $mode = $request->get('mode');
+            $semesterAktif = Semester::aktif()->first();
+
+            $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id');
+            $siswaList = Siswa::whereIn('kelas_tartil_id', $kelasIds)
+                ->orderBy('nama')
+                ->get(['id', 'nama']);
+
+            if ($mode === 'siswa' && $request->filled('siswa_id')) {
+                $filterSiswa = $siswaList->firstWhere('id', (int) $request->siswa_id);
+                $query->where('siswa_id', $request->siswa_id);
+                if ($semesterAktif) {
+                    $query->where('semester_id', $semesterAktif->id);
+                }
+            } elseif ($mode === 'tanggal' && $request->filled('tanggal')) {
+                $query->whereDate('tanggal', $request->tanggal);
+            } elseif ($mode === 'bulan' && $request->filled('bulan')
+                && preg_match('/^\d{4}-\d{2}$/', $request->bulan)) {
+                [$tahun, $bulan] = explode('-', $request->bulan);
+                $query->whereYear('tanggal', $tahun)
+                    ->whereMonth('tanggal', $bulan);
+            }
         }
 
         $laporan = $query->orderByRaw("status = 'pengajuan_konfirmasi' DESC")
             ->orderBy('tanggal', 'desc')
             ->get();
 
-        return view('guru.pendampingan-ortu.index', compact('laporan', 'status', 'guru'));
+        // Mode per siswa: data konfirmasi dipisah per bulan dalam semester berjalan
+        $laporanPerBulan = null;
+        if ($status === 'dikonfirmasi' && $mode === 'siswa' && $filterSiswa) {
+            $laporanPerBulan = $laporan->groupBy(fn ($l) => $l->tanggal?->format('Y-m'));
+        }
+
+        return view('guru.pendampingan-ortu.index', compact(
+            'laporan', 'status', 'guru', 'mode', 'siswaList', 'filterSiswa', 'semesterAktif', 'laporanPerBulan'
+        ));
     }
 
     public function guruConfirm(LaporanPendampinganOrtu $laporan)

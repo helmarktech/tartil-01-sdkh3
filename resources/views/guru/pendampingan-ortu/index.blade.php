@@ -49,6 +49,10 @@
 .po-btn:hover { background: #0a6b4a; }
 .po-btn:disabled { background: #ccc; cursor: not-allowed; }
 .po-checkbox { width: 18px; height: 18px; cursor: pointer; }
+.po-select {
+    padding: 8px 12px; border: 1px solid #d6d3d1; border-radius: 8px;
+    font-size: 13px; background: #fff; color: #1c1917; min-width: 220px;
+}
 .po-empty { text-align: center; padding: 48px; color: #888; }
 
 /* Mobile cards */
@@ -79,7 +83,186 @@
     <a href="{{ route('guru.pendampingan-ortu.index', ['status' => 'dikonfirmasi']) }}" class="po-tab {{ $status === 'dikonfirmasi' ? 'active' : '' }}">Telah Dikonfirmasi</a>
 </div>
 
-@if($laporan->isEmpty())
+@if($status === 'dikonfirmasi')
+    {{-- Filter data konfirmasi --}}
+    <div class="po-card" style="margin-bottom: 12px;">
+        <div style="font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Filter Data Konfirmasi</div>
+        <div class="po-tabs" style="margin-bottom: 12px;">
+            <a href="{{ route('guru.pendampingan-ortu.index', ['status' => 'dikonfirmasi']) }}" class="po-tab {{ !$mode ? 'active' : '' }}">Semua Data</a>
+            <a href="{{ route('guru.pendampingan-ortu.index', ['status' => 'dikonfirmasi', 'mode' => 'siswa']) }}" class="po-tab {{ $mode === 'siswa' ? 'active' : '' }}">Per Siswa</a>
+            <a href="{{ route('guru.pendampingan-ortu.index', ['status' => 'dikonfirmasi', 'mode' => 'tanggal']) }}" class="po-tab {{ $mode === 'tanggal' ? 'active' : '' }}">Per Tanggal</a>
+            <a href="{{ route('guru.pendampingan-ortu.index', ['status' => 'dikonfirmasi', 'mode' => 'bulan']) }}" class="po-tab {{ $mode === 'bulan' ? 'active' : '' }}">Per Bulan</a>
+        </div>
+
+        @if($mode)
+        <form method="GET" action="{{ route('guru.pendampingan-ortu.index') }}" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <input type="hidden" name="status" value="dikonfirmasi">
+            <input type="hidden" name="mode" value="{{ $mode }}">
+            @if($mode === 'siswa')
+                <select name="siswa_id" class="po-select" required>
+                    <option value="">-- Pilih Siswa --</option>
+                    @foreach($siswaList as $s)
+                        <option value="{{ $s->id }}" {{ (string) request('siswa_id') === (string) $s->id ? 'selected' : '' }}>{{ $s->nama }}</option>
+                    @endforeach
+                </select>
+            @elseif($mode === 'tanggal')
+                <input type="date" name="tanggal" class="po-select" value="{{ request('tanggal') }}" required>
+            @elseif($mode === 'bulan')
+                <input type="month" name="bulan" class="po-select" value="{{ request('bulan') }}" required>
+            @endif
+            <button type="submit" class="po-btn" style="padding: 8px 16px;">Terapkan</button>
+        </form>
+        @else
+        <p style="font-size: 13px; color: #666; margin: 0;">Menampilkan seluruh data konfirmasi. Gunakan filter untuk melihat data per siswa, per tanggal, atau per bulan.</p>
+        @endif
+    </div>
+
+    @if($mode === 'siswa' && request()->filled('siswa_id') && ! $filterSiswa)
+        <div class="po-card po-empty">
+            <h3>Siswa tidak ditemukan</h3>
+            <p>Siswa tersebut tidak terdaftar di kelas Anda.</p>
+        </div>
+    @elseif($mode === 'siswa' && $filterSiswa)
+        {{-- Tampilan konfirmasi per siswa, dipisah per bulan di semester berjalan --}}
+        <div class="po-card" style="margin-bottom: 12px;">
+            <div style="font-size: 16px; font-weight: 700; color: #1a1a2e;">{{ $filterSiswa->nama }}</div>
+            <div style="font-size: 13px; color: #666; margin-top: 2px;">
+                Data konfirmasi pada semester berjalan{{ $semesterAktif ? ' ('.$semesterAktif->nama.')' : '' }}, dipisah per bulan.
+            </div>
+        </div>
+        @if($laporanPerBulan->isEmpty())
+            <div class="po-card po-empty">
+                <div style="font-size: 48px; margin-bottom: 16px;">&#128106;</div>
+                <h3>Belum ada data</h3>
+                <p>Belum ada konfirmasi untuk siswa ini di semester berjalan.</p>
+            </div>
+        @else
+            @foreach($laporanPerBulan as $bulanKey => $items)
+            <div class="po-card">
+                <h3 style="font-size: 15px; font-weight: 700; color: #0c8a5f; margin: 0 0 12px;">
+                    {{ \Carbon\Carbon::parse($bulanKey.'-01')->locale('id')->translatedFormat('F Y') }}
+                    <span style="font-weight: 400; color: #888; font-size: 12px;">({{ $items->count() }} konfirmasi)</span>
+                </h3>
+                <div style="overflow-x: auto;">
+                    <table class="po-table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Jenis</th>
+                                <th>Surat / Ayat</th>
+                                <th>Catatan</th>
+                                <th>Dikonfirmasi Oleh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($items as $l)
+                            <tr>
+                                <td>{{ $l->tanggal?->format('d/m/Y') }}</td>
+                                <td>{{ \App\Models\LaporanPendampinganOrtu::labelJenis($l->jenis) }}</td>
+                                <td>
+                                    <strong>{{ $l->surat?->nama_latin ?? '-' }}</strong>
+                                    <div class="po-ayat">Ayat {{ $l->ayat_mulai }}{{ $l->ayat_selesai ? '-'.$l->ayat_selesai : '' }}</div>
+                                </td>
+                                <td style="max-width: 200px; word-break: break-word;">{{ $l->catatan ?? '-' }}</td>
+                                <td class="po-ayat">{{ $l->guruKonfirmasi?->nama ?? '-' }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endforeach
+        @endif
+    @elseif($laporan->isEmpty())
+        <div class="po-card po-empty">
+            <div style="font-size: 48px; margin-bottom: 16px;">&#128106;</div>
+            <h3>Tidak ada data</h3>
+            <p>Tidak ada data konfirmasi yang cocok dengan filter.</p>
+        </div>
+    @else
+    {{-- Tabel datar: semua data / per tanggal / per bulan, dengan link Detail ke tampilan per siswa --}}
+    <div class="po-table-wrap">
+        <table class="po-table">
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Siswa</th>
+                    <th>Jenis</th>
+                    <th>Surat / Ayat</th>
+                    <th>Catatan</th>
+                    <th>Status</th>
+                    <th style="width: 140px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($laporan as $l)
+                <tr>
+                    <td>{{ $l->tanggal?->format('d/m/Y') }}</td>
+                    <td><strong>{{ $l->siswa?->nama ?? '-' }}</strong></td>
+                    <td>{{ \App\Models\LaporanPendampinganOrtu::labelJenis($l->jenis) }}</td>
+                    <td>
+                        <strong>{{ $l->surat?->nama_latin ?? '-' }}</strong>
+                        <div class="po-ayat">Ayat {{ $l->ayat_mulai }}{{ $l->ayat_selesai ? '-'.$l->ayat_selesai : '' }}</div>
+                    </td>
+                    <td style="max-width: 200px; word-break: break-word;">{{ $l->catatan ?? '-' }}</td>
+                    <td>
+                        <span class="po-badge po-badge-dikonfirmasi">
+                            {{ \App\Models\LaporanPendampinganOrtu::labelStatus($l->status) }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="po-ayat" style="margin-bottom: 6px;">{{ $l->guruKonfirmasi?->nama ?? '-' }}</div>
+                        @if($l->siswa_id)
+                        <a href="{{ route('guru.pendampingan-ortu.index', ['status' => 'dikonfirmasi', 'mode' => 'siswa', 'siswa_id' => $l->siswa_id]) }}" class="po-btn" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">Detail</a>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    {{-- Mobile cards --}}
+    <div class="po-cards">
+        @foreach($laporan as $l)
+        <div class="po-card-item">
+            <div class="po-card-row">
+                <span class="po-card-label">Siswa</span>
+                <span class="po-card-value">{{ $l->siswa?->nama ?? '-' }}</span>
+            </div>
+            <div class="po-card-row">
+                <span class="po-card-label">Tanggal</span>
+                <span class="po-card-value">{{ $l->tanggal?->format('d/m/Y') }}</span>
+            </div>
+            <div class="po-card-row">
+                <span class="po-card-label">Jenis</span>
+                <span class="po-card-value">{{ \App\Models\LaporanPendampinganOrtu::labelJenis($l->jenis) }}</span>
+            </div>
+            <div class="po-card-row">
+                <span class="po-card-label">Surat / Ayat</span>
+                <span class="po-card-value" style="text-align: right;">
+                    {{ $l->surat?->nama_latin ?? '-' }}<br>
+                    <span class="po-ayat">Ayat {{ $l->ayat_mulai }}{{ $l->ayat_selesai ? '-'.$l->ayat_selesai : '' }}</span>
+                </span>
+            </div>
+            <div class="po-card-row">
+                <span class="po-card-label">Catatan</span>
+                <span class="po-card-value" style="max-width: 60%; word-break: break-word; font-weight: 400;">{{ $l->catatan ?? '-' }}</span>
+            </div>
+            <div class="po-card-row">
+                <span class="po-card-label">Guru Konfirmasi</span>
+                <span class="po-card-value">{{ $l->guruKonfirmasi?->nama ?? '-' }}</span>
+            </div>
+            @if($l->siswa_id)
+            <div style="margin-top: 4px;">
+                <a href="{{ route('guru.pendampingan-ortu.index', ['status' => 'dikonfirmasi', 'mode' => 'siswa', 'siswa_id' => $l->siswa_id]) }}" class="po-btn" style="width: 100%; text-decoration: none;">Detail Konfirmasi Siswa</a>
+            </div>
+            @endif
+        </div>
+        @endforeach
+    </div>
+    @endif
+@elseif($laporan->isEmpty())
     <div class="po-card po-empty">
         <div style="font-size: 48px; margin-bottom: 16px;">&#128106;</div>
         <h3>Tidak ada laporan</h3>
