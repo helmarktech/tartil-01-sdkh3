@@ -365,6 +365,9 @@ Route::middleware(['auth:siswa'])->prefix('siswa')->name('siswa.')->group(functi
     // ===== LAPORAN PENDAMPINGAN ORTU =====
     Route::get('/pendampingan-ortu', [PendampinganOrtuController::class, 'siswaIndex'])->name('pendampingan-ortu.index');
     Route::post('/pendampingan-ortu', [PendampinganOrtuController::class, 'siswaStore'])->name('pendampingan-ortu.store');
+    Route::get('/pendampingan-ortu/{laporan}/edit', [PendampinganOrtuController::class, 'siswaEdit'])->name('pendampingan-ortu.edit');
+    Route::put('/pendampingan-ortu/{laporan}', [PendampinganOrtuController::class, 'siswaUpdate'])->name('pendampingan-ortu.update');
+    Route::delete('/pendampingan-ortu/{laporan}', [PendampinganOrtuController::class, 'siswaDestroy'])->name('pendampingan-ortu.destroy');
     Route::get('/no-hp/edit', [SiswaDashboardController::class, 'editNoHp'])->name('no-hp.edit');
     Route::put('/no-hp/update', [SiswaDashboardController::class, 'updateNoHp'])->name('no-hp.update');
 

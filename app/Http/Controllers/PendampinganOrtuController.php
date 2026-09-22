@@ -72,6 +72,73 @@ class PendampinganOrtuController extends Controller
             ->with('success', 'Laporan pendampingan berhasil dikirim. Menunggu konfirmasi guru.');
     }
 
+    public function siswaEdit(LaporanPendampinganOrtu $laporan)
+    {
+        $this->authorizeSiswaPemilik($laporan);
+
+        $suratList = Surat::orderBy('urutan')->get();
+
+        return view('siswa.pendampingan-ortu.edit', compact('laporan', 'suratList'));
+    }
+
+    public function siswaUpdate(Request $request, LaporanPendampinganOrtu $laporan)
+    {
+        $this->authorizeSiswaPemilik($laporan);
+
+        $validated = $request->validate([
+            'jenis' => 'required|in:tadarus,murajaah',
+            'is_jilid' => 'nullable|boolean',
+            'surat_id' => 'required_unless:is_jilid,1|nullable|exists:surats,id',
+            'ayat_mulai' => 'required_unless:is_jilid,1|nullable|integer|min:1',
+            'ayat_selesai' => 'nullable|integer|min:1|gte:ayat_mulai',
+            'tanggal' => 'required|date',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $isJilid = $request->boolean('is_jilid');
+        $sudahDikonfirmasi = $laporan->status === 'telah_dikonfirmasi';
+
+        $laporan->update([
+            'jenis' => $validated['jenis'],
+            'surat_id' => $isJilid ? null : $validated['surat_id'],
+            'ayat_mulai' => $isJilid ? null : $validated['ayat_mulai'],
+            'ayat_selesai' => $isJilid ? null : ($validated['ayat_selesai'] ?? null),
+            'is_jilid' => $isJilid,
+            'tanggal' => $validated['tanggal'],
+            'catatan' => $validated['catatan'] ?? null,
+            // Edit selalu mengembalikan laporan ke antrean konfirmasi guru
+            'status' => 'pengajuan_konfirmasi',
+            'dikonfirmasi_oleh' => null,
+            'tanggal_konfirmasi' => null,
+        ]);
+
+        $pesan = $sudahDikonfirmasi
+            ? 'Laporan berhasil diperbarui. Status kembali ke Pengajuan Konfirmasi dan akan dikonfirmasi ulang oleh guru.'
+            : 'Laporan pendampingan berhasil diperbarui.';
+
+        return redirect()->route('siswa.pendampingan-ortu.index')->with('success', $pesan);
+    }
+
+    public function siswaDestroy(LaporanPendampinganOrtu $laporan)
+    {
+        $this->authorizeSiswaPemilik($laporan);
+
+        if ($laporan->status === 'telah_dikonfirmasi') {
+            return back()->with('error', 'Laporan yang sudah dikonfirmasi tidak dapat dihapus.');
+        }
+
+        $laporan->delete();
+
+        return redirect()->route('siswa.pendampingan-ortu.index')
+            ->with('success', 'Laporan pendampingan berhasil dihapus.');
+    }
+
+    // Hanya siswa pemilik laporan yang boleh mengubah/menghapus laporannya
+    private function authorizeSiswaPemilik(LaporanPendampinganOrtu $laporan): void
+    {
+        abort_unless($laporan->siswa_id === auth('siswa')->id(), 403, 'Laporan ini bukan milik Anda.');
+    }
+
     // ==================== GURU: KONFIRMASI LAPORAN ====================
     public function guruIndex(Request $request)
     {

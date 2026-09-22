@@ -51,6 +51,16 @@
 .po-badge-dikonfirmasi { background: #d4edda; color: #155724; }
 .po-empty { text-align: center; padding: 40px; color: #888; }
 .po-ayat { font-size: 12px; color: #78716c; }
+.po-aksi { display: flex; gap: 6px; flex-wrap: wrap; }
+.po-btn-sm {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    text-decoration: none; cursor: pointer; border: none; font-family: inherit;
+}
+.po-btn-edit { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.po-btn-edit:hover { background: #dbeafe; }
+.po-btn-hapus { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.po-btn-hapus:hover { background: #fee2e2; }
 </style>
 
 <div class="siswa-page-header">
@@ -151,6 +161,7 @@
                         <th>Catatan</th>
                         <th>Status</th>
                         <th>Guru Konfirmasi</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -175,6 +186,18 @@
                             @else
                                 <span class="po-ayat">-</span>
                             @endif
+                        </td>
+                        <td>
+                            <div class="po-aksi">
+                                <a href="{{ route('siswa.pendampingan-ortu.edit', $l) }}" class="po-btn-sm po-btn-edit">Edit</a>
+                                @if($l->status === 'pengajuan_konfirmasi')
+                                    <form method="POST" action="{{ route('siswa.pendampingan-ortu.destroy', $l) }}" onsubmit="return confirm('Hapus laporan ini? Tindakan tidak dapat dibatalkan.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="po-btn-sm po-btn-hapus">Hapus</button>
+                                    </form>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @endforeach
