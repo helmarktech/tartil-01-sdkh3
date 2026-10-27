@@ -242,6 +242,24 @@ class TasmiTest extends TestCase
             ->assertDontSee('Video P01', false);
     }
 
+    public function test_landing_video_terbaru_berdasarkan_tanggal_tasmi(): void
+    {
+        // Video dengan tanggal tasmi' lebih baru harus tampil sebagai sorotan,
+        // meski waktu upload-nya lebih lama dari video lain (setUp: tanggal null).
+        $videoTanggalBaru = TasmiVideo::create([
+            'siswa_id' => $this->siswa->id, 'juz' => 29,
+            'judul' => "Tasmi' Tanggal Baru", 'youtube_url' => 'https://youtu.be/abc123XYZ89',
+            'youtube_id' => 'abc123XYZ89', 'tanggal_tasmi' => now()->subDay()->toDateString(),
+            'diupload_oleh' => $this->admin->id, 'created_at' => now()->subDays(5),
+        ]);
+
+        // Poster sorotan (lpTasmiThumb) harus memakai thumbnail video tsb,
+        // bukan sekadar muncul di baris tabel galeri.
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('id="lpTasmiThumb" src="https://i.ytimg.com/vi/abc123XYZ89/hqdefault.jpg"', false);
+    }
+
     public function test_hapus_video_ikut_menghapus_like_dan_komentar(): void
     {
         TasmiLike::create([

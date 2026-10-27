@@ -34,11 +34,14 @@ Route::get('/', function () {
             : redirect()->route('guru.dashboard');
     }
 
-    // Dokumentasi tasmi' publik: video terbaru (in-frame) + galeri 10 per halaman
-    $tasmiTerbaru = TasmiVideo::with('siswa')->latest()->first();
-    $tasmiList = TasmiVideo::with('siswa')
-        ->withCount(['likes', 'comments'])
-        ->latest()
+    // Dokumentasi tasmi' publik: video terbaru berdasarkan TANGGAL TASMI'
+    // (bukan waktu upload), null di urutan belakang; galeri 10 per halaman
+    $urutanTanggal = fn ($q) => $q->orderByRaw('tanggal_tasmi IS NULL')
+        ->orderByDesc('tanggal_tasmi')
+        ->latest();
+
+    $tasmiTerbaru = $urutanTanggal(TasmiVideo::with('siswa'))->first();
+    $tasmiList = $urutanTanggal(TasmiVideo::with('siswa')->withCount(['likes', 'comments']))
         ->paginate(10);
 
     return view('landing', compact('tasmiTerbaru', 'tasmiList'));
