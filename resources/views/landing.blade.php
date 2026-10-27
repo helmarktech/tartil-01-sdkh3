@@ -900,7 +900,20 @@
             box-shadow: 0 4px 24px rgba(28, 25, 23, 0.06); margin-bottom: 28px;
         }
         .lp-tasmi-frame { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
-        .lp-tasmi-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+        .lp-tasmi-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .lp-tasmi-play-overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 12px;
+            background: rgba(0, 0, 0, 0.45); text-decoration: none; transition: background 0.2s;
+        }
+        .lp-tasmi-play-overlay:hover { background: rgba(0, 0, 0, 0.6); }
+        .lp-tasmi-play-btn {
+            width: 68px; height: 68px; border-radius: 50%; background: #0c8a5f; color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35); transition: transform 0.15s;
+        }
+        .lp-tasmi-play-overlay:hover .lp-tasmi-play-btn { transform: scale(1.08); }
+        .lp-tasmi-play-text { color: #fff; font-size: 14px; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
         .lp-tasmi-meta { padding: 16px 20px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
         .lp-tasmi-meta h3 { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
         .lp-tasmi-meta .sub { font-size: 13px; color: var(--ink-muted); }
@@ -911,8 +924,8 @@
         .lp-tasmi-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border, #e7e5e4); }
         .lp-tasmi-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-muted); padding: 10px 14px; background: var(--bg); }
         .lp-tasmi-table td { padding: 10px 14px; font-size: 13px; border-top: 1px solid var(--border, #e7e5e4); color: var(--ink-secondary); }
-        .lp-tasmi-table tr[data-embed] { cursor: pointer; transition: background 0.15s; }
-        .lp-tasmi-table tr[data-embed]:hover { background: #f0faf5; }
+        .lp-tasmi-table tr[data-thumb] { cursor: pointer; transition: background 0.15s; }
+        .lp-tasmi-table tr[data-thumb]:hover { background: #f0faf5; }
         .lp-tasmi-table img { width: 64px; height: 36px; object-fit: cover; border-radius: 6px; display: block; }
         .lp-tasmi-pager { display: flex; gap: 6px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
         .lp-tasmi-pager a, .lp-tasmi-pager span {
@@ -1062,16 +1075,21 @@
     <section class="lp-tasmi" id="tasmi">
         <div class="lp-tasmi-head">
             <h2>Dokumentasi <em>Tasmi'</em> Terbaru</h2>
-            <p>Saksikan dokumentasi tasmi' para siswa SD Khadijah 3 — langsung dari halaman ini</p>
+            <p>Saksikan dokumentasi tasmi' para siswa SD Khadijah 3 — masuk untuk menonton videonya</p>
         </div>
 
         @if($tasmiTerbaru)
-        {{-- Pemutar in-frame: menampilkan video terbaru, berubah saat baris tabel diklik --}}
+        {{-- Poster video terbaru: play diarahkan ke login agar penghitung
+             "ditonton" berjalan (count hanya dihitung setelah login) --}}
         <div class="lp-tasmi-player">
             <div class="lp-tasmi-frame">
-                <iframe id="lpTasmiFrame" src="{{ $tasmiTerbaru->embed_url }}" title="{{ $tasmiTerbaru->judul }}"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen loading="lazy"></iframe>
+                <img id="lpTasmiThumb" src="{{ $tasmiTerbaru->thumbnail }}" alt="{{ $tasmiTerbaru->judul }}" loading="lazy">
+                <a href="#login" class="lp-tasmi-play-overlay" title="Masuk untuk menonton">
+                    <span class="lp-tasmi-play-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="30" height="30"><path d="M8 5v14l11-7z"/></svg>
+                    </span>
+                    <span class="lp-tasmi-play-text">Masuk untuk menonton video</span>
+                </a>
             </div>
             <div class="lp-tasmi-meta">
                 <div>
@@ -1110,7 +1128,7 @@
                 </thead>
                 <tbody>
                     @foreach($tasmiList as $v)
-                    <tr data-embed="{{ $v->embed_url }}"
+                    <tr data-thumb="{{ $v->thumbnail }}"
                         data-judul="{{ $v->judul }}"
                         data-sub="{{ $v->siswa->nama }} · Juz {{ $v->juz }}{{ $v->tanggal_tasmi ? ' · '.$v->tanggal_tasmi->format('d/m/Y') : '' }} · 👁 {{ $v->jumlah_ditonton }}×"
                         data-badge="Juz {{ $v->juz }}"
@@ -1486,15 +1504,17 @@
             document.getElementById('panel-' + tab).classList.add('active');
         }
 
-        // Klik baris tabel tasmi' → putar video di pemutar in-frame
+        // Klik baris tabel tasmi' → ganti poster video di pemutar
+        // (play tetap diarahkan ke login agar penghitung "ditonton" berjalan)
         function lpTasmiPutar(row) {
-            const frame = document.getElementById('lpTasmiFrame');
-            if (!frame) return;
-            frame.src = row.dataset.embed;
+            const thumb = document.getElementById('lpTasmiThumb');
+            if (!thumb) return;
+            thumb.src = row.dataset.thumb;
+            thumb.alt = row.dataset.judul;
             document.getElementById('lpTasmiJudul').textContent = row.dataset.judul;
             document.getElementById('lpTasmiSub').textContent = row.dataset.sub;
             document.getElementById('lpTasmiBadge').textContent = row.dataset.badge;
-            frame.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            thumb.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     </script>
 

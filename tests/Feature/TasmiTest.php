@@ -204,10 +204,14 @@ class TasmiTest extends TestCase
 
     public function test_landing_menampilkan_tasmi_terbaru_inframe_dan_galeri(): void
     {
+        // Pengunjung anonim melihat poster + ajakan login (bukan iframe langsung),
+        // karena penghitung "ditonton" hanya berjalan setelah login.
         $this->get('/')
             ->assertOk()
             ->assertSee('Dokumentasi', false)
-            ->assertSee('youtube-nocookie.com/embed/dQw4w9WgXcQ', false)
+            ->assertDontSee('youtube-nocookie.com/embed/', false)
+            ->assertSee('i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg', false)
+            ->assertSee('Masuk untuk menonton video', false)
             ->assertSee('Tasmi&#039; Juz 30', false) // apostrof di-escape Blade
             ->assertSee('Masuk dulu di sini', false) // ajakan login untuk like/komentar
             ->assertSee('id="login"', false); // anchor ke kartu login
