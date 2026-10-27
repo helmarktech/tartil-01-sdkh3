@@ -691,7 +691,7 @@
 .sd-munaqosyah-status.tidak-lulus { background: #fecaca; color: #991b1b; }
 .sd-munaqosyah-status.pending { background: #fef9c3; color: #854d0e; }
 
-.sd-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center; }
+.sd-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; text-align: center; }
 .sd-summary-num { font-size: 24px; font-weight: 800; color: #1c1917; display: block; }
 .sd-summary-label { font-size: 11px; color: #78716c; margin-top: 2px; }
 
