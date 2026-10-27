@@ -11,6 +11,7 @@ use App\Models\TasmiComment;
 use App\Models\TasmiLike;
 use App\Models\TasmiVideo;
 use App\Models\User;
+use App\Notifications\GuruNotifikasi;
 use App\Notifications\SiswaNotifikasi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -107,9 +108,24 @@ class TasmiTest extends TestCase
         $this->assertDatabaseMissing('tasmi_videos', ['judul' => 'Uji invalid']);
     }
 
-    public function test_admin_store_mengirim_notifikasi_ke_siswa(): void
+    public function test_admin_store_mengirim_notifikasi_ke_semua_siswa_aktif_dan_guru(): void
     {
         Notification::fake();
+
+        $siswaLain = Siswa::create([
+            'nis' => '2526002', 'nama' => 'Siswa B', 'no_hp' => '081111111112',
+            'password' => bcrypt('password'), 'jenis_kelamin' => 'P',
+            'kelas_reguler_id' => KelasReguler::first()->id,
+            'kelas_tartil_id' => $this->siswa->kelas_tartil_id,
+            'tanggal_masuk' => now()->subMonths(3)->toDateString(), 'status' => 'aktif',
+        ]);
+        $siswaNonaktif = Siswa::create([
+            'nis' => '2526003', 'nama' => 'Siswa C', 'no_hp' => '081111111113',
+            'password' => bcrypt('password'), 'jenis_kelamin' => 'L',
+            'kelas_reguler_id' => KelasReguler::first()->id,
+            'kelas_tartil_id' => $this->siswa->kelas_tartil_id,
+            'tanggal_masuk' => now()->subMonths(3)->toDateString(), 'status' => 'lulus',
+        ]);
 
         $this->actingAs($this->admin)->post(route('admin.tasmi.store'), [
             'siswa_id' => $this->siswa->id,
@@ -118,7 +134,13 @@ class TasmiTest extends TestCase
             'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ',
         ]);
 
+        // Semua siswa aktif dikabari; siswa non-aktif tidak
         Notification::assertSentTo($this->siswa, SiswaNotifikasi::class);
+        Notification::assertSentTo($siswaLain, SiswaNotifikasi::class);
+        Notification::assertNotSentTo($siswaNonaktif, SiswaNotifikasi::class);
+
+        // Guru juga dikabari (via notifikasi database untuk user)
+        Notification::assertSentTo($this->userGuru, GuruNotifikasi::class);
     }
 
     public function test_semua_peran_bisa_membuka_galeri_dan_detail(): void
@@ -271,6 +293,34 @@ class TasmiTest extends TestCase
 
         $this->assertEquals(1, $this->video->fresh()->jumlah_ditonton);
         $this->assertEquals(0, ActivityLog::count());
+    }
+
+    public function test_guru_membuka_halaman_notifikasi_dan_menandai_dibaca(): void
+    {
+        $this->userGuru->notify(new GuruNotifikasi(
+            tipe: 'tasmi',
+            judul: 'Dokumentasi Tasmi\' Baru 🎬',
+            pesan: 'Ada dokumentasi tasmi\' baru',
+            url: route('guru.tasmi.show', $this->video),
+        ));
+
+        // Halaman daftar notifikasi tampil
+        $this->actingAs($this->userGuru)->get(route('guru.notifikasi.index'))
+            ->assertOk()
+            ->assertSee('Dokumentasi Tasmi');
+
+        // Badge unread
+        $this->actingAs($this->userGuru)->get(route('guru.notifikasi.unread'))
+            ->assertOk()
+            ->assertJson(['count' => 1]);
+
+        // Tandai dibaca
+        $notif = $this->userGuru->unreadNotifications()->first();
+        $this->actingAs($this->userGuru)
+            ->post(route('guru.notifikasi.read', $notif->id))
+            ->assertOk();
+
+        $this->assertEquals(0, $this->userGuru->fresh()->unreadNotifications()->count());
     }
 
     public function test_hapus_video_ikut_menghapus_like_dan_komentar(): void

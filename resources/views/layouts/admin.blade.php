@@ -346,6 +346,21 @@
                     <a href="{{ route('guru.dashboard') }}" class="nav-item {{ str_contains($p, 'guru/dashboard') ? 'active' : '' }}">
                         <span>&#127968; Dashboard</span>
                     </a>
+                    <a href="{{ route('guru.notifikasi.index') }}" class="nav-item {{ str_contains($p, 'guru/notifikasi') ? 'active' : '' }}">
+                        <span>&#128276; Notifikasi <span id="guruNotifBadge" style="display:none; background:#c62828; color:#fff; border-radius:999px; font-size:10px; font-weight:700; padding:2px 7px; margin-left:4px;"></span></span>
+                    </a>
+                    <script>
+                    // Badge jumlah notifikasi belum dibaca (guru)
+                    fetch('{{ route('guru.notifikasi.unread') }}', { headers: { 'Accept': 'application/json' } })
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d.count > 0) {
+                                var b = document.getElementById('guruNotifBadge');
+                                b.textContent = d.count;
+                                b.style.display = 'inline-block';
+                            }
+                        }).catch(function () {});
+                    </script>
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ str_contains($p, 'guru/jurnal') ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
                             <span>&#128221; Jurnal & Absensi</span>

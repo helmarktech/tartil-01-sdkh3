@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GuruController;
+use App\Http\Controllers\GuruNotifikasiController;
 use App\Http\Controllers\ImportExcelGuruController;
 use App\Http\Controllers\ImportExcelSiswaController;
 use App\Http\Controllers\JurnalController;
@@ -375,6 +376,12 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     Route::post('/tasmi/{tasmi}/like', [TasmiController::class, 'toggleLike'])->name('tasmi.like');
     Route::post('/tasmi/{tasmi}/komentar', [TasmiController::class, 'storeComment'])->name('tasmi.komentar');
     Route::delete('/tasmi-komentar/{comment}', [TasmiController::class, 'destroyComment'])->name('tasmi.komentar.hapus');
+
+    // ===== NOTIFIKASI GURU =====
+    Route::get('/notifikasi', [GuruNotifikasiController::class, 'index'])->name('notifikasi.index');
+    Route::get('/notifikasi/unread-count', [GuruNotifikasiController::class, 'unreadCount'])->name('notifikasi.unread');
+    Route::post('/notifikasi/read-all', [GuruNotifikasiController::class, 'readAll'])->name('notifikasi.read-all');
+    Route::post('/notifikasi/{id}/read', [GuruNotifikasiController::class, 'markRead'])->name('notifikasi.read');
 
     // Ganti Password
     Route::get('/password/edit', [GuruController::class, 'editPassword'])->name('password.edit');

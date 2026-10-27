@@ -7,6 +7,7 @@ use App\Models\TasmiComment;
 use App\Models\TasmiLike;
 use App\Models\TasmiVideo;
 use App\Models\User;
+use App\Notifications\GuruNotifikasi;
 use App\Notifications\SiswaNotifikasi;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -43,13 +44,26 @@ class TasmiController extends Controller
             'diupload_oleh' => auth()->id(),
         ]);
 
-        // Kabari siswa yang bersangkutan (database + push bila tersedia)
-        $tasmi->siswa->notify(new SiswaNotifikasi(
+        // Kabari SEMUA siswa aktif: ada dokumentasi tasmi' baru
+        // (database + push bila tersedia). Chunk agar hemat memori.
+        Siswa::where('status', 'aktif')->select('id')->chunk(200, function ($chunk) use ($tasmi) {
+            $notifikasi = new SiswaNotifikasi(
+                tipe: 'tasmi',
+                judul: 'Dokumentasi Tasmi\' Baru 🎬',
+                pesan: "Ada dokumentasi tasmi' baru: {$tasmi->judul} — {$tasmi->siswa->nama} (Juz {$tasmi->juz})",
+                url: route('siswa.tasmi.show', $tasmi->id),
+            );
+            Siswa::whereIn('id', $chunk->pluck('id'))->get()->each->notify($notifikasi);
+        });
+
+        // Kabari semua guru (channel database; push khusus siswa)
+        $notifikasiGuru = new GuruNotifikasi(
             tipe: 'tasmi',
-            judul: 'Dokumentasi Tasmi\' Baru',
-            pesan: "Dokumentasi tasmi' Anda (Juz {$tasmi->juz}) telah diunggah: {$tasmi->judul}",
-            url: route('siswa.tasmi.show', $tasmi->id),
-        ));
+            judul: 'Dokumentasi Tasmi\' Baru 🎬',
+            pesan: "Admin mengunggah dokumentasi tasmi': {$tasmi->judul} — {$tasmi->siswa->nama} (Juz {$tasmi->juz})",
+            url: route('guru.tasmi.show', $tasmi->id),
+        );
+        User::where('role', 'guru')->get()->each->notify($notifikasiGuru);
 
         return redirect()->route('admin.tasmi.index')
             ->with('success', 'Dokumentasi tasmi\' berhasil ditambahkan.');
