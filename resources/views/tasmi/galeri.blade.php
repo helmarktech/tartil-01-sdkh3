@@ -35,7 +35,7 @@
             <div style="padding: 12px 14px;">
                 <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">{{ $v->judul }}</div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">{{ $v->siswa->nama }}{{ $v->tanggal_tasmi ? ' · '.$v->tanggal_tasmi->format('d/m/Y') : '' }}</div>
-                <div style="font-size: 12px; color: var(--text-muted);">♥ {{ $v->likes_count }} &nbsp;·&nbsp; 💬 {{ $v->comments_count }}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">👁 {{ $v->jumlah_ditonton }} &nbsp;·&nbsp; ♥ {{ $v->likes_count }} &nbsp;·&nbsp; 💬 {{ $v->comments_count }}</div>
             </div>
         </a>
         @endforeach

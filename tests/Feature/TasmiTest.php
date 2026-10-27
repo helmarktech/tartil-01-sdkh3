@@ -186,6 +186,22 @@ class TasmiTest extends TestCase
         $this->assertDatabaseMissing('tasmi_comments', ['id' => $komentarGuru->id]);
     }
 
+    public function test_penayangan_dihitung_sekali_per_sesi(): void
+    {
+        // Kunjungan pertama menambah penghitung
+        $this->actingAs($this->siswa, 'siswa')->get(route('siswa.tasmi.show', $this->video))->assertOk();
+        $this->assertEquals(1, $this->video->fresh()->jumlah_ditonton);
+
+        // Kunjungan ulang di sesi yang sama tidak menambah
+        $this->actingAs($this->siswa, 'siswa')->get(route('siswa.tasmi.show', $this->video))->assertOk();
+        $this->assertEquals(1, $this->video->fresh()->jumlah_ditonton);
+
+        // Pengguna lain (guru) dengan sesi berbeda menambah penghitung
+        $this->flushSession();
+        $this->actingAs($this->userGuru)->get(route('guru.tasmi.show', $this->video))->assertOk();
+        $this->assertEquals(2, $this->video->fresh()->jumlah_ditonton);
+    }
+
     public function test_hapus_video_ikut_menghapus_like_dan_komentar(): void
     {
         TasmiLike::create([

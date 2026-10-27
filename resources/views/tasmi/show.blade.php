@@ -18,6 +18,7 @@
             <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">
                 <strong>{{ $tasmi->siswa->nama }}</strong> ({{ $tasmi->siswa->nis }}) · Juz {{ $tasmi->juz }}
                 {{ $tasmi->tanggal_tasmi ? ' · Tasmi\' '.$tasmi->tanggal_tasmi->format('d F Y') : '' }}
+                · 👁 Ditonton {{ $tasmi->jumlah_ditonton }} kali
             </div>
             @if($tasmi->deskripsi)
             <p style="font-size: 13px; color: var(--text-secondary, #555); margin: 8px 0 0; white-space: pre-line;">{{ $tasmi->deskripsi }}</p>

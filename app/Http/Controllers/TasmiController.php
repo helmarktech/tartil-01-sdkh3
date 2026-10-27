@@ -131,6 +131,15 @@ class TasmiController extends Controller
 
     public function show(TasmiVideo $tasmi)
     {
+        // Hitung penayangan: sekali per video per sesi pengguna
+        // (refresh berulang tidak menggelembungkan angka).
+        $sessionKey = "tasmi_ditonton.{$tasmi->id}";
+        if (! session()->has($sessionKey)) {
+            $tasmi->increment('jumlah_ditonton');
+            session()->put($sessionKey, true);
+            $tasmi->refresh();
+        }
+
         $tasmi->load(['siswa', 'comments.pengomentar'])->loadCount('likes');
 
         $aktor = TasmiLike::aktor();

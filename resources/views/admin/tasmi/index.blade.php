@@ -23,6 +23,7 @@
                         <th style="padding: 12px;">Siswa</th>
                         <th style="padding: 12px;">Juz</th>
                         <th style="padding: 12px;">Tanggal Tasmi'</th>
+                        <th style="padding: 12px; text-align: center;">👁</th>
                         <th style="padding: 12px; text-align: center;">♥</th>
                         <th style="padding: 12px; text-align: center;">💬</th>
                         <th style="padding: 12px;">Aksi</th>
@@ -43,6 +44,7 @@
                         <td style="padding: 10px 12px;">{{ $v->siswa->nama }}<br><small style="color: var(--text-muted);">{{ $v->siswa->nis }}</small></td>
                         <td style="padding: 10px 12px;">Juz {{ $v->juz }}</td>
                         <td style="padding: 10px 12px;">{{ $v->tanggal_tasmi?->format('d/m/Y') ?? '-' }}</td>
+                        <td style="padding: 10px 12px; text-align: center;">{{ $v->jumlah_ditonton }}</td>
                         <td style="padding: 10px 12px; text-align: center;">{{ $v->likes_count }}</td>
                         <td style="padding: 10px 12px; text-align: center;">{{ $v->comments_count }}</td>
                         <td style="padding: 10px 12px; white-space: nowrap;">
@@ -57,7 +59,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" style="padding: 32px; text-align: center; color: var(--text-muted);">Belum ada dokumentasi tasmi'. Klik "Tambah Video" untuk mengunggah.</td>
+                        <td colspan="8" style="padding: 32px; text-align: center; color: var(--text-muted);">Belum ada dokumentasi tasmi'. Klik "Tambah Video" untuk mengunggah.</td>
                     </tr>
                     @endforelse
                 </tbody>
