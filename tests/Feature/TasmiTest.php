@@ -149,7 +149,8 @@ class TasmiTest extends TestCase
         $this->actingAs($this->siswa, 'siswa')->get(route('siswa.tasmi.galeri'))->assertOk();
         $this->actingAs($this->siswa, 'siswa')->get(route('siswa.tasmi.show', $this->video))
             ->assertOk()
-            ->assertSee('youtube-nocookie.com/embed/dQw4w9WgXcQ', false);
+            ->assertSee('youtube-nocookie.com/embed/dQw4w9WgXcQ', false)
+            ->assertSee('Klik tombol', false); // keterangan tombol like
 
         // Guru
         $this->actingAs($this->userGuru)->get(route('guru.tasmi.galeri'))->assertOk();

@@ -32,6 +32,9 @@
                         {{ $sudahLike ? '❤️' : '🤍' }} <span>{{ $tasmi->likes_count }}</span>
                     </button>
                 </form>
+                <span style="font-size: 12px; color: var(--text-muted);">
+                    {{ $sudahLike ? 'Anda menyukai video ini — klik lagi untuk batal' : 'Klik tombol ❤️ ini jika Anda menyukai video ini' }}
+                </span>
                 <a href="{{ $shareWa }}" target="_blank" rel="noopener" class="btn-tartil-outline" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                     📤 Share ke WhatsApp
                 </a>
