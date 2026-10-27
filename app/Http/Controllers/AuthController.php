@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Siswa;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
-use App\Models\Siswa;
 
 class AuthController extends Controller
 {
@@ -39,6 +39,7 @@ class AuthController extends Controller
     public function logout()
     {
         Auth::logout();
+
         return redirect('/');
     }
 
@@ -62,6 +63,15 @@ class AuthController extends Controller
 
         if ($siswa) {
             auth('siswa')->login($siswa, $request->boolean('remember'));
+
+            // Kembali ke halaman yang semula dituju (mis. link share tasmi'
+            // dari WhatsApp yang dibuka sebelum login). Hanya URL internal
+            // jalur siswa yang diterima demi keamanan.
+            $intended = session()->pull('url.intended');
+            if ($intended && str_starts_with($intended, url('/siswa'))) {
+                return redirect($intended);
+            }
+
             return redirect()->route('siswa.dashboard');
         }
 
@@ -71,6 +81,7 @@ class AuthController extends Controller
     public function siswaLogout()
     {
         auth('siswa')->logout();
+
         return redirect()->route('siswa.login');
     }
 }

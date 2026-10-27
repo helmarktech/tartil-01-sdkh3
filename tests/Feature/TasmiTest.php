@@ -355,6 +355,28 @@ class TasmiTest extends TestCase
             ->assertJson(['ok' => true]);
     }
 
+    public function test_login_siswa_diarahkan_kembali_ke_halaman_yang_dituju(): void
+    {
+        // Simulasi: pengunjung membuka link share WA tanpa login →
+        // ditolak ke login, lalu setelah login kembali ke video yang dituju
+        $tujuan = route('siswa.tasmi.show', $this->video);
+
+        $this->get($tujuan)->assertRedirect(); // dilempar ke login
+
+        $this->post(route('siswa.login.post'), [
+            'nis' => $this->siswa->nis,
+            'no_hp' => $this->siswa->no_hp,
+        ])->assertRedirect($tujuan);
+    }
+
+    public function test_login_siswa_tanpa_tujuan_tetap_ke_dashboard(): void
+    {
+        $this->post(route('siswa.login.post'), [
+            'nis' => $this->siswa->nis,
+            'no_hp' => $this->siswa->no_hp,
+        ])->assertRedirect(route('siswa.dashboard'));
+    }
+
     public function test_hapus_video_ikut_menghapus_like_dan_komentar(): void
     {
         TasmiLike::create([
