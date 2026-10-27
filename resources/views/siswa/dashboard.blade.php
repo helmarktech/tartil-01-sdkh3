@@ -578,6 +578,7 @@
 .sd-r2card {
     background: #fff; border: 1px solid #e7e5e4; border-radius: 12px;
     padding: 20px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
 }
 .sd-r2card-featured {
     background: #1c1917; border-color: #1c1917; color: #fff;
@@ -599,6 +600,7 @@
 .sd-r2card-featured .sd-r2desc { color: #a8a29e; }
 .sd-r2bar {
     height: 4px; background: #f5f5f4; border-radius: 2px; margin-top: 12px; overflow: hidden;
+    width: 100%;
 }
 .sd-r2card-featured .sd-r2bar { background: #333; }
 .sd-r2bar-fill {
