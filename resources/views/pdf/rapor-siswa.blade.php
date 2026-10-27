@@ -121,83 +121,34 @@
     <div class="section-title">Ringkasan Penilaian</div>
     <div class="nilai-grid">
         <div class="nilai-item">
-            <div class="nilai-value">{{ $rapor['rata_b'] }}</div>
-            <div class="nilai-label">Bacaan (B)</div>
+            <div class="nilai-value">{{ $rapor['r2_harian'] }}</div>
+            <div class="nilai-label">Rekap Mengaji Harian (B/C/K)</div>
         </div>
         <div class="nilai-item">
-            <div class="nilai-value">{{ $rapor['rata_c'] }}</div>
-            <div class="nilai-label">Catatan (C)</div>
+            <div class="nilai-value">{{ $rapor['r2_penilaian'] }}</div>
+            <div class="nilai-label">R2 Penilaian</div>
         </div>
         <div class="nilai-item">
-            <div class="nilai-value">{{ $rapor['rata_k'] }}</div>
-            <div class="nilai-label">Keterampilan (K)</div>
+            <div class="nilai-value">{{ $rapor['jumlah_terisi'] }}/{{ $rapor['jumlah_indikator'] }}</div>
+            <div class="nilai-label">Indikator Terisi</div>
         </div>
         <div class="nilai-item">
-            <div class="nilai-value">{{ $rapor['rata_akhir'] }}</div>
-            <div class="nilai-label">Nilai Akhir</div>
+            <div class="nilai-value">{{ $rapor['r2_akhir'] }}</div>
+            <div class="nilai-label">Nilai Rapor (Penilaian Internal)</div>
         </div>
         <div class="clear"></div>
     </div>
+    <p style="font-size:10px; color:#888; text-align:center; margin-top:5px;">Catatan: Rekap Mengaji Harian hanya informasi kegiatan mengaji dan tidak masuk nilai rapor.</p>
 
     <div class="predikat">Predikat: {{ $rapor['predikat'] }}</div>
 
     {{-- Keputusan --}}
     <div class="keputusan">
-        @if($rapor['rata_akhir'] >= 80)
+        @if($rapor['r2_akhir'] >= 80)
         Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>berhak melanjutkan pembelajaran pada jilid selanjutnya</strong>.
         @else
         Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>tetap melanjutkan pembelajaran pada jilid yang sama untuk pemantapan</strong>.
         @endif
-    </div>
-
-    {{-- Detail Penilaian --}}
-    <div class="section-title">Detail Penilaian ({{ $rapor['jumlah_penilaian'] }} x pertemuan)</div>
-    <table class="data">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Tanggal</th>
-                <th>Surat</th>
-                <th>Ayat</th>
-                <th>B</th>
-                <th>C</th>
-                <th>K</th>
-                <th>Rata</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($rapor['details'] as $i => $d)
-            <tr>
-                <td>{{ $i+1 }}</td>
-                <td>{{ $d->jurnal->tanggal->format('d/m/Y') }}</td>
-                <td>{{ $d->jurnal->surat }}</td>
-                <td>{{ $d->jurnal->ayat }}</td>
-                <td>{{ $d->nilai_b }}</td>
-                <td>{{ $d->nilai_c }}</td>
-                <td>{{ $d->nilai_k }}</td>
-                <td>{{ $d->nilai_akhir }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    {{-- Kehadiran --}}
-    <div class="section-title">Kehadiran</div>
-    <div class="summary-box">
-        <table class="info-table">
-            <tr>
-                <td class="label">Hadir</td><td>: {{ $rapor['absensi']['Hadir'] }} kali</td>
-                <td class="label">Sakit</td><td>: {{ $rapor['absensi']['Sakit'] }} kali</td>
-            </tr>
-            <tr>
-                <td class="label">Izin</td><td>: {{ $rapor['absensi']['Izin'] }} kali</td>
-                <td class="label">Alpha</td><td>: {{ $rapor['absensi']['Alpha'] }} kali</td>
-            </tr>
-            <tr>
-                <td class="label">Total Pertemuan</td><td>: {{ $rapor['total_pertemuan'] }} kali</td>
-                <td class="label">Persentase Hadir</td><td>: {{ $rapor['persentase_hadir'] }}</td>
-            </tr>
-        </table>
     </div>
 
     {{-- Tanda Tangan --}}

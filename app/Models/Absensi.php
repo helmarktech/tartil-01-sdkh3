@@ -22,9 +22,4 @@ class Absensi extends Model
     {
         return $this->belongsTo(Siswa::class);
     }
-
-    public function jurnal()
-    {
-        return $this->belongsTo(Jurnal::class);
-    }
 }

@@ -1028,7 +1028,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
                 <h3>Rekap R2 Otomatis</h3>
-                <p>Sistem menghitung R2 Harian dari persentase penilaian B dalam jurnal dan R2 Penilaian dari rata-rata nilai indikator rapor secara otomatis. R2 Akhir dihasilkan dari rata-rata keduanya, tersimpan dalam cache 6 jam untuk performa optimal ribuan siswa.</p>
+                <p>Sistem menghitung R2 Harian dari persentase penilaian B dalam jurnal sebagai rekap kegiatan mengaji, dan R2 Penilaian dari rata-rata nilai indikator rapor secara otomatis. Nilai rapor dihasilkan murni dari rata-rata Penilaian Internal (R2 Harian tidak masuk nilai rapor), tersimpan dalam cache 6 jam untuk performa optimal ribuan siswa.</p>
                 <span class="feature-benefit">Real-time calculation</span>
             </div>
             <div class="feature-card">

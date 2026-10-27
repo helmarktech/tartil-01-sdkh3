@@ -62,11 +62,11 @@ Berdasarkan eksplorasi repositori:
 
 | Komponen | Jumlah |
 |----------|--------|
-| Model | 41 |
-| Controller | 21 |
+| Model | 38 |
+| Controller | 22 (termasuk base `Controller.php`) |
 | Migration | 75 |
-| View Blade | 112 |
-| Console Command | 5 (+ command `session:fix` di `routes/console.php`) |
+| View Blade | 120 |
+| Console Command | 9 (+ command `session:fix` di `routes/console.php`) |
 
 ### Direktori Penting
 
@@ -196,6 +196,8 @@ Test suite saat ini mencakup:
 - `tests/Feature/TahfidzKumulatifTest.php` — memastikan hafalan Tahfidz kumulatif antar semester/TA dan pemilihan juz 1–30 berfungsi.
 - `tests/Feature/DataAmanTutupSemesterTest.php` — memastikan data jurnal, munaqosyah, penilaian rapor, dan tahfidz tidak hilang saat semester ditutup.
 - `tests/Feature/NotifikasiSiswaTest.php` — memastikan notifikasi siswa terkirim saat jurnal diinput, setoran hafalan ditambahkan, pendampingan dikonfirmasi, dan subscription push tersimpan.
+- `tests/Feature/KonsistensiJurnalTest.php` — memastikan hitungan hari jurnal konsisten di semua tampilan via `JurnalSiswaService`, termasuk aturan baru `r2_akhir = r2_penilaian`.
+- `tests/Feature/RaporMurniPenilaianTest.php` — memastikan nilai rapor murni dari penilaian internal (B/C/K harian tidak memengaruhi), recalc retroaktif snapshot semester ditutup, dan invalidasi cache R2 saat guru menyimpan nilai.
 
 > Migration yang mengandung raw SQL khusus MySQL (`SHOW COLUMNS`, `ALTER TABLE ... MODIFY`, dsb.) sudah dibungkus dengan pengecekan driver agar test SQLite bisa berjalan, tanpa mengubah perilaku di MySQL/MariaDB.
 
@@ -218,8 +220,12 @@ Test suite saat ini mencakup:
 | `php artisan r2:precalculate` | Hitung ulang cache R2 akhir |
 | `php artisan r2:precalculate --semester_id=1 --kelas_id=2` | Hitung untuk semester/kelas tertentu |
 | `php artisan r2:sync-semester {semester_id?}` | Hitung rekap R2 untuk semester yang sudah ditutup |
+| `php artisan r2:recalc-rapor-murni {--semester_id=} {--force}` | Hitung ulang `r2_akhir = r2_penilaian` pada snapshot semester ditutup (migrasi ke aturan nilai rapor murni penilaian internal) |
 | `php artisan semester:retroactive-lock {semester_id} \| --all` | Kunci/snapshot data semester lama secara retroaktif |
 | `php artisan jurnal:sync-surat` | Sinkronisasi surat/ayat/materi dari `jurnal_kelas` ke `jurnal_harians` |
+| `php artisan jurnal:fix-pertemuan-ke` | Utilitas perbaikan kolom `pertemuan_ke` di `jurnal_kelas` |
+| `php artisan import:siswa {file?}` | Import siswa dari Excel via CLI (default `storage/app/import-data/template-import-siswa.xlsx`) |
+| `php artisan import:penempatan {file?}` | Import penempatan kelas tartil via CLI (default `storage/app/import-data/import.xlsx`) |
 | `php artisan pulse:token` | Generate token akses Laravel Pulse |
 | `php artisan webpush:vapid` | Generate VAPID keys untuk push notification (butuh `OPENSSL_CONF` di Windows) |
 | `php artisan session:fix` | Diagnosa dan perbaiki konfigurasi session (di `routes/console.php`) |
@@ -294,11 +300,11 @@ Proyek ini memiliki dokumen arsitektur tersendiri:
 | `kelas` | Kelas tartil |
 | `gurus` / `users` | Data guru dan akun login admin/guru |
 | `siswas` | Data siswa + akun login siswa |
-| `jurnal_harians` / `jurnal_details` (legacy) | Jurnal harian dan penilaian B/C/K |
+| `jurnal_harians` | Jurnal harian dan penilaian B/C/K (tabel legacy `jurnals`/`jurnal_details` sudah tidak dipakai kode) |
 | `jurnal_kelas` | Info umum jurnal per kelas per tanggal (surat, ayat, halaman, materi, topik, rencana) |
 | `absensis` | Absensi (otomatis dari jurnal) |
 | `rekap_jurnal_bulanans` | Rekap jurnal per bulan |
-| `rekap_r2_akhirs` | Cache R2 akhir per siswa/semester |
+| `rekap_r2_akhirs` | Cache/snapshot nilai rapor per siswa/semester (`r2_akhir` = murni penilaian internal; `r2_harian` hanya info mengaji) |
 | `penilaian_rapor_internals` / `penilaian_rapor_nilais` | Penilaian rapor internal |
 | `ujian_munaqosyahs` / `munaqosyah_pendaftarans` | Ujian munaqosyah |
 | `perpindahan_kelas` | Riwayat perpindahan kelas tartil |
@@ -386,10 +392,13 @@ Saat semester ditutup, sistem dapat membuat snapshot di tabel berikut (data asli
 - Informasi umum per kelas per tanggal disimpan di `jurnal_kelas` (surat, ayat, halaman, materi, topik, rencana).
 - **Hitungan hari jurnal siswa WAJIB melalui satu sumber kebenaran: `App\Services\JurnalSiswaService`.** Aturannya: 1 tanggal = 1 hari; hanya hari aktif (Senin–Kamis); bukan hari libur kelas; tidak menghitung jurnal sebelum tanggal mulai resmi kelas (`Kelas::getAwalHitungHari`); dalam rentang semester (semester berjalan dibatasi sampai hari ini). Dipakai oleh dashboard siswa, track record, snapshot tutup semester (`RekapJurnalSemester::snapshot`), dan jalur R2 (`RekapR2Akhir::calculateAndSave`). Jangan menghitung ulang manual dari `jurnal_harians` di controller/view.
 
-### 8.3 R2 (Rata-Rata Akhir)
+### 8.3 Nilai Rapor (R2)
 
-- R2 akhir merupakan kombinasi R2 harian dan R2 penilaian rapor.
+- **Nilai rapor (`r2_akhir`) MURNI dari Penilaian Rapor Internal** (`r2_penilaian` = rata-rata nilai indikator). Nilai B/C/K jurnal harian **tidak lagi masuk** penilaian rapor (per keputusan klien).
+- `r2_harian` tetap dihitung dan disimpan di `rekap_r2_akhirs`, tetapi hanya sebagai **info rekap mengaji harian** di tampilan — bukan komponen nilai rapor.
 - Dihitung via command `r2:precalculate` dan disimpan di `rekap_r2_akhirs`.
+- Snapshot semester ditutup yang masih memakai rumus lama (50:50) dapat dihitung ulang retroaktif via `php artisan r2:recalc-rapor-murni` (set `r2_akhir = r2_penilaian`).
+- `guruSimpanNilai` meng-invalidate cache R2 siswa terkait agar nilai rapor tidak basi.
 - `HitungR2Job` bisa dipakai untuk menghitung R2 via queue.
 - `PrecalculateReminderService` mengingatkan admin saat cache R2 sudah lebih dari 6 jam (popup) atau 72 jam (badge sidebar).
 
@@ -477,8 +486,8 @@ File entry Vite (`resources/css/app.css` dan `resources/js/app.js`) sudah tersed
 - **Test suite sudah berkembang** — kini terdapat `TahfidzKumulatifTest` dan `DataAmanTutupSemesterTest`. Tambahkan test baru saat mengubah logika inti.
 - **Performance jurnal** — perhatikan query N+1 saat data siswa/jurnal besar. Gunakan `cursor()`, `chunk()`, dan eager load sesuai rekomendasi di `ANALISIS_SISTEM_TARTIL.md`.
 - **Mobile responsiveness** — beberapa form panjang masih perlu disesuaikan untuk layar kecil.
-- **File `name('daftar-jurnal')`** ada di root repositori dan tampaknya merupakan file tidak sengaja yang tidak berfungsi; bisa dihapus.
-- **Direktori `tartil-patch/`** berisi patch lama (migration, CSS, route) dan tidak aktif dalam autoload Laravel. Biasakan memeriksa apakah isinya sudah termigrasi ke root sebelum merujuknya.
+- **Tabel legacy `jurnals` / `jurnal_details`** masih ada di database tetapi sudah tidak dipakai kode sama sekali (model & relasinya sudah dihapus). Drop manual hanya setelah memastikan tidak ada data historis yang masih dibutuhkan.
+- **Skrip generator aset/dokumen** ada di `tools/` (bukan runtime app); venv Python-nya di `.venv-docs/`.
 - **PHP 8.3 diperlukan** — environment pengembangan harus menjalankan PHP >= 8.3.0 agar Composer autoload dan Artisan berfungsi.
 
 ---
@@ -492,3 +501,4 @@ Jika butuh detail lebih lanjut, baca file berikut:
 - `ANALISIS_SISTEM_TARTIL.md` — analisis komprehensif kekuatan, risiko, rekomendasi.
 - `ANALISIS_TA_TUTUP.md` — perlakuan data saat tahun ajaran ditutup.
 - `AUDIT_TA_LIFECYCLE.md` — skenario pembuatan/penutupan tahun ajaran dan semester.
+- `DAFTAR_TINJAUAN_DEADCODE.md` — daftar dead code/fitur orphaned hasil audit untuk ditinjau ulang sebelum dihapus.

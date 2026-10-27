@@ -51,7 +51,7 @@
     {{-- RINGKASAN --}}
     <div class="summary-grid">
         <div><div class="val">{{ $rekapData['totalSiswa'] ?? 0 }}</div><div class="lbl">Total Siswa</div></div>
-        <div><div class="val">{{ $rekapData['rataR2Akhir'] ?? 0 }}</div><div class="lbl">R2 Akhir Rata-rata</div></div>
+        <div><div class="val">{{ $rekapData['rataR2Akhir'] ?? 0 }}</div><div class="lbl">Nilai Rapor Rata-rata</div></div>
         <div><div class="val">{{ $rekapData['rataMengaji'] ?? 0 }}</div><div class="lbl">Mengaji Rata-rata (hari)</div></div>
         <div><div class="val">{{ count($rekapData['munaqosyahList'] ?? []) }}</div><div class="lbl">Munaqosyah</div></div>
     </div>
@@ -153,9 +153,9 @@
                         <th style="width:8%">NIS</th>
                         <th style="width:18%">Nama</th>
                         <th style="width:10%">Kelas Tartil</th>
-                        <th style="width:7%" class="text-center">R2 H</th>
-                        <th style="width:7%" class="text-center">R2 P</th>
-                        <th style="width:7%" class="text-center">R2 A</th>
+                        <th style="width:7%" class="text-center">R2 Harian (info)</th>
+                        <th style="width:7%" class="text-center">R2 Penilaian</th>
+                        <th style="width:7%" class="text-center">Nilai Rapor</th>
                         <th style="width:7%" class="text-center">Mengaji</th>
                         <th style="width:7%" class="text-center">B/C/K</th>
                         <th style="width:10%">Munaqosyah</th>

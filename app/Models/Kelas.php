@@ -2,16 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Kelas extends Model
 {
-    use \App\Traits\Auditable;
+    use Auditable;
+
     protected $table = 'kelas';
+
     protected $fillable = [
         'nama', 'jenis', 'mata_pelajaran', 'deskripsi',
-        'guru_id', 'status', 'tanggal_dibuat', 'tanggal_dimulai'
+        'guru_id', 'status', 'tanggal_dibuat', 'tanggal_dimulai',
     ];
+
     protected $casts = [
         'tanggal_dibuat' => 'date',
         'tanggal_dimulai' => 'date',
@@ -25,11 +30,6 @@ class Kelas extends Model
     public function siswas()
     {
         return $this->hasMany(Siswa::class, 'kelas_tartil_id');
-    }
-
-    public function jurnals()
-    {
-        return $this->hasMany(Jurnal::class);
     }
 
     public function liburs()
@@ -79,14 +79,14 @@ class Kelas extends Model
      * Prioritas: tanggal_dimulai > tanggal_dibuat > awal semester.
      * tanggal_dimulai diisi admin saat tutup/buat semester baru.
      */
-    public function getAwalHitungHari(\Carbon\Carbon $semesterMulai): \Carbon\Carbon
+    public function getAwalHitungHari(Carbon $semesterMulai): Carbon
     {
         if ($this->tanggal_dimulai) {
-            return \Carbon\Carbon::parse($this->tanggal_dimulai);
+            return Carbon::parse($this->tanggal_dimulai);
         }
 
         if ($this->tanggal_dibuat) {
-            return \Carbon\Carbon::parse($this->tanggal_dibuat);
+            return Carbon::parse($this->tanggal_dibuat);
         }
 
         return $semesterMulai;

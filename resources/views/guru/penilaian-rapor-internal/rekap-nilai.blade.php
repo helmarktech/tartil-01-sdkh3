@@ -6,7 +6,7 @@
     <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
         <div>
             <h1 class="page-title-display">Rekap Nilai Rapor</h1>
-            <p class="page-subtitle">R2 Penilaian + R2 Harian → R2 Akhir</p>
+            <p class="page-subtitle">Nilai Rapor = rata-rata Penilaian Internal (R2 Harian hanya info mengaji)</p>
         </div>
     </div>
 
@@ -29,7 +29,7 @@
         @if($penilaian && $kelasTerpilih)
         <div style="margin-top: 12px; padding: 10px 14px; background: #E9F0E9; border-radius: 8px; font-size: 13px; color: #5A7D5A;">
             <strong>{{ $penilaian->nama }}</strong> — Semester {{ $penilaian->semester->nama ?? '-' }}
-            <span style="margin-left: 12px;">Rumus: <strong>(R2 Penilaian + R2 Harian) / 2 = R2 Akhir</strong></span>
+            <span style="margin-left: 12px;">Rumus: <strong>Nilai Rapor = rata-rata Penilaian Internal (R2 Harian hanya info mengaji)</strong></span>
         </div>
         @elseif(!$penilaian && $kelasTerpilih)
         <div style="margin-top: 12px; padding: 10px 14px; background: #fff3e0; border-radius: 8px; font-size: 13px; color: #e65100;">
@@ -53,8 +53,8 @@
                     @endforeach
                     {{-- 3 R2 terpisah --}}
                     <th style="text-align: center; min-width: 55px;">R2<br>Penilaian</th>
-                    <th style="text-align: center; min-width: 55px;">R2<br>Harian</th>
-                    <th style="text-align: center; min-width: 55px; background: #E9F0E9;">R2<br>Akhir</th>
+                    <th style="text-align: center; min-width: 55px;">R2<br>Harian<br><span style="font-size: 9px; font-weight: 400;">(info)</span></th>
+                    <th style="text-align: center; min-width: 55px; background: #E9F0E9;">Nilai<br>Rapor</th>
                 </tr>
             </thead>
             <tbody>
@@ -93,7 +93,7 @@
                             -
                         @endif
                     </td>
-                    {{-- R2 Akhir --}}
+                    {{-- Nilai Rapor --}}
                     <td style="text-align: center; background: #f8faf8;">
                         @if($rd)
                             <span style="font-size: 14px; font-weight: 700; color: {{ $rd['r2_akhir'] >= 80 ? '#5A7D5A' : ($rd['r2_akhir'] >= 60 ? '#D4A373' : '#A85A52') }}">{{ $rd['r2_akhir'] }}</span>

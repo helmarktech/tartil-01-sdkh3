@@ -106,9 +106,9 @@
                         <th>Nama</th>
                         @if($mode == 'reguler')<th>Kelas Tartil</th>@endif
                         @if($mode == 'tartil')<th>Kelas Reguler</th>@endif
-                        <th style="text-align: center;">R2 Harian</th>
+                        <th style="text-align: center;">R2 Harian (info)</th>
                         <th style="text-align: center;">R2 Penilaian</th>
-                        <th style="text-align: center;">R2 Akhir</th>
+                        <th style="text-align: center;">Nilai Rapor</th>
                         <th style="text-align: center;">Terisi</th>
                         <th style="width: 100px;">Aksi</th>
                     </tr>

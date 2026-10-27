@@ -259,6 +259,12 @@ class KonsistensiJurnalTest extends TestCase
 
         $rekap = RekapR2Akhir::calculateAndSave($this->siswa, $this->semester, $this->kelas);
         $this->assertEquals(50, $rekap->r2_harian);
+
+        // Aturan baru: nilai rapor (r2_akhir) murni dari Penilaian Internal,
+        // tidak lagi rata-rata gabungan dengan R2 Harian.
+        // Tanpa nilai penilaian internal → r2_penilaian = 0 → r2_akhir = 0.
+        $this->assertEquals(0, $rekap->r2_penilaian);
+        $this->assertEquals($rekap->r2_penilaian, $rekap->r2_akhir);
     }
 
     public function test_semester_ditutup_tetap_menghitung_sampai_akhir_semester(): void

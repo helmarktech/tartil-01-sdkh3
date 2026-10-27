@@ -78,7 +78,8 @@ class RekapR2Akhir extends Model
         }
         $r2Penilaian = $nilaiFilled->count() > 0 ? round($nilaiFilled->avg()) : 0;
 
-        // R2 Harian — sistem poin: B=2, C=1, K=0
+        // R2 Harian — sistem poin: B=2, C=1, K=0. Hanya sebagai info rekap
+        // mengaji harian; TIDAK masuk hitungan nilai rapor.
         // Via SSOT (JurnalSiswaService): 1 tanggal = 1 hari, hanya hari aktif
         // (Senin-Kamis), bukan hari libur kelas, dalam rentang semester.
         $jurnals = JurnalSiswaService::jurnalEfektif($siswa->id, $semester, $kelas->id)
@@ -94,7 +95,9 @@ class RekapR2Akhir extends Model
             $r2Harian = round(($totalPoin / $maxPoin) * 100);
         }
 
-        $r2Akhir = round(($r2Harian + $r2Penilaian) / 2);
+        // Nilai rapor murni dari Penilaian Rapor Internal (per keputusan klien:
+        // nilai B/C/K harian tidak lagi masuk penilaian rapor).
+        $r2Akhir = $r2Penilaian;
 
         return static::updateOrCreate(
             ['semester_id' => $semester->id, 'kelas_id' => $kelas->id, 'siswa_id' => $siswa->id],
@@ -108,14 +111,5 @@ class RekapR2Akhir extends Model
                 'last_calculated' => now(),
             ]
         );
-    }
-
-    /**
-     * Invalidate cache R2 untuk siswa ini.
-     * Dipanggil saat jurnal baru diinput atau nilai rapor diubah.
-     */
-    public static function invalidate(Siswa $siswa): void
-    {
-        static::where('siswa_id', $siswa->id)->delete();
     }
 }

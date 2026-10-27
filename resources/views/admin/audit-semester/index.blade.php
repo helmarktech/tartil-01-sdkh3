@@ -292,14 +292,9 @@
                     <span><strong>{{ $sem->total_munaqosyah }}</strong> munaqosyah</span>
                     <span><strong>{{ $sem->total_penilaian }}</strong> penilaian</span>
                 </div>
-                @php
-                    $semRataR2 = \App\Models\RekapR2Akhir::where('semester_id', $sem->id)->avg('r2_akhir');
-                    $semTotalMengaji = \App\Models\RekapJurnalSemester::where('semester_id', $sem->id)->sum('total_hari');
-                    $semAvgMengaji = $sem->total_siswa > 0 ? round($semTotalMengaji / $sem->total_siswa, 0) : 0;
-                @endphp
                 <div style="display: flex; gap: 16px; margin-top: 4px; font-size: 11px; color: #888;">
-                    <span>R2: <strong style="color: #0c8a5f;">{{ $semRataR2 ? round($semRataR2, 1) : '-' }}</strong></span>
-                    <span>Mengaji: <strong>{{ $semAvgMengaji }} hari</strong></span>
+                    <span>Nilai Rapor: <strong style="color: #0c8a5f;">{{ $sem->rata_nilai_rapor !== null ? round($sem->rata_nilai_rapor, 1) : '-' }}</strong></span>
+                    <span>Mengaji: <strong>{{ $sem->avg_mengaji }} hari</strong></span>
                 </div>
                 <div class="semester-card-periode">{{ $sem->tanggal_mulai?->format('d/m/Y') ?? '-' }} &ndash; {{ $sem->tanggal_selesai?->format('d/m/Y') ?? '-' }}</div>
             </a>
@@ -325,7 +320,7 @@
         </div>
         <div class="stat-box">
             <div class="val">{{ $rekapData['rataR2Akhir'] }}</div>
-            <div class="lbl">R2 Akhir Rata-rata</div>
+            <div class="lbl">Nilai Rapor Rata-rata</div>
         </div>
         <div class="stat-box">
             <div class="val">{{ $rekapData['rataMengaji'] }}</div>
@@ -488,7 +483,7 @@
                         <div class="kelas-body" id="kelas-{{ md5($kelasRegulerNama) }}">
                             <div class="table-responsive">
                                 <table class="table-tartil" style="font-size: 12px;">
-                                    <thead><tr><th>No</th><th>NIS</th><th>Nama</th><th>Kelas Tartil</th><th>R2 Harian</th><th>R2 Penilaian</th><th>R2 Akhir</th><th>Mengaji</th><th>B/C/K</th><th>Munaqosyah</th></tr></thead>
+                                    <thead><tr><th>No</th><th>NIS</th><th>Nama</th><th>Kelas Tartil</th><th>R2 Harian (info)</th><th>R2 Penilaian</th><th>Nilai Rapor</th><th>Mengaji</th><th>B/C/K</th><th>Munaqosyah</th></tr></thead>
                                     <tbody>
                                         @foreach($siswaKelas as $i => $d)
                                             <tr><td>{{ $i + 1 }}</td><td>{{ $d['siswa']->nis }}</td><td>{{ $d['siswa']->nama }}</td><td>{{ $d['kelasTartil'] }}</td><td>{{ $d['r2Harian'] }}</td><td>{{ $d['r2Penilaian'] }}</td><td><strong>{{ $d['r2Akhir'] }}</strong></td><td>{{ $d['totalHari'] }} hari</td><td>{{ $d['countB'] }}/{{ $d['countC'] }}/{{ $d['countK'] }}</td><td>{{ $d['munaqosyahStatus'] }}</td></tr>

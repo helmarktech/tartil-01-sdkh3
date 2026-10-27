@@ -87,8 +87,10 @@ class TrackRecordPersentaseTest extends TestCase
             'status' => 'aktif',
         ]);
 
-        // 4 hari aktif (Senin–Kamis pekan ini): 2 B, 1 C, 1 K
-        $senin = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        // 4 hari aktif (Senin–Kamis PEKAN LALU — bukan pekan berjalan, karena
+        // SSOT membatasi semester aktif sampai hari ini; jurnal ber-tanggal
+        // masa depan di pekan berjalan tidak dihitung): 2 B, 1 C, 1 K
+        $senin = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeek();
         foreach (['B', 'C', 'K', 'B'] as $i => $penilaian) {
             JurnalHarian::create([
                 'semester_id' => $this->semester->id,

@@ -2,14 +2,15 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
-use Carbon\Carbon;
 
 class PrecalculateReminderService
 {
     const SESSION_KEY_TIME = 'last_precalculate_time';
+
     const SESSION_KEY_DISMISS = 'precalculate_dismissed';
 
     /**
@@ -24,7 +25,7 @@ class PrecalculateReminderService
         ],
         'admin.penilaian-rapor-internal.rekap' => [
             'label' => 'Progress Rapor',
-            'deskripsi' => 'Rekap menampilkan R2 Harian + R2 Penilaian + R2 Akhir untuk semua siswa. Precalculate memastikan data tampil instan.',
+            'deskripsi' => 'Rekap menampilkan R2 Harian (info mengaji) + R2 Penilaian + Nilai Rapor untuk semua siswa. Precalculate memastikan data tampil instan.',
             'icon' => 'clipboard-data',
             'warna' => 'warning',
         ],
@@ -92,7 +93,7 @@ class PrecalculateReminderService
     {
         $last = static::getLastPrecalculateTime();
 
-        if (!$last) {
+        if (! $last) {
             return true;
         }
 
@@ -106,7 +107,7 @@ class PrecalculateReminderService
     {
         $last = static::getLastPrecalculateTime();
 
-        if (!$last) {
+        if (! $last) {
             return true;
         }
 
@@ -136,7 +137,7 @@ class PrecalculateReminderService
     {
         try {
             $currentRoute = request()->route()?->getName();
-            if (!$currentRoute || !isset(static::$criticalMenus[$currentRoute])) {
+            if (! $currentRoute || ! isset(static::$criticalMenus[$currentRoute])) {
                 return ['show' => false];
             }
 
@@ -146,7 +147,7 @@ class PrecalculateReminderService
             }
 
             // Cache masih fresh (< 6 jam)?
-            if (!static::needsPopupReminder()) {
+            if (! static::needsPopupReminder()) {
                 return ['show' => false];
             }
 
@@ -172,11 +173,11 @@ class PrecalculateReminderService
     public static function getMenuBadge(string $routeName): ?array
     {
         try {
-            if (!isset(static::$criticalMenus[$routeName])) {
+            if (! isset(static::$criticalMenus[$routeName])) {
                 return null;
             }
 
-            if (!static::needsPrecalculate()) {
+            if (! static::needsPrecalculate()) {
                 return null;
             }
 
@@ -214,7 +215,7 @@ class PrecalculateReminderService
     {
         $last = static::getLastPrecalculateTime();
 
-        if (!$last) {
+        if (! $last) {
             return '<span class="badge bg-danger">Belum pernah</span>';
         }
 
@@ -223,13 +224,13 @@ class PrecalculateReminderService
         $diffMinutes = $last->diffInMinutes(now()) % 60;
 
         if ($diffHours < 1) {
-            return '<span class="badge bg-success">' . $diffMinutes . ' menit yang lalu</span>';
+            return '<span class="badge bg-success">'.$diffMinutes.' menit yang lalu</span>';
         } elseif ($diffHours < 24) {
-            return '<span class="badge bg-success">' . $diffHours . ' jam ' . $diffMinutes . ' menit yang lalu</span>';
+            return '<span class="badge bg-success">'.$diffHours.' jam '.$diffMinutes.' menit yang lalu</span>';
         } elseif ($diffHours < 72) {
-            return '<span class="badge bg-warning text-dark">' . $diffDays . ' hari yang lalu</span>';
+            return '<span class="badge bg-warning text-dark">'.$diffDays.' hari yang lalu</span>';
         } else {
-            return '<span class="badge bg-danger">' . $diffDays . ' hari yang lalu</span>';
+            return '<span class="badge bg-danger">'.$diffDays.' hari yang lalu</span>';
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -9,7 +10,7 @@ use NotificationChannels\WebPush\HasPushSubscriptions;
 
 class Siswa extends Authenticatable
 {
-    use \App\Traits\Auditable, HasPushSubscriptions, Notifiable, SoftDeletes;
+    use Auditable, HasPushSubscriptions, Notifiable, SoftDeletes;
 
     protected $table = 'siswas';
 
@@ -37,11 +38,6 @@ class Siswa extends Authenticatable
     public function kelasTartil()
     {
         return $this->belongsTo(Kelas::class, 'kelas_tartil_id');
-    }
-
-    public function jurnalDetails()
-    {
-        return $this->hasMany(JurnalDetail::class);
     }
 
     public function absensis()

@@ -551,13 +551,11 @@
 
             <div class="guide-sub">
                 <h3><span class="dot"></span>3.2 Dashboard Siswa</h3>
-                <p>Dashboard menampilkan ringkasan pembelajaran siswa: R2 Harian, R2 Penilaian, R2 Akhir, progress hafalan, statistik B/C/K, grafik bulanan, dan jurnal terbaru.</p>
+                <p>Dashboard menampilkan ringkasan pembelajaran siswa: Rekap Mengaji Harian (R2 Harian), R2 Penilaian, Nilai Rapor, progress hafalan, statistik B/C/K, grafik bulanan, dan jurnal terbaru.</p>
                 <ul class="check-list">
-                    <li><span><strong>R2 Harian</strong> = hasil penilaian jurnal harian (B=2, C=1, K=0).</span></li>
+                    <li><span><strong>R2 Harian (Rekap Mengaji)</strong> = hasil penilaian jurnal harian (B=2, C=1, K=0); hanya info kegiatan mengaji, tidak masuk nilai rapor.</span></li>
                     <li><span><strong>R2 Penilaian</strong> = hasil penilaian rapor internal.</span></li>
-                    <li><span><strong>R2 Akhir</strong> = rata-rata dari R2 Harian dan R2 Penilaian.</span></li>
-                    <li><span><strong>R2 Akhir Sebelum Penilaian</strong> = nilai R2 Harian.</span></li>
-                    <li><span><strong>R2 Akhir Setelah Penilaian</strong> = nilai R2 Akhir gabungan.</span></li>
+                    <li><span><strong>Nilai Rapor</strong> = murni rata-rata dari R2 Penilaian (Penilaian Internal).</span></li>
                 </ul>
                 <p><strong>Jurnal Terbaru:</strong> menampilkan 30 jurnal terbaru dengan tanggal, penilaian B/C/K, surat, dan catatan guru. Catatan guru yang ditulis saat input jurnal akan langsung muncul di sini agar siswa/orang tua dapat memantau keterangan dari guru.</p>
                 <p><strong>Progress Hafalan:</strong> jika siswa memiliki kelas tartil, dashboard menampilkan progress juz 1–30 dengan warna status: hafal, murajaah, setengah hafal, baru, atau belum.</p>

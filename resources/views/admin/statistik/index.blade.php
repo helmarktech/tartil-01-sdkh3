@@ -154,11 +154,11 @@
     {{-- ══════ GRAFIK PER SEMESTER (semua TA) ══════ --}}
     <div class="grid-2">
         <div class="stat-card">
-            <div class="stat-card-title">&#128200; R2 Akhir per Semester</div>
+            <div class="stat-card-title">&#128200; Nilai Rapor per Semester</div>
             <div class="chart-container"><canvas id="chartR2Akhir"></canvas></div>
         </div>
         <div class="stat-card">
-            <div class="stat-card-title">&#128200; R2 Harian vs Penilaian</div>
+            <div class="stat-card-title">&#128200; Perbandingan R2 Harian (info) vs R2 Penilaian</div>
             <div class="chart-container"><canvas id="chartR2Compare"></canvas></div>
         </div>
     </div>
@@ -254,7 +254,7 @@
                 </div>
                 <div class="summary-box">
                     <div class="val" style="color: #e65100;">{{ $taData['rataR2Akhir'] ?? 0 }}</div>
-                    <div class="lbl">R2 Akhir Rata-rata</div>
+                    <div class="lbl">Nilai Rapor Rata-rata</div>
                 </div>
                 <div class="summary-box">
                     <div class="val" style="color: #6a1b9a;">{{ $taData['rataMengaji'] ?? 0 }}</div>
@@ -351,13 +351,13 @@
         purple: '#6a1b9a', purpleLight: 'rgba(106,27,154,0.2)',
     };
 
-    // Chart 1: R2 Akhir
+    // Chart 1: Nilai Rapor
     new Chart(document.getElementById('chartR2Akhir'), {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
-                label: 'R2 Akhir',
+                label: 'Nilai Rapor',
                 data: @json($chartData['r2Akhir'] ?? []),
                 borderColor: colors.green, backgroundColor: colors.greenLight,
                 fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: colors.green,
@@ -373,13 +373,13 @@
         }
     });
 
-    // Chart 2: R2 Harian vs Penilaian
+    // Chart 2: R2 Harian (info) vs R2 Penilaian
     new Chart(document.getElementById('chartR2Compare'), {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [
-                { label: 'R2 Harian', data: @json($chartData['r2Harian'] ?? []), backgroundColor: colors.blue, borderRadius: 4 },
+                { label: 'R2 Harian (info)', data: @json($chartData['r2Harian'] ?? []), backgroundColor: colors.blue, borderRadius: 4 },
                 { label: 'R2 Penilaian', data: @json($chartData['r2Penilaian'] ?? []), backgroundColor: colors.orange, borderRadius: 4 }
             ]
         },

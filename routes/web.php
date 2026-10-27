@@ -297,7 +297,6 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
 
     // API: Get siswa by kelas
     Route::get('/api/siswa-by-kelas', [GuruController::class, 'getSiswaByKelas'])->name('api.siswa');
-    Route::get('/api/siswa-by-kelas-reguler', [KenaikanKelasController::class, 'getSiswaByKelasReguler'])->name('api.siswa.reguler');
 
     // Perpindahan
     Route::get('/perpindahan/create', [PerpindahanTartilController::class, 'guruCreate'])->name('perpindahan.create');

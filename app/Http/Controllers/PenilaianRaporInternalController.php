@@ -252,6 +252,10 @@ class PenilaianRaporInternalController extends Controller
             }
         });
 
+        // Nilai rapor kini murni dari penilaian internal, jadi cache R2 siswa
+        // yang nilainya baru diubah wajib dibuang agar tidak basi.
+        RekapR2Akhir::whereIn('siswa_id', array_keys($request->nilai))->delete();
+
         return redirect()->route('guru.penilaian-rapor.isi-nilai', [$penilaian->id, $kelasId])
             ->with('success', 'Nilai berhasil disimpan.');
     }
@@ -328,8 +332,8 @@ class PenilaianRaporInternalController extends Controller
 
     // ═══════════════════════════════════════════════
     // GURU: REKAP NILAI
-    // Format: per indikator + rata-rata + R2 Harian + R2 Penilaian + R2 Akhir
-    // R2 Akhir = (R2 Harian + R2 Penilaian) / 2
+    // Format: per indikator + rata-rata + R2 Harian (info) + Nilai Rapor
+    // Nilai Rapor = rata-rata Penilaian Internal (B/C/K harian tidak masuk rapor)
     // Hanya 1 penilaian per semester
     // ═══════════════════════════════════════════════
     public function guruRekapNilai(Request $request)
@@ -392,13 +396,14 @@ class PenilaianRaporInternalController extends Controller
                 $r2Penilaian = count($nilaiFilled) > 0 ? round(array_sum($nilaiFilled) / count($nilaiFilled)) : 0;
 
                 // 3. R2 Harian = sistem poin B=2, C=1, K=0 — via SSOT
-                // (filter semester, hari aktif Senin-Kamis, bukan libur kelas)
+                // (filter semester, hari aktif Senin-Kamis, bukan libur kelas).
+                // Hanya info rekap mengaji; TIDAK masuk nilai rapor.
                 $r2Harian = $penilaian->semester
                     ? JurnalSiswaService::r2Harian($siswa->id, $penilaian->semester, $kelasTerpilih->id)
                     : 0;
 
-                // 4. R2 Akhir = (R2 Harian + R2 Penilaian) / 2
-                $r2Akhir = round(($r2Harian + $r2Penilaian) / 2);
+                // 4. Nilai Rapor (r2_akhir) = murni rata-rata Penilaian Internal
+                $r2Akhir = $r2Penilaian;
 
                 $rekapData[$siswa->id] = [
                     'nilai_per_indikator' => $nilaiPerIndikator,
@@ -601,7 +606,8 @@ class PenilaianRaporInternalController extends Controller
     }
 
     /**
-     * Hitung R2 untuk 1 siswa: R2 Harian + R2 Penilaian + R2 Akhir.
+     * Hitung R2 untuk 1 siswa: R2 Harian (info) + R2 Penilaian + Nilai Rapor (r2_akhir).
+     * Nilai rapor (r2_akhir) murni dari Penilaian Internal; R2 Harian tidak masuk hitungan.
      * UNTUK SKALA BESAR: pakai cache RekapR2Akhir, hanya hitung ulang kalau cache miss atau expired.
      */
     private function hitungR2Siswa(Siswa $siswa, PenilaianRaporInternal $penilaian, Kelas $kelas): array
@@ -686,7 +692,8 @@ class PenilaianRaporInternalController extends Controller
         $nilaiFilled = collect($nilaiPerIndikator)->whereNotNull('nilai')->pluck('nilai');
         $r2Penilaian = $nilaiFilled->count() > 0 ? round($nilaiFilled->avg()) : 0;
         $r2Harian = 0;
-        $r2Akhir = round(($r2Harian + $r2Penilaian) / 2);
+        // Nilai rapor murni dari Penilaian Internal
+        $r2Akhir = $r2Penilaian;
 
         return [
             'nilai_per_indikator' => $nilaiPerIndikator,

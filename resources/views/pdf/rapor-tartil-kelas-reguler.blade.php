@@ -172,9 +172,9 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 <table class="r2-table">
     <tr>
         <td style="background:#e3f2fd">
-            <div class="r2-label">R2 Harian</div>
+            <div class="r2-label">Rekap Mengaji Harian (B/C/K)</div>
             <div class="r2-value" style="color:#1565c0">{{ $rekap['r2_harian'] }}</div>
-            <div class="r2-desc">Persentase B dari jurnal</div>
+            <div class="r2-desc">Info kegiatan mengaji, tidak masuk nilai rapor</div>
         </td>
         <td style="background:#e8f5e9">
             <div class="r2-label">R2 Penilaian</div>
@@ -182,9 +182,9 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
             <div class="r2-desc">Rata-rata nilai indikator</div>
         </td>
         <td style="background:#fff3e0">
-            <div class="r2-label">R2 Akhir</div>
+            <div class="r2-label">Nilai Rapor</div>
             <div class="r2-value" style="color:#ef6c00">{{ $rekap['r2_akhir'] }}</div>
-            <div class="r2-desc">(Harian + Penilaian) / 2</div>
+            <div class="r2-desc">Penilaian Internal</div>
         </td>
     </tr>
 </table>

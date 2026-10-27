@@ -75,7 +75,8 @@ class SiswaDashboardController extends Controller
             $r2Harian = JurnalSiswaService::r2Harian($siswa->id, $semester);
         }
         $r2Penilaian = $r2Data?->r2_penilaian ?? 0;
-        $r2Akhir = $r2Data?->r2_akhir ?? round(($r2Harian + $r2Penilaian) / 2);
+        // Nilai rapor (r2_akhir) murni dari Penilaian Internal — R2 Harian tidak masuk hitungan
+        $r2Akhir = $r2Data?->r2_akhir ?? $r2Penilaian;
 
         // Munaqosyah — semester ditutup: snapshot. aktif: real-time.
         $munaqosyah = collect();

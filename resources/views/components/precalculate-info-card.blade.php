@@ -221,7 +221,7 @@
             <div class="pc-confirm-list">
                 <div class="pc-confirm-item">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <span>Menghitung R2 Harian dari {{ number_format($totalJurnal) }} jurnal</span>
+                    <span>Menghitung R2 Harian dari {{ number_format($totalJurnal) }} jurnal (hanya info rekap mengaji)</span>
                 </div>
                 <div class="pc-confirm-item">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -229,7 +229,7 @@
                 </div>
                 <div class="pc-confirm-item">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <span>Menghitung R2 Akhir untuk {{ number_format($totalSiswa) }} siswa aktif</span>
+                    <span>Menghitung Nilai Rapor untuk {{ number_format($totalSiswa) }} siswa aktif (murni dari rata-rata Penilaian Internal)</span>
                 </div>
                 <div class="pc-confirm-item">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>

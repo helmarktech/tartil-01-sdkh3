@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Semester extends Model
 {
     protected $fillable = ['tahun_ajaran', 'jenis', 'tanggal_mulai', 'tanggal_selesai', 'is_aktif', 'status'];
+
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
@@ -25,6 +26,7 @@ class Semester extends Model
     public function getNamaAttribute(): string
     {
         $jenisLabel = $this->jenis === 'ganjil' ? 'Ganjil' : 'Genap';
+
         return "TA {$this->tahun_ajaran} - {$jenisLabel}";
     }
 
@@ -36,11 +38,6 @@ class Semester extends Model
     public function tahunAjaran()
     {
         return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran', 'nama');
-    }
-
-    public function jurnals()
-    {
-        return $this->hasMany(Jurnal::class);
     }
 
     public function perpindahanKelas()
@@ -64,7 +61,7 @@ class Semester extends Model
 
     public function semesterSiswaRecords()
     {
-        return $this->hasMany(\App\Models\SemesterSiswa::class);
+        return $this->hasMany(SemesterSiswa::class);
     }
 
     public function scopeAktif($query)

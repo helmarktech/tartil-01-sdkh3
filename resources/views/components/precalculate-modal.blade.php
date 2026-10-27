@@ -32,6 +32,7 @@
         <div class="precalculate-modal-body">
             {{-- Deskripsi --}}
             <p class="text-muted mb-3">{{ $menu['deskripsi'] }}</p>
+            <p class="text-muted small mb-3">Catatan: Nilai rapor kini murni dari rata-rata Penilaian Internal; R2 Harian (B/C/K) hanya info rekap mengaji dan tidak masuk nilai rapor.</p>
 
             {{-- Info Box --}}
             <div class="precalculate-info-box">

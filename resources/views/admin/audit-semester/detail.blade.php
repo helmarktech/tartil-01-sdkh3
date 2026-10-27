@@ -23,15 +23,16 @@
 {{-- R2 Summary --}}
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
     <div class="card-tartil" style="text-align: center;">
-        <div class="stat-label">R2 Harian</div>
+        <div class="stat-label">Rekap Mengaji Harian (info)</div>
         <div class="stat-value" style="font-size: 32px;">{{ $snapR2?->r2_harian ?? 0 }}</div>
+        <div style="font-size: 10px; color: var(--text-muted, #888); margin-top: 4px;">Tidak masuk nilai rapor</div>
     </div>
     <div class="card-tartil" style="text-align: center;">
         <div class="stat-label">R2 Penilaian</div>
         <div class="stat-value" style="font-size: 32px;">{{ $snapR2?->r2_penilaian ?? 0 }}</div>
     </div>
     <div class="card-tartil" style="text-align: center;">
-        <div class="stat-label">R2 Akhir</div>
+        <div class="stat-label">Nilai Rapor (Penilaian Internal)</div>
         <div class="stat-value" style="font-size: 32px; color: var(--accent);">{{ $snapR2?->r2_akhir ?? 0 }}</div>
     </div>
 </div>

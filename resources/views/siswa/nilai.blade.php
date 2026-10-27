@@ -30,11 +30,11 @@
                     <div class="sr-stat-num {{ $r['r2_akhir'] >= 70 ? 'good' : ($r['r2_akhir'] >= 60 ? 'mid' : 'low') }}">
                         {{ $r['r2_akhir'] }}
                     </div>
-                    <div class="sr-stat-label">R2 Akhir</div>
+                    <div class="sr-stat-label">Nilai Rapor</div>
                 </div>
                 <div class="sr-stat">
                     <div class="sr-stat-num">{{ $r['r2_harian'] }}</div>
-                    <div class="sr-stat-label">R2 Harian</div>
+                    <div class="sr-stat-label">R2 Harian (info)</div>
                 </div>
                 <div class="sr-stat">
                     <div class="sr-stat-num">{{ $r['r2_penilaian'] }}</div>

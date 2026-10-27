@@ -156,7 +156,7 @@
                     </div>
                     <div class="ta-stat">
                         <div class="ta-stat-value" style="color: #1565c0;">{{ $ta->rata_r2_akhir ?? 0 }}</div>
-                        <div class="ta-stat-label">R2 Rata-rata</div>
+                        <div class="ta-stat-label">Nilai Rapor Rata-rata</div>
                     </div>
                     <div class="ta-stat">
                         <div class="ta-stat-value" style="color: #e65100;">{{ $ta->semester_ditutup ?? 0 }}</div>

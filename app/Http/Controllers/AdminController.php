@@ -1839,6 +1839,9 @@ class AdminController extends Controller
             $semester->total_siswa = SemesterSiswa::where('semester_id', $semester->id)->count();
             $semester->total_munaqosyah = UjianMunaqosyah::where('semester_id', $semester->id)->count();
             $semester->total_penilaian = PenilaianRaporInternal::where('semester_id', $semester->id)->count();
+            $semester->rata_nilai_rapor = RekapR2Akhir::where('semester_id', $semester->id)->avg('r2_akhir');
+            $totalMengaji = RekapJurnalSemester::where('semester_id', $semester->id)->sum('total_hari');
+            $semester->avg_mengaji = $semester->total_siswa > 0 ? round($totalMengaji / $semester->total_siswa, 0) : 0;
 
             return $semester;
         });
@@ -1943,7 +1946,7 @@ class AdminController extends Controller
         $sheet1->setCellValue("A{$r}", 'Total Siswa');
         $sheet1->setCellValue("B{$r}", $rekapData['totalSiswa'] ?? 0);
         $r++;
-        $sheet1->setCellValue("A{$r}", 'R2 Akhir Rata-rata');
+        $sheet1->setCellValue("A{$r}", 'Nilai Rapor Rata-rata (Penilaian Internal)');
         $sheet1->setCellValue("B{$r}", $rekapData['rataR2Akhir'] ?? 0);
         $r++;
         $sheet1->setCellValue("A{$r}", 'Mengaji Rata-rata (hari)');
@@ -2086,7 +2089,7 @@ class AdminController extends Controller
             $sheet4->mergeCells("A{$r}:J{$r}");
             $r++;
 
-            $headers = ['No', 'NIS', 'Nama', 'Kelas Tartil', 'R2 Harian', 'R2 Penilaian', 'R2 Akhir', 'Mengaji (hari)', 'B/C/K', 'Munaqosyah'];
+            $headers = ['No', 'NIS', 'Nama', 'Kelas Tartil', 'R2 Harian (info)', 'R2 Penilaian', 'Nilai Rapor', 'Mengaji (hari)', 'B/C/K', 'Munaqosyah'];
             foreach ($headers as $i => $h) {
                 $col = chr(65 + $i);
                 $sheet4->setCellValue("{$col}{$r}", $h);

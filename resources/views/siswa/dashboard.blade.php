@@ -40,7 +40,8 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             </div>
             <div class="sd-r2value" style="color:#065f43;">{{ $r2Harian }}<span class="sd-r2unit">%</span></div>
-            <div class="sd-r2label">R2 Harian <span style="font-size:9px;color:#a8a29e;font-weight:400;">(B=2, C=1, K=0)</span></div>
+            <div class="sd-r2label">Rekap Mengaji Harian <span style="font-size:9px;color:#a8a29e;font-weight:400;">(B=2, C=1, K=0)</span></div>
+            <div style="font-size:10px;color:#a8a29e;margin-top:2px;">Info kegiatan mengaji, tidak masuk nilai rapor</div>
             <div class="sd-r2bar"><div class="sd-r2bar-fill" style="width:{{ $r2Harian }}%;background:#0c8a5f;"></div></div>
         </div>
         <div class="sd-r2card">
@@ -56,13 +57,13 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div class="sd-r2value">{{ $r2Akhir }}<span class="sd-r2unit">%</span></div>
-            <div class="sd-r2label">R2 Akhir Setelah Penilaian</div>
-            <div class="sd-r2desc">Rata-rata R2 Harian & R2 Penilaian</div>
+            <div class="sd-r2label">Nilai Rapor (Penilaian Internal)</div>
+            <div class="sd-r2desc">Murni dari rata-rata Penilaian Internal</div>
             <div class="sd-r2bar"><div class="sd-r2bar-fill" style="width:{{ $r2Akhir }}%;"></div></div>
             <div class="sd-r2breakdown">
-                <span>Sebelum penilaian: <strong>{{ $r2Harian }}%</strong></span>
-                <span class="sd-r2sep">&rarr;</span>
-                <span>Setelah penilaian: <strong>{{ $r2Akhir }}%</strong></span>
+                <span>Rekap mengaji harian (info): <strong>{{ $r2Harian }}%</strong></span>
+                <span class="sd-r2sep">&middot;</span>
+                <span>R2 Penilaian: <strong>{{ $r2Penilaian }}</strong></span>
             </div>
         </div>
     </div>
