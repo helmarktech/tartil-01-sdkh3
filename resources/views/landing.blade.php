@@ -923,6 +923,17 @@
         .lp-tasmi-pager .aktif { background: #0c8a5f; border-color: #0c8a5f; color: #fff; }
         .lp-tasmi-pager .mati { opacity: 0.4; pointer-events: none; }
         .lp-tasmi-kosong { text-align: center; color: var(--ink-muted); padding: 40px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border, #e7e5e4); }
+        .lp-tasmi-cta {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            padding: 12px 20px; border-top: 1px solid var(--border, #e7e5e4);
+            font-size: 13px; color: var(--ink-muted);
+        }
+        .lp-tasmi-cta-sep { opacity: 0.5; }
+        .lp-tasmi-cta-btn {
+            color: #fff; background: #0c8a5f; font-weight: 600; font-size: 12px;
+            padding: 6px 14px; border-radius: 999px; text-decoration: none;
+        }
+        .lp-tasmi-cta-btn:hover { background: #0a7450; }
         @media (max-width: 768px) {
             .lp-tasmi { padding: 40px 20px; }
             .lp-tasmi-hide-mobile { display: none; }
@@ -977,7 +988,7 @@
         </div>
 
         <div class="hero-right">
-            <div class="login-card">
+            <div class="login-card" id="login">
                 <div class="login-tabs">
                     <button class="login-tab active" onclick="switchTab('admin', this)">Admin & Guru</button>
                     <button class="login-tab" onclick="switchTab('siswa', this)">Siswa</button>
@@ -1070,6 +1081,13 @@
                     </div>
                 </div>
                 <span class="lp-tasmi-badge" id="lpTasmiBadge">Juz {{ $tasmiTerbaru->juz }}</span>
+            </div>
+            {{-- Interaksi butuh login: arahkan pengunjung ke kartu login di atas --}}
+            <div class="lp-tasmi-cta">
+                <span>♥ {{ $tasmiTerbaru->likes()->count() }} &nbsp; 💬 {{ $tasmiTerbaru->comments()->count() }}</span>
+                <span class="lp-tasmi-cta-sep">·</span>
+                <span>Ingin memberi like atau komentar?</span>
+                <a href="#login" class="lp-tasmi-cta-btn">Masuk dulu di sini</a>
             </div>
         </div>
         @endif

@@ -208,7 +208,9 @@ class TasmiTest extends TestCase
             ->assertOk()
             ->assertSee('Dokumentasi', false)
             ->assertSee('youtube-nocookie.com/embed/dQw4w9WgXcQ', false)
-            ->assertSee('Tasmi&#039; Juz 30', false); // apostrof di-escape Blade
+            ->assertSee('Tasmi&#039; Juz 30', false) // apostrof di-escape Blade
+            ->assertSee('Masuk dulu di sini', false) // ajakan login untuk like/komentar
+            ->assertSee('id="login"', false); // anchor ke kartu login
     }
 
     public function test_landing_paginasi_galeri_maksimal_10_per_halaman(): void
