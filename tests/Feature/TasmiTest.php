@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\GuruTartil;
 use App\Models\Kelas;
 use App\Models\KelasReguler;
@@ -258,6 +259,18 @@ class TasmiTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('id="lpTasmiThumb" src="https://i.ytimg.com/vi/abc123XYZ89/hqdefault.jpg"', false);
+    }
+
+    public function test_penayangan_tidak_menulis_audit_log_dan_aman_untuk_siswa(): void
+    {
+        // Regresi production: increment dulunya memicu Auditable → insert
+        // activity_logs dengan user_id siswa → FK ke users gagal (500).
+        ActivityLog::query()->delete();
+
+        $this->actingAs($this->siswa, 'siswa')->get(route('siswa.tasmi.show', $this->video))->assertOk();
+
+        $this->assertEquals(1, $this->video->fresh()->jumlah_ditonton);
+        $this->assertEquals(0, ActivityLog::count());
     }
 
     public function test_hapus_video_ikut_menghapus_like_dan_komentar(): void

@@ -133,9 +133,11 @@ class TasmiController extends Controller
     {
         // Hitung penayangan: sekali per video per sesi pengguna
         // (refresh berulang tidak menggelembungkan angka).
+        // incrementQuietly: penayangan bukan peristiwa audit — jangan
+        // memicu trait Auditable untuk setiap kali ditonton.
         $sessionKey = "tasmi_ditonton.{$tasmi->id}";
         if (! session()->has($sessionKey)) {
-            $tasmi->increment('jumlah_ditonton');
+            $tasmi->incrementQuietly('jumlah_ditonton');
             session()->put($sessionKey, true);
             $tasmi->refresh();
         }
