@@ -199,7 +199,7 @@ class TasmiController extends Controller
     // ═══════════════════════════════════════════════
     // INTERAKSI: LIKE & KOMENTAR (multi-guard)
     // ═══════════════════════════════════════════════
-    public function toggleLike(TasmiVideo $tasmi)
+    public function toggleLike(Request $request, TasmiVideo $tasmi)
     {
         $aktor = TasmiLike::aktor();
         if (! $aktor) {
@@ -215,8 +215,19 @@ class TasmiController extends Controller
         $like = TasmiLike::where($where)->first();
         if ($like) {
             $like->delete();
+            $liked = false;
         } else {
             TasmiLike::create($where);
+            $liked = true;
+        }
+
+        // Permintaan AJAX: balas JSON agar halaman (dan video yang sedang
+        // diputar) tidak perlu di-refresh
+        if ($request->expectsJson()) {
+            return response()->json([
+                'liked' => $liked,
+                'count' => $tasmi->likes()->count(),
+            ]);
         }
 
         return back();
@@ -233,12 +244,27 @@ class TasmiController extends Controller
             'isi' => 'required|string|max:500',
         ]);
 
-        TasmiComment::create([
+        $komentar = TasmiComment::create([
             'tasmi_video_id' => $tasmi->id,
             'pengomentar_type' => $aktor->getMorphClass(),
             'pengomentar_id' => $aktor->getKey(),
             'isi' => $data['isi'],
         ]);
+
+        // Permintaan AJAX: balas data komentar agar halaman (dan video yang
+        // sedang diputar) tidak perlu di-refresh
+        if ($request->expectsJson()) {
+            return response()->json([
+                'id' => $komentar->id,
+                'nama' => $komentar->nama_pengomentar,
+                'peran' => $komentar->peran_pengomentar,
+                'inisial' => strtoupper(mb_substr($komentar->nama_pengomentar, 0, 1)),
+                'waktu' => $komentar->created_at->diffForHumans(),
+                'isi' => $komentar->isi,
+                'count' => $tasmi->comments()->count(),
+                'hapus_url' => route($this->routePrefix().'.komentar.hapus', $komentar),
+            ]);
+        }
 
         return back();
     }
@@ -255,6 +281,10 @@ class TasmiController extends Controller
         }
 
         $comment->delete();
+
+        if (request()->expectsJson()) {
+            return response()->json(['ok' => true]);
+        }
 
         return back()->with('success', 'Komentar dihapus.');
     }

@@ -324,6 +324,37 @@ class TasmiTest extends TestCase
         $this->assertEquals(0, $this->userGuru->fresh()->unreadNotifications()->count());
     }
 
+    public function test_like_ajax_membalas_json_tanpa_redirect(): void
+    {
+        // Permintaan AJAX (Accept: JSON) mendapat status & jumlah terbaru,
+        // tanpa redirect — halaman tidak perlu refresh.
+        $this->actingAs($this->siswa, 'siswa')
+            ->postJson(route('siswa.tasmi.like', $this->video))
+            ->assertOk()
+            ->assertJson(['liked' => true, 'count' => 1]);
+
+        $this->actingAs($this->siswa, 'siswa')
+            ->postJson(route('siswa.tasmi.like', $this->video))
+            ->assertOk()
+            ->assertJson(['liked' => false, 'count' => 0]);
+    }
+
+    public function test_komentar_ajax_membalas_json_tanpa_redirect(): void
+    {
+        // Tambah komentar via AJAX → JSON berisi data komentar, tanpa redirect
+        $this->actingAs($this->siswa, 'siswa')
+            ->postJson(route('siswa.tasmi.komentar', $this->video), ['isi' => 'MasyaAllah keren!'])
+            ->assertOk()
+            ->assertJson(['isi' => 'MasyaAllah keren!', 'nama' => 'Siswa A', 'count' => 1]);
+
+        // Hapus komentar via AJAX → JSON ok
+        $komentar = TasmiComment::first();
+        $this->actingAs($this->siswa, 'siswa')
+            ->deleteJson(route('siswa.tasmi.komentar.hapus', $komentar))
+            ->assertOk()
+            ->assertJson(['ok' => true]);
+    }
+
     public function test_hapus_video_ikut_menghapus_like_dan_komentar(): void
     {
         TasmiLike::create([
