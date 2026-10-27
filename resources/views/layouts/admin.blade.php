@@ -248,6 +248,18 @@
                         <span>&#128202; Statistik</span>
                     </a>
 
+                    {{-- Dokumentasi Tasmi' --}}
+                    <div class="nav-group">
+                        <button type="button" class="nav-item nav-toggle {{ str_contains($p, 'admin/tasmi') ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
+                            <span>&#127909; Dokumentasi Tasmi'</span>
+                            <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <div class="nav-submenu {{ str_contains($p, 'admin/tasmi') ? 'open' : '' }}">
+                            <a href="{{ route('admin.tasmi.index') }}" class="nav-subitem {{ request()->routeIs('admin.tasmi.index', 'admin.tasmi.create', 'admin.tasmi.edit') ? 'active' : '' }}">Kelola Video</a>
+                            <a href="{{ route('admin.tasmi.galeri') }}" class="nav-subitem {{ request()->routeIs('admin.tasmi.galeri', 'admin.tasmi.show') ? 'active' : '' }}">Galeri</a>
+                        </div>
+                    </div>
+
                     {{-- Riwayat Siswa (gabungan) --}}
                     <div class="nav-group">
                         <button type="button" class="nav-item nav-toggle {{ $riwayatSiswaOpen ? 'active open' : '' }}" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
@@ -365,6 +377,9 @@
                     </a>
                     <a href="{{ route('guru.tahfidz.index') }}" class="nav-item {{ str_contains($p, 'guru/tahfidz') ? 'active' : '' }}">
                         <span>&#128218; Tahfidz & Hafalan</span>
+                    </a>
+                    <a href="{{ route('guru.tasmi.galeri') }}" class="nav-item {{ str_contains($p, 'guru/tasmi') ? 'active' : '' }}">
+                        <span>&#127909; Dokumentasi Tasmi'</span>
                     </a>
                     <a href="{{ route('guru.pendampingan-ortu.index') }}" class="nav-item {{ str_contains($p, 'guru/pendampingan-ortu') ? 'active' : '' }}">
                         <span>&#128106; Konfirmasi Ortu</span>

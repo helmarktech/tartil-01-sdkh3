@@ -20,6 +20,7 @@ use App\Http\Controllers\SiswaDashboardController;
 use App\Http\Controllers\SiswaNotifikasiController;
 use App\Http\Controllers\SystemSetupController;
 use App\Http\Controllers\TahfidzController;
+use App\Http\Controllers\TasmiController;
 use App\Http\Controllers\TrackRecordController;
 use App\Http\Middleware\PulseAccess;
 use Illuminate\Support\Facades\Route;
@@ -233,6 +234,19 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/penilaian-rapor-internal/{penilaian}', [PenilaianRaporInternalController::class, 'adminDestroy'])->name('penilaian-rapor-internal.destroy');
     Route::get('/penilaian-rapor-internal-rekap', [PenilaianRaporInternalController::class, 'adminRekapProgress'])->name('penilaian-rapor-internal.rekap');
 
+    // ===== DOKUMENTASI TASMI' (admin kelola, semua peran bisa lihat/like/komentar) =====
+    Route::get('/tasmi', [TasmiController::class, 'adminIndex'])->name('tasmi.index');
+    Route::get('/tasmi/create', [TasmiController::class, 'adminCreate'])->name('tasmi.create');
+    Route::post('/tasmi', [TasmiController::class, 'adminStore'])->name('tasmi.store');
+    Route::get('/tasmi/{tasmi}/edit', [TasmiController::class, 'adminEdit'])->name('tasmi.edit');
+    Route::put('/tasmi/{tasmi}', [TasmiController::class, 'adminUpdate'])->name('tasmi.update');
+    Route::delete('/tasmi/{tasmi}', [TasmiController::class, 'adminDestroy'])->name('tasmi.destroy');
+    Route::get('/tasmi-galeri', [TasmiController::class, 'galeri'])->name('tasmi.galeri');
+    Route::get('/tasmi-galeri/{tasmi}', [TasmiController::class, 'show'])->name('tasmi.show');
+    Route::post('/tasmi-galeri/{tasmi}/like', [TasmiController::class, 'toggleLike'])->name('tasmi.like');
+    Route::post('/tasmi-galeri/{tasmi}/komentar', [TasmiController::class, 'storeComment'])->name('tasmi.komentar');
+    Route::delete('/tasmi-komentar/{comment}', [TasmiController::class, 'destroyComment'])->name('tasmi.komentar.hapus');
+
     // ===== MONITORING GURU BELUM MENGISI JURNAL =====
     Route::get('/monitoring-guru', [ProgressJurnalController::class, 'monitoringGuru'])->name('monitoring.guru');
 
@@ -344,6 +358,13 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     Route::get('/siswa', [GuruController::class, 'siswaIndex'])->name('siswa.index');
     Route::put('/siswa/{siswa}/no-hp', [GuruController::class, 'siswaUpdateNoHp'])->name('siswa.update-no-hp');
 
+    // ===== DOKUMENTASI TASMI' (guru: lihat, like, komentar) =====
+    Route::get('/tasmi', [TasmiController::class, 'galeri'])->name('tasmi.galeri');
+    Route::get('/tasmi/{tasmi}', [TasmiController::class, 'show'])->name('tasmi.show');
+    Route::post('/tasmi/{tasmi}/like', [TasmiController::class, 'toggleLike'])->name('tasmi.like');
+    Route::post('/tasmi/{tasmi}/komentar', [TasmiController::class, 'storeComment'])->name('tasmi.komentar');
+    Route::delete('/tasmi-komentar/{comment}', [TasmiController::class, 'destroyComment'])->name('tasmi.komentar.hapus');
+
     // Ganti Password
     Route::get('/password/edit', [GuruController::class, 'editPassword'])->name('password.edit');
     Route::put('/password/update', [GuruController::class, 'updatePassword'])->name('password.update');
@@ -377,6 +398,13 @@ Route::middleware(['auth:siswa'])->prefix('siswa')->name('siswa.')->group(functi
     Route::post('/notifikasi/{id}/read', [SiswaNotifikasiController::class, 'markRead'])->name('notifikasi.read');
     Route::post('/notifikasi/push/subscribe', [SiswaNotifikasiController::class, 'subscribe'])->name('notifikasi.subscribe');
     Route::delete('/notifikasi/push/unsubscribe', [SiswaNotifikasiController::class, 'unsubscribe'])->name('notifikasi.unsubscribe');
+
+    // ===== DOKUMENTASI TASMI' (siswa: lihat, like, komentar) =====
+    Route::get('/tasmi', [TasmiController::class, 'galeri'])->name('tasmi.galeri');
+    Route::get('/tasmi/{tasmi}', [TasmiController::class, 'show'])->name('tasmi.show');
+    Route::post('/tasmi/{tasmi}/like', [TasmiController::class, 'toggleLike'])->name('tasmi.like');
+    Route::post('/tasmi/{tasmi}/komentar', [TasmiController::class, 'storeComment'])->name('tasmi.komentar');
+    Route::delete('/tasmi-komentar/{comment}', [TasmiController::class, 'destroyComment'])->name('tasmi.komentar.hapus');
 });
 
 // ════════════════════════════════════════════

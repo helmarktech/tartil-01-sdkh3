@@ -32,6 +32,7 @@ class SiswaNotifikasi extends Notification
             'jurnal' => '/siswa/dashboard#jurnal-terbaru',
             'hafalan' => '/siswa/hafalan',
             'pendampingan' => '/siswa/pendampingan-ortu',
+            'tasmi' => '/siswa/tasmi',
             default => null,
         };
     }

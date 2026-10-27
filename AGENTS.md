@@ -26,6 +26,7 @@ Fitur inti meliputi:
 - Hari libur per kelas.
 - Tahfidz: tracking hafalan siswa per juz 1–30 (tidak harus berurutan), dengan rekap per semester yang membedakan total siswa, siswa sudah hafal, dan siswa tuntas per juz.
 - Pendampingan ortu: siswa melaporkan tadarus/murajaah (surat + ayat) untuk dikonfirmasi guru. Tersedia mode **jilid/bilqolam** (checkbox `is_jilid` di form siswa) untuk siswa kelas jilid — surat & ayat tidak wajib, kolom bacaan ditampilkan sebagai "Jilid / Bilqolam" via `LaporanPendampinganOrtu::labelBacaan()`/`labelAyat()`.
+- Dokumentasi Tasmi': admin mengunggah link YouTube + detail siswa & juz (`TasmiController`). Video ditonton in-frame (embed `youtube-nocookie.com`) oleh semua peran; like & komentar multi-guard via relasi polimorfik (`tasmi_likes.penyuka_*`, `tasmi_comments.pengomentar_*` → User/Siswa); share ke WhatsApp via `wa.me`; admin dapat memoderasi (hapus) komentar siapa pun, non-admin hanya komentarnya sendiri. Upload video memicu notifikasi ke siswa terkait. **Catatan guard:** di request siswa, middleware `auth:siswa` mengalihkan guard default via `shouldUse('siswa')` — jangan panggil `auth()->user()->isAdmin()` tanpa cek `instanceof User` (lihat `TasmiController::userWeb()`).
 - Notifikasi siswa (database + push Web VAPID): siswa menerima notifikasi saat guru menginput jurnal harian, menambahkan setoran hafalan, dan mengkonfirmasi laporan pendampingan orangtua. Lonceng notifikasi di topbar siswa + halaman `/siswa/notifikasi`.
 - PWA: installable (manifest + service worker `public/sw.js`), caching cache-first hanya untuk asset statis (`/build/`, `/icons/`, `/images/`, `/css/`), halaman dinamis network-only.
 - Audit trail perubahan data via `activity_logs`.
@@ -198,6 +199,7 @@ Test suite saat ini mencakup:
 - `tests/Feature/NotifikasiSiswaTest.php` — memastikan notifikasi siswa terkirim saat jurnal diinput, setoran hafalan ditambahkan, pendampingan dikonfirmasi, dan subscription push tersimpan.
 - `tests/Feature/KonsistensiJurnalTest.php` — memastikan hitungan hari jurnal konsisten di semua tampilan via `JurnalSiswaService`, termasuk aturan baru `r2_akhir = r2_penilaian`.
 - `tests/Feature/RaporMurniPenilaianTest.php` — memastikan nilai rapor murni dari penilaian internal (B/C/K harian tidak memengaruhi), recalc retroaktif snapshot semester ditutup, dan invalidasi cache R2 saat guru menyimpan nilai.
+- `tests/Feature/TasmiTest.php` — dokumentasi tasmi': parsing URL YouTube, akses galeri/detail semua peran, like multi-guard unik, moderasi komentar admin, dan cascade delete.
 
 > Migration yang mengandung raw SQL khusus MySQL (`SHOW COLUMNS`, `ALTER TABLE ... MODIFY`, dsb.) sudah dibungkus dengan pengecekan driver agar test SQLite bisa berjalan, tanpa mengubah perilaku di MySQL/MariaDB.
 
@@ -310,6 +312,7 @@ Proyek ini memiliki dokumen arsitektur tersendiri:
 | `perpindahan_kelas` | Riwayat perpindahan kelas tartil |
 | `kelas_liburs` | Hari libur per kelas |
 | `hafalan_tahfidzs` / `rekap_tahfidz_semesters` | Tracking hafalan |
+| `tasmi_videos` / `tasmi_likes` / `tasmi_comments` | Dokumentasi tasmi' (link YouTube) + interaksi like/komentar polimorfik |
 | `juz_surats` | Mapping surat-ayat per juz untuk perhitungan persentase hafalan |
 | `activity_logs` | Audit trail perubahan data |
 | `notifications` | Notifikasi siswa (morph ke `siswas`, channel database) |
