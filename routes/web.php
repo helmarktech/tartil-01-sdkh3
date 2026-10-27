@@ -23,6 +23,7 @@ use App\Http\Controllers\TahfidzController;
 use App\Http\Controllers\TasmiController;
 use App\Http\Controllers\TrackRecordController;
 use App\Http\Middleware\PulseAccess;
+use App\Models\TasmiVideo;
 use Illuminate\Support\Facades\Route;
 
 // ==================== PUBLIC ====================
@@ -33,7 +34,14 @@ Route::get('/', function () {
             : redirect()->route('guru.dashboard');
     }
 
-    return view('landing');
+    // Dokumentasi tasmi' publik: video terbaru (in-frame) + galeri 10 per halaman
+    $tasmiTerbaru = TasmiVideo::with('siswa')->latest()->first();
+    $tasmiList = TasmiVideo::with('siswa')
+        ->withCount(['likes', 'comments'])
+        ->latest()
+        ->paginate(10);
+
+    return view('landing', compact('tasmiTerbaru', 'tasmiList'));
 });
 
 // Fallback: redirect /login ke landing page (menangani session timeout & bookmark lama)

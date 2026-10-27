@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
+    // RefreshDatabase diperlukan karena landing page men-query tasmi_videos
+    use RefreshDatabase;
+
     /**
      * A basic test example.
      */

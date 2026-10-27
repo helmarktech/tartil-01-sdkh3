@@ -888,6 +888,45 @@
             .compare-illust { grid-template-columns: 1fr; }
             .footer { padding: 32px 20px 20px; }
         }
+
+        /* ===== DOKUMENTASI TASMI' (landing publik) ===== */
+        .lp-tasmi { padding: 64px 48px; max-width: 1200px; margin: 0 auto; }
+        .lp-tasmi-head { text-align: center; margin-bottom: 32px; }
+        .lp-tasmi-head h2 { font-size: 28px; font-weight: 800; color: var(--ink); }
+        .lp-tasmi-head p { color: var(--ink-muted); font-size: 14px; margin-top: 6px; }
+        .lp-tasmi-player {
+            background: var(--bg-card); border: 1px solid var(--border, #e7e5e4);
+            border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 24px rgba(28, 25, 23, 0.06); margin-bottom: 28px;
+        }
+        .lp-tasmi-frame { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+        .lp-tasmi-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+        .lp-tasmi-meta { padding: 16px 20px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .lp-tasmi-meta h3 { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+        .lp-tasmi-meta .sub { font-size: 13px; color: var(--ink-muted); }
+        .lp-tasmi-badge {
+            background: #0c8a5f; color: #fff; font-size: 11px; font-weight: 700;
+            padding: 4px 12px; border-radius: 999px; white-space: nowrap;
+        }
+        .lp-tasmi-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border, #e7e5e4); }
+        .lp-tasmi-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-muted); padding: 10px 14px; background: var(--bg); }
+        .lp-tasmi-table td { padding: 10px 14px; font-size: 13px; border-top: 1px solid var(--border, #e7e5e4); color: var(--ink-secondary); }
+        .lp-tasmi-table tr[data-embed] { cursor: pointer; transition: background 0.15s; }
+        .lp-tasmi-table tr[data-embed]:hover { background: #f0faf5; }
+        .lp-tasmi-table img { width: 64px; height: 36px; object-fit: cover; border-radius: 6px; display: block; }
+        .lp-tasmi-pager { display: flex; gap: 6px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .lp-tasmi-pager a, .lp-tasmi-pager span {
+            min-width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; padding: 0 10px;
+            border: 1px solid var(--border, #e7e5e4); color: var(--ink-secondary); background: var(--bg-card);
+        }
+        .lp-tasmi-pager .aktif { background: #0c8a5f; border-color: #0c8a5f; color: #fff; }
+        .lp-tasmi-pager .mati { opacity: 0.4; pointer-events: none; }
+        .lp-tasmi-kosong { text-align: center; color: var(--ink-muted); padding: 40px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border, #e7e5e4); }
+        @media (max-width: 768px) {
+            .lp-tasmi { padding: 40px 20px; }
+            .lp-tasmi-hide-mobile { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -1006,6 +1045,94 @@
                 </div>
             </div>
         </div>
+    </section>
+
+    <!-- ===== DOKUMENTASI TASMI' ===== -->
+    <section class="lp-tasmi" id="tasmi">
+        <div class="lp-tasmi-head">
+            <h2>Dokumentasi <em>Tasmi'</em> Terbaru</h2>
+            <p>Saksikan dokumentasi tasmi' para siswa SD Khadijah 3 — langsung dari halaman ini</p>
+        </div>
+
+        @if($tasmiTerbaru)
+        {{-- Pemutar in-frame: menampilkan video terbaru, berubah saat baris tabel diklik --}}
+        <div class="lp-tasmi-player">
+            <div class="lp-tasmi-frame">
+                <iframe id="lpTasmiFrame" src="{{ $tasmiTerbaru->embed_url }}" title="{{ $tasmiTerbaru->judul }}"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen loading="lazy"></iframe>
+            </div>
+            <div class="lp-tasmi-meta">
+                <div>
+                    <h3 id="lpTasmiJudul">{{ $tasmiTerbaru->judul }}</h3>
+                    <div class="sub" id="lpTasmiSub">
+                        {{ $tasmiTerbaru->siswa->nama }} · Juz {{ $tasmiTerbaru->juz }}{{ $tasmiTerbaru->tanggal_tasmi ? ' · '.$tasmiTerbaru->tanggal_tasmi->format('d/m/Y') : '' }} · 👁 {{ $tasmiTerbaru->jumlah_ditonton }}×
+                    </div>
+                </div>
+                <span class="lp-tasmi-badge" id="lpTasmiBadge">Juz {{ $tasmiTerbaru->juz }}</span>
+            </div>
+        </div>
+        @endif
+
+        {{-- Daftar galeri tasmi' (10 per halaman) --}}
+        @if($tasmiList->isEmpty())
+        <div class="lp-tasmi-kosong">Belum ada dokumentasi tasmi' yang diunggah.</div>
+        @else
+        <div style="overflow-x: auto;">
+            <table class="lp-tasmi-table">
+                <thead>
+                    <tr>
+                        <th>Video</th>
+                        <th>Judul</th>
+                        <th>Siswa</th>
+                        <th class="lp-tasmi-hide-mobile">Juz</th>
+                        <th class="lp-tasmi-hide-mobile">Tanggal</th>
+                        <th class="lp-tasmi-hide-mobile">👁</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($tasmiList as $v)
+                    <tr data-embed="{{ $v->embed_url }}"
+                        data-judul="{{ $v->judul }}"
+                        data-sub="{{ $v->siswa->nama }} · Juz {{ $v->juz }}{{ $v->tanggal_tasmi ? ' · '.$v->tanggal_tasmi->format('d/m/Y') : '' }} · 👁 {{ $v->jumlah_ditonton }}×"
+                        data-badge="Juz {{ $v->juz }}"
+                        onclick="lpTasmiPutar(this)">
+                        <td><img src="{{ $v->thumbnail }}" alt="" loading="lazy"></td>
+                        <td style="font-weight: 600; color: var(--ink);">{{ $v->judul }}</td>
+                        <td>{{ $v->siswa->nama }}</td>
+                        <td class="lp-tasmi-hide-mobile">Juz {{ $v->juz }}</td>
+                        <td class="lp-tasmi-hide-mobile">{{ $v->tanggal_tasmi?->format('d/m/Y') ?? '-' }}</td>
+                        <td class="lp-tasmi-hide-mobile">{{ $v->jumlah_ditonton }}×</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        @if($tasmiList->hasPages())
+        <div class="lp-tasmi-pager">
+            @if($tasmiList->onFirstPage())
+                <span class="mati">‹</span>
+            @else
+                <a href="{{ $tasmiList->previousPageUrl() }}#tasmi">‹</a>
+            @endif
+
+            @for($i = 1; $i <= $tasmiList->lastPage(); $i++)
+                @if($i == $tasmiList->currentPage())
+                    <span class="aktif">{{ $i }}</span>
+                @else
+                    <a href="{{ $tasmiList->url($i) }}#tasmi">{{ $i }}</a>
+                @endif
+            @endfor
+
+            @if($tasmiList->hasMorePages())
+                <a href="{{ $tasmiList->nextPageUrl() }}#tasmi">›</a>
+            @else
+                <span class="mati">›</span>
+            @endif
+        </div>
+        @endif
+        @endif
     </section>
 
     <!-- ===== FEATURES ===== -->
@@ -1339,6 +1466,17 @@
             document.querySelectorAll('.login-panel').forEach(p => p.classList.remove('active'));
             el.classList.add('active');
             document.getElementById('panel-' + tab).classList.add('active');
+        }
+
+        // Klik baris tabel tasmi' → putar video di pemutar in-frame
+        function lpTasmiPutar(row) {
+            const frame = document.getElementById('lpTasmiFrame');
+            if (!frame) return;
+            frame.src = row.dataset.embed;
+            document.getElementById('lpTasmiJudul').textContent = row.dataset.judul;
+            document.getElementById('lpTasmiSub').textContent = row.dataset.sub;
+            document.getElementById('lpTasmiBadge').textContent = row.dataset.badge;
+            frame.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     </script>
 

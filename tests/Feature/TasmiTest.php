@@ -202,6 +202,40 @@ class TasmiTest extends TestCase
         $this->assertEquals(2, $this->video->fresh()->jumlah_ditonton);
     }
 
+    public function test_landing_menampilkan_tasmi_terbaru_inframe_dan_galeri(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Dokumentasi', false)
+            ->assertSee('youtube-nocookie.com/embed/dQw4w9WgXcQ', false)
+            ->assertSee('Tasmi&#039; Juz 30', false); // apostrof di-escape Blade
+    }
+
+    public function test_landing_paginasi_galeri_maksimal_10_per_halaman(): void
+    {
+        // Total 12 video (1 dari setUp + 11 baru) → halaman 1 berisi 10, halaman 2 berisi 2
+        for ($i = 1; $i <= 11; $i++) {
+            TasmiVideo::create([
+                'siswa_id' => $this->siswa->id, 'juz' => 1,
+                'judul' => 'Video P'.str_pad($i, 2, '0', STR_PAD_LEFT), 'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ',
+                'youtube_id' => 'dQw4w9WgXcQ', 'diupload_oleh' => $this->admin->id,
+                'created_at' => now()->subMinutes($i),
+            ]);
+        }
+
+        // Urutan latest(): video setUp (baru), lalu P01 (terbaru dari 11) ... P11 (terlama)
+        // Halaman 1: setUp + P01..P09 | Halaman 2: P10, P11
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Video P01', false)
+            ->assertDontSee('Video P11', false);
+
+        $this->get('/?page=2')
+            ->assertOk()
+            ->assertSee('Video P11', false)
+            ->assertDontSee('Video P01', false);
+    }
+
     public function test_hapus_video_ikut_menghapus_like_dan_komentar(): void
     {
         TasmiLike::create([
