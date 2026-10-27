@@ -71,8 +71,8 @@ if ('serviceWorker' in navigator) {
 
     // Ambil jumlah belum dibaca + notifikasi terbaru
     const muatNotifikasi = () => {
-        if (!pollingAktif) return;
-        fetchJson('/siswa/notifikasi/unread-count')
+        if (!pollingAktif) return Promise.resolve();
+        return fetchJson('/siswa/notifikasi/unread-count')
             .then((res) => {
                 if (res.status === 401 || res.redirected) {
                     hentikanPolling();
@@ -92,13 +92,21 @@ if ('serviceWorker' in navigator) {
             .catch(() => {});
     };
 
-    // Buka/tutup dropdown saat lonceng diklik
+    // Buka/tutup dropdown saat lonceng diklik.
+    // Saat dibuka: tampilkan notifikasi terbaru, lalu otomatis tandai semua
+    // sudah dibaca (badge langsung hilang tanpa harus membuka satu per satu).
     const tombolBell = document.getElementById('notifikasi-tombol');
     if (tombolBell && panel) {
         tombolBell.addEventListener('click', (ev) => {
             ev.stopPropagation();
             panel.hidden = !panel.hidden;
-            if (!panel.hidden) muatNotifikasi();
+            if (!panel.hidden) {
+                muatNotifikasi().finally(() => {
+                    fetchJson('/siswa/notifikasi/read-all', { method: 'POST' })
+                        .catch(() => {})
+                        .finally(() => { if (badge) badge.hidden = true; });
+                });
+            }
         });
         document.addEventListener('click', (ev) => {
             if (!panel.hidden && !panel.contains(ev.target)) panel.hidden = true;

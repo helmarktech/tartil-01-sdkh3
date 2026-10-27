@@ -661,6 +661,37 @@
             transition: all 0.15s;
         }
         .notifikasi-aktifkan:hover { background: var(--accent); color: #fff; }
+
+        /* ===== Pagination (layout siswa mandiri, tanpa tartil.css) ===== */
+        .tartil-pagination-nav { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 16px; }
+        .pagination-tartil { display: flex; gap: 4px; list-style: none; padding: 0; margin: 0; }
+        .pagination-tartil .page-link, .pagination-mobile-only .page-link {
+            border: 1px solid var(--border, #e7e5e4);
+            border-radius: 8px;
+            color: var(--ink-muted, #78716c);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 11px;
+            min-width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            background: #fff;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .pagination-tartil .page-link:hover { background: var(--accent-soft, #e0f2ea); border-color: var(--accent, #0c8a5f); color: var(--accent-dark, #065f43); }
+        .pagination-tartil .active .page-link { background: var(--accent, #0c8a5f); border-color: var(--accent, #0c8a5f); color: #fff; }
+        .pagination-tartil .disabled .page-link, .pagination-mobile-only .page-link.disabled { color: #d6d3d1; background: #fafaf9; cursor: not-allowed; }
+        .pagination-mobile-only { display: none; gap: 8px; }
+        .pagination-desktop-only { display: flex; }
+        .pagination-info { margin: 0; font-size: 12px; color: var(--ink-muted, #78716c); }
+        @media (max-width: 640px) {
+            .pagination-mobile-only { display: flex; }
+            .pagination-desktop-only { display: none; }
+        }
     </style>
     @stack('styles')
 </head>
