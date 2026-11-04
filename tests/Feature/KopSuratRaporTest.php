@@ -170,6 +170,27 @@ class KopSuratRaporTest extends TestCase
         }
     }
 
+    public function test_rapor_siswa_memiliki_ttd_mualim_dan_kepala_sekolah(): void
+    {
+        [$siswa, $kelas, $semester] = $this->buatSiswaKelasSemester();
+        $kop = KopSuratRapor::nullSafe();
+        $rapor = [
+            'r2_harian' => 0,
+            'r2_penilaian' => 80,
+            'jumlah_terisi' => 3,
+            'jumlah_indikator' => 4,
+            'r2_akhir' => 80,
+            'predikat' => 'Baik',
+        ];
+
+        $html = view('pdf.rapor-siswa', compact('siswa', 'kelas', 'semester', 'rapor', 'kop'))->render();
+
+        $this->assertStringContainsString("Mu'alim", $html);
+        $this->assertStringContainsString('Kepala Sekolah', $html);
+        // Nama guru tartil tampil pada blok TTD Mu'alim
+        $this->assertStringContainsString('Ust. Test', $html);
+    }
+
     private function buatSiswaKelasSemester(): array
     {
         TahunAjaran::create([

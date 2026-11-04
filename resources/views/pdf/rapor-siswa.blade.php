@@ -150,11 +150,15 @@
         @endif
     </div>
 
-    {{-- Tanda Tangan --}}
-    @if($kop && ($kop->kepala_sekolah || $kop->ttd_base64))
+    {{-- Tanda Tangan: Mu'alim (guru tartil) & Kepala Sekolah --}}
     <table class="ttd-section">
         <tr>
-            <td></td>
+            <td>
+                <div class="ttd-box">
+                    <div class="ttd-label">Mu'alim<br>{{ $kelas->guru->nama ?? '........................' }}</div>
+                    <div class="ttd-nama" style="text-decoration: none;">( {{ $kelas->guru->nama ?? '........................' }} )</div>
+                </div>
+            </td>
             <td>
                 <div class="ttd-box">
                     <div class="ttd-label">
@@ -171,7 +175,7 @@
                     @endif
                     <div style="margin-top: {{ $kop->ttd_base64 ? '20px' : '60px' }};">
                         <div class="ttd-nama">{{ $kop->kepala_sekolah ?? '(________________________)' }}</div>
-                        @if($kop->nip_kepala_sekolah)
+                        @if($kop->nip_kepala_sekolah && $kop->nip_kepala_sekolah !== '-')
                         <div class="ttd-nip">NIP. {{ $kop->nip_kepala_sekolah }}</div>
                         @endif
                     </div>
@@ -179,7 +183,6 @@
             </td>
         </tr>
     </table>
-    @endif
 
     {{-- Catatan Kaki --}}
     @if($kop && $kop->catatan_kaki)

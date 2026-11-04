@@ -217,7 +217,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 <table class="ttd-table">
     <tr>
         <td>
-            <div class="ttd-jabatan">Guru Tartil<br>{{ $kelas->guru->nama ?? '........................' }}</div>
+            <div class="ttd-jabatan">Mu'alim<br>{{ $kelas->guru->nama ?? '........................' }}</div>
             <div class="ttd-nama">({{ $kelas->guru->nama ?? '........................' }})</div>
         </td>
         <td style="position: relative;">

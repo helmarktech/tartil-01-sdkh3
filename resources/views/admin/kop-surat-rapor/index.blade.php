@@ -265,24 +265,34 @@
                     </table>
                 </div>
 
-                {{-- Footer Preview --}}
-                <div style="border-top: 1px solid #ddd; padding-top: 12px; font-size: 11px; color: #999; text-align: center;">
-                    <div>{{ $kop->catatan_kaki }}</div>
-                    <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 16px; align-items: flex-end;">
-                        @if($kop->stempel_base64)
-                        <img src="{{ $kop->stempel_base64 }}" alt="Stempel" style="height: 80px; width: auto; opacity: 0.8;">
-                        @endif
-                        <div style="text-align: center;">
-                            <div>Kepala Sekolah,</div>
+                {{-- Footer Preview — sama dengan desain TTD pada rapor PDF --}}
+                <div style="border-top: 1px solid #ddd; padding-top: 16px; font-size: 11px; color: #555;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;">
+                        {{-- Mu'alim (kiri) --}}
+                        <div style="text-align: center; width: 50%;">
+                            <div style="margin-bottom: 40px; line-height: 1.6;">Mu'alim<br>........................</div>
+                            <div style="font-weight: 600;">( ........................ )</div>
+                        </div>
+                        {{-- Kepala Sekolah (kanan) --}}
+                        <div style="text-align: center; width: 50%; position: relative;">
+                            @if($kop->stempel_base64)
+                            <img src="{{ $kop->stempel_base64 }}" alt="Stempel" style="position: absolute; top: -10px; right: 10px; height: 80px; width: auto; opacity: 0.7;">
+                            @endif
+                            <div style="margin-bottom: 8px; line-height: 1.6;">Kepala Sekolah<br>{{ $kop->kepala_sekolah ?? '' }}</div>
                             @if($kop->ttd_base64)
                             <img src="{{ $kop->ttd_base64 }}" alt="TTD" style="height: 50px; width: auto; margin: 4px 0;">
                             @else
-                            <div style="margin-top: 40px;"></div>
+                            <div style="height: 30px;"></div>
                             @endif
-                            <div style="font-weight: 600;">{{ $kop->kepala_sekolah }}</div>
-                            <div>NIP. {{ $kop->nip_kepala_sekolah }}</div>
+                            <div style="font-weight: 600;"><u>{{ $kop->kepala_sekolah ?? '........................' }}</u></div>
+                            @if($kop->nip_kepala_sekolah && $kop->nip_kepala_sekolah !== '-')
+                            <div style="font-size: 10px; color: #777; margin-top: 2px;">NIP. {{ $kop->nip_kepala_sekolah }}</div>
+                            @endif
                         </div>
                     </div>
+                    @if($kop->catatan_kaki)
+                    <div style="font-size: 10px; color: #999; font-style: italic; text-align: center; margin-top: 12px; padding: 6px; background: #f5f5f5; border-radius: 4px;">{{ $kop->catatan_kaki }}</div>
+                    @endif
                 </div>
             </div>
         </div>
