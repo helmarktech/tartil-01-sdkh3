@@ -42,7 +42,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 
 /* R2 */
 .r2-table { width: 100%; border-collapse: collapse; margin: 4px 0 6px; }
-.r2-table td { width: 50%; text-align: center; padding: 5px 3px; border: 1px solid #ddd; }
+.r2-table td { text-align: center; padding: 5px 3px; border: 1px solid #ddd; }
 .r2-label { font-size: 6px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
 .r2-value { font-size: 14px; font-weight: 700; }
 .r2-desc { font-size: 6px; color: #999; }
@@ -178,15 +178,10 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 <div class="section-title">B. Rekapitulasi Nilai (R2)</div>
 <table class="r2-table">
     <tr>
-        <td style="background:#e8f5e9">
-            <div class="r2-label">R2 Penilaian</div>
-            <div class="r2-value" style="color:#2e7d32">{{ $rekap['r2_penilaian'] }}</div>
-            <div class="r2-desc">Rata-rata nilai indikator</div>
-        </td>
         <td style="background:#fff3e0">
             <div class="r2-label">Nilai Rapor</div>
             <div class="r2-value" style="color:#ef6c00">{{ $rekap['r2_akhir'] }}</div>
-            <div class="r2-desc">Penilaian Internal</div>
+            <div class="r2-desc">Rata-rata Penilaian Internal per indikator</div>
         </td>
     </tr>
 </table>
@@ -217,7 +212,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 <table class="ttd-table">
     <tr>
         <td>
-            <div class="ttd-jabatan">Mu'alim<br>{{ $kelasTartil->guru->nama ?? '........................' }}</div>
+            <div class="ttd-jabatan">Mu'alim</div>
             <div class="ttd-nama">({{ $kelasTartil->guru->nama ?? '........................' }})</div>
         </td>
         <td style="position: relative;">

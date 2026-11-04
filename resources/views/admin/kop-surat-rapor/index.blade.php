@@ -270,7 +270,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;">
                         {{-- Mu'alim (kiri) --}}
                         <div style="text-align: center; width: 50%;">
-                            <div style="margin-bottom: 40px; line-height: 1.6;">Mu'alim<br>........................</div>
+                            <div style="margin-bottom: 40px; line-height: 1.6;">Mu'alim</div>
                             <div style="font-weight: 600;">( ........................ )</div>
                         </div>
                         {{-- Kepala Sekolah (kanan) --}}

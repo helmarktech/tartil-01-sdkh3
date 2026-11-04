@@ -36,12 +36,11 @@
         .summary-box { background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
         
         .nilai-grid { display: inline-block; width: 100%; }
-        .nilai-item { float: left; width: 33.33%; text-align: center; padding: 10px; box-sizing: border-box; }
+        .nilai-item { float: left; width: 50%; text-align: center; padding: 10px; box-sizing: border-box; }
         .nilai-value { font-size: 28px; font-weight: bold; }
         .nilai-label { font-size: 11px; color: #888; margin-top: 5px; }
-        .nilai-item:nth-child(1) .nilai-value { color: #166534; }
-        .nilai-item:nth-child(2) .nilai-value { color: #854d0e; }
-        .nilai-item:nth-child(3) .nilai-value { color: #1c1917; }
+        .nilai-item:nth-child(1) .nilai-value { color: #854d0e; }
+        .nilai-item:nth-child(2) .nilai-value { color: #1c1917; }
         .clear { clear: both; }
         
         .predikat { font-size: 16px; font-weight: bold; text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; margin-top: 10px; }
@@ -125,10 +124,6 @@
     <div class="section-title">Ringkasan Penilaian</div>
     <div class="nilai-grid">
         <div class="nilai-item">
-            <div class="nilai-value">{{ $rapor['r2_penilaian'] }}</div>
-            <div class="nilai-label">R2 Penilaian</div>
-        </div>
-        <div class="nilai-item">
             <div class="nilai-value">{{ $rapor['jumlah_terisi'] }}/{{ $rapor['jumlah_indikator'] }}</div>
             <div class="nilai-label">Indikator Terisi</div>
         </div>
@@ -155,7 +150,7 @@
         <tr>
             <td>
                 <div class="ttd-box">
-                    <div class="ttd-label">Mu'alim<br>{{ $kelas->guru->nama ?? '........................' }}</div>
+                    <div class="ttd-label">Mu'alim</div>
                     <div class="ttd-nama" style="text-decoration: none;">( {{ $kelas->guru->nama ?? '........................' }} )</div>
                 </div>
             </td>

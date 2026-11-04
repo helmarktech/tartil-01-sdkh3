@@ -126,6 +126,13 @@ class KopSuratRaporTest extends TestCase
         $this->assertStringNotContainsString('jilid yang sama', $html);
         $this->assertStringContainsString('tetap melanjutkan pembelajaran pada jenjang pembelajaran tartil yang sama untuk pemantapan', $html);
 
+        // Section B hanya menampilkan satu Nilai Rapor (bukan duplikat R2 Penilaian)
+        $this->assertStringNotContainsString('R2 Penilaian', $html);
+        $this->assertStringContainsString('Nilai Rapor', $html);
+
+        // Nama Mu'alim hanya tampil sekali di blok TTD (dalam tanda kurung)
+        $this->assertEquals(1, substr_count($html, '(Ust. Test)'));
+
         // Lulus: lanjut ke jenjang berikutnya
         $rekap['r2_akhir'] = 85;
         $html = view('pdf.rapor-tartil', compact('siswa', 'penilaian', 'kelas', 'kop', 'rekap'))->render();
