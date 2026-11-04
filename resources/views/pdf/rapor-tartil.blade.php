@@ -207,7 +207,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
             @if($kop->stempel_base64)
             <img src="{{ $kop->stempel_base64 }}" style="position: absolute; top: -10px; right: 10px; height: 70px; width: auto; opacity: 0.7; z-index: 1;">
             @endif
-            <div class="ttd-jabatan">Kepala Sekolah<br>{{ $kop->kepala_sekolah ?? '' }}</div>
+            <div class="ttd-jabatan">Kepala Sekolah<br>{{ $kop->nama_sekolah ?? '' }}</div>
             @if($kop->ttd_base64)
             <img src="{{ $kop->ttd_base64 }}" style="height: 35px; width: auto; margin: 2px 0;">
             @else

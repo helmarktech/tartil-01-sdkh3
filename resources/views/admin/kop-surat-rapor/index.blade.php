@@ -278,7 +278,7 @@
                             @if($kop->stempel_base64)
                             <img src="{{ $kop->stempel_base64 }}" alt="Stempel" style="position: absolute; top: -10px; right: 10px; height: 80px; width: auto; opacity: 0.7;">
                             @endif
-                            <div style="margin-bottom: 8px; line-height: 1.6;">Kepala Sekolah<br>{{ $kop->kepala_sekolah ?? '' }}</div>
+                            <div style="margin-bottom: 8px; line-height: 1.6;">Kepala Sekolah<br>{{ $kop->nama_sekolah ?? '' }}</div>
                             @if($kop->ttd_base64)
                             <img src="{{ $kop->ttd_base64 }}" alt="TTD" style="height: 50px; width: auto; margin: 4px 0;">
                             @else

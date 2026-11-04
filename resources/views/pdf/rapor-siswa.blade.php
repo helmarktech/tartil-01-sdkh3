@@ -158,7 +158,8 @@
                 <div class="ttd-box">
                     <div class="ttd-label">
                         {{ $kop->tanggal_cetak ? $kop->tanggal_cetak->format('d F Y') : now()->format('d F Y') }}<br>
-                        Kepala Sekolah
+                        Kepala Sekolah<br>
+                        {{ $kop->nama_sekolah ?? '' }}
                     </div>
                     @if($kop->ttd_base64)
                     <div class="ttd-stempel">

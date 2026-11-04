@@ -133,6 +133,9 @@ class KopSuratRaporTest extends TestCase
         // Nama Mu'alim hanya tampil sekali di blok TTD (dalam tanda kurung)
         $this->assertEquals(1, substr_count($html, '(Ust. Test)'));
 
+        // Nama sekolah tampil di bawah jabatan Kepala Sekolah pada TTD
+        $this->assertStringContainsString('Kepala Sekolah<br>'.$kop->nama_sekolah, $html);
+
         // Lulus: lanjut ke jenjang berikutnya
         $rekap['r2_akhir'] = 85;
         $html = view('pdf.rapor-tartil', compact('siswa', 'penilaian', 'kelas', 'kop', 'rekap'))->render();
