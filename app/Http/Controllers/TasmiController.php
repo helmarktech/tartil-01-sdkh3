@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\GuruNotifikasi;
 use App\Notifications\SiswaNotifikasi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class TasmiController extends Controller
@@ -19,38 +20,61 @@ class TasmiController extends Controller
     // ═══════════════════════════════════════════════
     public function adminIndex()
     {
-        $videos = TasmiVideo::with('siswa')
-            ->withCount(['likes', 'comments'])
+        $videos = TasmiVideo::with('siswas')
+            ->withCount(['likes', 'comments', 'siswas'])
             ->latest()
             ->paginate(20);
 
-        return view('admin.tasmi.index', compact('videos'));
+        // Rekap detail: jumlah video & siswa per juz, beserta nama siswanya
+        $rekapJuz = TasmiVideo::with('siswas:id,nama,nis')->get(['id', 'juz'])
+            ->groupBy('juz')
+            ->map(fn ($items, $juz) => [
+                'juz' => $juz,
+                'video' => $items->count(),
+                'siswaUnik' => $items->flatMap->siswas->unique('id')
+                    ->sortBy('nama', SORT_NATURAL | SORT_FLAG_CASE)->values(),
+            ])
+            ->sortKeys();
+
+        $statistik = [
+            'video' => TasmiVideo::count(),
+            'siswa' => DB::table('tasmi_video_siswa')->distinct()->count('siswa_id'),
+            'ditonton' => (int) TasmiVideo::sum('jumlah_ditonton'),
+            'juz' => TasmiVideo::distinct()->count('juz'),
+        ];
+
+        return view('admin.tasmi.index', compact('videos', 'rekapJuz', 'statistik'));
     }
 
     public function adminCreate()
     {
         $siswas = Siswa::where('status', 'aktif')->orderBy('nama')->get(['id', 'nama', 'nis']);
         $tasmi = null;
+        $terpilih = [];
 
-        return view('admin.tasmi.form', compact('siswas', 'tasmi'));
+        return view('admin.tasmi.form', compact('siswas', 'tasmi', 'terpilih'));
     }
 
     public function adminStore(Request $request)
     {
         $data = $this->validasiTasmi($request);
+        $siswaIds = $data['siswa_ids'];
+        unset($data['siswa_ids']);
 
         $tasmi = TasmiVideo::create([
             ...$data,
             'diupload_oleh' => auth()->id(),
         ]);
+        $tasmi->siswas()->sync($siswaIds);
+        $namaSiswa = $tasmi->ringkasNamaSiswa();
 
         // Kabari SEMUA siswa aktif: ada dokumentasi tasmi' baru
         // (database + push bila tersedia). Chunk agar hemat memori.
-        Siswa::where('status', 'aktif')->select('id')->chunk(200, function ($chunk) use ($tasmi) {
+        Siswa::where('status', 'aktif')->select('id')->chunk(200, function ($chunk) use ($tasmi, $namaSiswa) {
             $notifikasi = new SiswaNotifikasi(
                 tipe: 'tasmi',
                 judul: 'Dokumentasi Tasmi\' Baru 🎬',
-                pesan: "Ada dokumentasi tasmi' baru: {$tasmi->judul} — {$tasmi->siswa->nama} (Juz {$tasmi->juz})",
+                pesan: "Ada dokumentasi tasmi' baru: {$tasmi->judul} — {$namaSiswa} (Juz {$tasmi->juz})",
                 url: route('siswa.tasmi.show', $tasmi->id),
             );
             Siswa::whereIn('id', $chunk->pluck('id'))->get()->each->notify($notifikasi);
@@ -60,7 +84,7 @@ class TasmiController extends Controller
         $notifikasiGuru = new GuruNotifikasi(
             tipe: 'tasmi',
             judul: 'Dokumentasi Tasmi\' Baru 🎬',
-            pesan: "Admin mengunggah dokumentasi tasmi': {$tasmi->judul} — {$tasmi->siswa->nama} (Juz {$tasmi->juz})",
+            pesan: "Admin mengunggah dokumentasi tasmi': {$tasmi->judul} — {$namaSiswa} (Juz {$tasmi->juz})",
             url: route('guru.tasmi.show', $tasmi->id),
         );
         User::where('role', 'guru')->get()->each->notify($notifikasiGuru);
@@ -72,13 +96,19 @@ class TasmiController extends Controller
     public function adminEdit(TasmiVideo $tasmi)
     {
         $siswas = Siswa::where('status', 'aktif')->orderBy('nama')->get(['id', 'nama', 'nis']);
+        $terpilih = $tasmi->siswas()->pluck('siswas.id')->all();
 
-        return view('admin.tasmi.form', compact('siswas', 'tasmi'));
+        return view('admin.tasmi.form', compact('siswas', 'tasmi', 'terpilih'));
     }
 
     public function adminUpdate(Request $request, TasmiVideo $tasmi)
     {
-        $tasmi->update($this->validasiTasmi($request));
+        $data = $this->validasiTasmi($request);
+        $siswaIds = $data['siswa_ids'];
+        unset($data['siswa_ids']);
+
+        $tasmi->update($data);
+        $tasmi->siswas()->sync($siswaIds);
 
         return redirect()->route('admin.tasmi.index')
             ->with('success', 'Dokumentasi tasmi\' berhasil diperbarui.');
@@ -98,7 +128,8 @@ class TasmiController extends Controller
     private function validasiTasmi(Request $request): array
     {
         $data = $request->validate([
-            'siswa_id' => 'required|exists:siswas,id',
+            'siswa_ids' => 'required|array|min:1',
+            'siswa_ids.*' => 'integer|distinct|exists:siswas,id',
             'juz' => 'required|integer|min:1|max:30',
             'judul' => 'required|string|max:150',
             'youtube_url' => 'required|string|max:255',
@@ -123,7 +154,7 @@ class TasmiController extends Controller
     // ═══════════════════════════════════════════════
     public function galeri(Request $request)
     {
-        $query = TasmiVideo::with('siswa')
+        $query = TasmiVideo::with('siswas')
             ->withCount(['likes', 'comments'])
             ->latest();
 
@@ -134,7 +165,7 @@ class TasmiController extends Controller
             $cari = $request->cari;
             $query->where(function ($q) use ($cari) {
                 $q->where('judul', 'like', "%{$cari}%")
-                    ->orWhereHas('siswa', fn ($s) => $s->where('nama', 'like', "%{$cari}%"));
+                    ->orWhereHas('siswas', fn ($s) => $s->where('nama', 'like', "%{$cari}%"));
             });
         }
 
@@ -156,7 +187,7 @@ class TasmiController extends Controller
             $tasmi->refresh();
         }
 
-        $tasmi->load(['siswa', 'comments.pengomentar'])->loadCount('likes');
+        $tasmi->load(['siswas', 'comments.pengomentar'])->loadCount('likes');
 
         $aktor = TasmiLike::aktor();
         $sudahLike = $tasmi->isLikedOleh($aktor);
@@ -164,7 +195,7 @@ class TasmiController extends Controller
         $rp = $this->routePrefix();
         // Link share selalu mengarah ke jalur siswa (target share umumnya orang tua/siswa)
         $shareWa = 'https://wa.me/?text='.rawurlencode(
-            "Dokumentasi Tasmi' {$tasmi->siswa->nama} (Juz {$tasmi->juz}): {$tasmi->judul}\n"
+            "Dokumentasi Tasmi' {$tasmi->ringkasNamaSiswa()} (Juz {$tasmi->juz}): {$tasmi->judul}\n"
             .route('siswa.tasmi.show', $tasmi)
         );
 

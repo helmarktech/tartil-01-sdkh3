@@ -41,8 +41,8 @@ Route::get('/', function () {
         ->orderByDesc('tanggal_tasmi')
         ->latest();
 
-    $tasmiTerbaru = $urutanTanggal(TasmiVideo::with('siswa'))->first();
-    $tasmiList = $urutanTanggal(TasmiVideo::with('siswa')->withCount(['likes', 'comments']))
+    $tasmiTerbaru = $urutanTanggal(TasmiVideo::with('siswas'))->first();
+    $tasmiList = $urutanTanggal(TasmiVideo::with('siswas')->withCount(['likes', 'comments']))
         ->paginate(10);
 
     return view('landing', compact('tasmiTerbaru', 'tasmiList'));

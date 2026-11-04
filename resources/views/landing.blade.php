@@ -1095,7 +1095,7 @@
                 <div>
                     <h3 id="lpTasmiJudul">{{ $tasmiTerbaru->judul }}</h3>
                     <div class="sub" id="lpTasmiSub">
-                        {{ $tasmiTerbaru->siswa->nama }} · Juz {{ $tasmiTerbaru->juz }}{{ $tasmiTerbaru->tanggal_tasmi ? ' · '.$tasmiTerbaru->tanggal_tasmi->format('d/m/Y') : '' }} · 👁 {{ $tasmiTerbaru->jumlah_ditonton }}×
+                        {{ $tasmiTerbaru->nama_siswa_list }} · Juz {{ $tasmiTerbaru->juz }}{{ $tasmiTerbaru->tanggal_tasmi ? ' · '.$tasmiTerbaru->tanggal_tasmi->format('d/m/Y') : '' }} · 👁 {{ $tasmiTerbaru->jumlah_ditonton }}×
                     </div>
                 </div>
                 <span class="lp-tasmi-badge" id="lpTasmiBadge">Juz {{ $tasmiTerbaru->juz }}</span>
@@ -1130,12 +1130,12 @@
                     @foreach($tasmiList as $v)
                     <tr data-thumb="{{ $v->thumbnail }}"
                         data-judul="{{ $v->judul }}"
-                        data-sub="{{ $v->siswa->nama }} · Juz {{ $v->juz }}{{ $v->tanggal_tasmi ? ' · '.$v->tanggal_tasmi->format('d/m/Y') : '' }} · 👁 {{ $v->jumlah_ditonton }}×"
+                        data-sub="{{ $v->nama_siswa_list }} · Juz {{ $v->juz }}{{ $v->tanggal_tasmi ? ' · '.$v->tanggal_tasmi->format('d/m/Y') : '' }} · 👁 {{ $v->jumlah_ditonton }}×"
                         data-badge="Juz {{ $v->juz }}"
                         onclick="lpTasmiPutar(this)">
                         <td><img src="{{ $v->thumbnail }}" alt="" loading="lazy"></td>
                         <td style="font-weight: 600; color: var(--ink);">{{ $v->judul }}</td>
-                        <td>{{ $v->siswa->nama }}</td>
+                        <td>{{ $v->nama_siswa_list }}</td>
                         <td class="lp-tasmi-hide-mobile">Juz {{ $v->juz }}</td>
                         <td class="lp-tasmi-hide-mobile">{{ $v->tanggal_tasmi?->format('d/m/Y') ?? '-' }}</td>
                         <td class="lp-tasmi-hide-mobile">{{ $v->jumlah_ditonton }}×</td>

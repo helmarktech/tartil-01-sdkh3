@@ -14,14 +14,21 @@
             @if($tasmi) @method('PUT') @endif
 
             <div style="margin-bottom: 16px;">
-                <label class="form-label" style="display: block; margin-bottom: 6px; font-size: 13px;">Siswa *</label>
+                <label class="form-label" style="display: block; margin-bottom: 6px; font-size: 13px;">
+                    Siswa * <span style="font-weight: 400; color: var(--text-muted); font-size: 12px;">(bisa pilih lebih dari satu — satu video dapat memuat beberapa siswa)</span>
+                </label>
                 <input type="text" id="cariSiswa" class="form-input" placeholder="Ketik untuk mencari nama/NIS..." style="margin-bottom: 6px;" autocomplete="off">
-                <select name="siswa_id" id="selectSiswa" class="form-input" required size="6" style="height: auto;">
+                <div id="daftarSiswa" style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border, #e5e5e5); border-radius: 8px; padding: 6px;">
                     @foreach($siswas as $s)
-                    <option value="{{ $s->id }}" {{ old('siswa_id', $tasmi?->siswa_id) == $s->id ? 'selected' : '' }}>{{ $s->nama }} ({{ $s->nis }})</option>
+                    <label class="siswa-item" style="display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                        <input type="checkbox" name="siswa_ids[]" value="{{ $s->id }}" class="cb-siswa" style="width: 16px; height: 16px; accent-color: #0c8a5f;"
+                            {{ in_array($s->id, old('siswa_ids', $terpilih ?? [])) ? 'checked' : '' }}>
+                        <span>{{ $s->nama }} <small style="color: var(--text-muted);">({{ $s->nis }})</small></span>
+                    </label>
                     @endforeach
-                </select>
-                @error('siswa_id')<div style="color: #c62828; font-size: 12px; margin-top: 4px;">{{ $message }}</div>@enderror
+                </div>
+                <div id="jumlahTerpilih" style="font-size: 12px; color: #0c8a5f; font-weight: 600; margin-top: 4px;"></div>
+                @error('siswa_ids')<div style="color: #c62828; font-size: 12px; margin-top: 4px;">{{ $message }}</div>@enderror
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -72,13 +79,29 @@
 </div>
 
 <script>
-// Pencarian siswa pada select
-document.getElementById('cariSiswa').addEventListener('input', function () {
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('#selectSiswa option').forEach(function (opt) {
-        opt.style.display = opt.text.toLowerCase().includes(q) ? '' : 'none';
+// Pencarian siswa + penghitung pilihan (multi-siswa per video)
+(function () {
+    const items = document.querySelectorAll('.siswa-item');
+    const counter = document.getElementById('jumlahTerpilih');
+
+    function updateCounter() {
+        const n = document.querySelectorAll('.cb-siswa:checked').length;
+        counter.textContent = n > 0 ? n + ' siswa dipilih' : 'Belum ada siswa dipilih';
+        counter.style.color = n > 0 ? '#0c8a5f' : '#c62828';
+    }
+
+    document.getElementById('cariSiswa').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        items.forEach(function (item) {
+            item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
     });
-});
+
+    document.querySelectorAll('.cb-siswa').forEach(function (cb) {
+        cb.addEventListener('change', updateCounter);
+    });
+    updateCounter();
+})();
 
 // Preview thumbnail YouTube saat link diisi
 function ekstrakId(url) {

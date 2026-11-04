@@ -65,10 +65,11 @@ class TasmiTest extends TestCase
         ]);
 
         $this->video = TasmiVideo::create([
-            'siswa_id' => $this->siswa->id, 'juz' => 30,
+            'juz' => 30,
             'judul' => "Tasmi' Juz 30", 'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ',
             'youtube_id' => 'dQw4w9WgXcQ', 'diupload_oleh' => $this->admin->id,
         ]);
+        $this->video->siswas()->attach($this->siswa->id);
     }
 
     public function test_admin_store_memparse_berbagai_format_url_youtube(): void
@@ -84,7 +85,7 @@ class TasmiTest extends TestCase
 
         foreach ($formatValid as $url => $expectedId) {
             $this->actingAs($this->admin)->post(route('admin.tasmi.store'), [
-                'siswa_id' => $this->siswa->id,
+                'siswa_ids' => [$this->siswa->id],
                 'juz' => 29,
                 'judul' => 'Uji '.$url,
                 'youtube_url' => $url,
@@ -99,7 +100,7 @@ class TasmiTest extends TestCase
         Notification::fake();
 
         $this->actingAs($this->admin)->post(route('admin.tasmi.store'), [
-            'siswa_id' => $this->siswa->id,
+            'siswa_ids' => [$this->siswa->id],
             'juz' => 30,
             'judul' => 'Uji invalid',
             'youtube_url' => 'https://example.com/video',
@@ -128,7 +129,7 @@ class TasmiTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)->post(route('admin.tasmi.store'), [
-            'siswa_id' => $this->siswa->id,
+            'siswa_ids' => [$this->siswa->id],
             'juz' => 1,
             'judul' => "Tasmi' Juz 1",
             'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ',
@@ -245,12 +246,13 @@ class TasmiTest extends TestCase
     {
         // Total 12 video (1 dari setUp + 11 baru) → halaman 1 berisi 10, halaman 2 berisi 2
         for ($i = 1; $i <= 11; $i++) {
-            TasmiVideo::create([
-                'siswa_id' => $this->siswa->id, 'juz' => 1,
+            $video = TasmiVideo::create([
+                'juz' => 1,
                 'judul' => 'Video P'.str_pad($i, 2, '0', STR_PAD_LEFT), 'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ',
                 'youtube_id' => 'dQw4w9WgXcQ', 'diupload_oleh' => $this->admin->id,
                 'created_at' => now()->subMinutes($i),
             ]);
+            $video->siswas()->attach($this->siswa->id);
         }
 
         // Urutan latest(): video setUp (baru), lalu P01 (terbaru dari 11) ... P11 (terlama)
@@ -271,11 +273,12 @@ class TasmiTest extends TestCase
         // Video dengan tanggal tasmi' lebih baru harus tampil sebagai sorotan,
         // meski waktu upload-nya lebih lama dari video lain (setUp: tanggal null).
         $videoTanggalBaru = TasmiVideo::create([
-            'siswa_id' => $this->siswa->id, 'juz' => 29,
+            'juz' => 29,
             'judul' => "Tasmi' Tanggal Baru", 'youtube_url' => 'https://youtu.be/abc123XYZ89',
             'youtube_id' => 'abc123XYZ89', 'tanggal_tasmi' => now()->subDay()->toDateString(),
             'diupload_oleh' => $this->admin->id, 'created_at' => now()->subDays(5),
         ]);
+        $videoTanggalBaru->siswas()->attach($this->siswa->id);
 
         // Poster sorotan (lpTasmiThumb) harus memakai thumbnail video tsb,
         // bukan sekadar muncul di baris tabel galeri.
@@ -397,5 +400,89 @@ class TasmiTest extends TestCase
         $this->assertDatabaseMissing('tasmi_videos', ['id' => $this->video->id]);
         $this->assertEquals(0, TasmiLike::count());
         $this->assertEquals(0, TasmiComment::count());
+    }
+
+    public function test_store_multi_siswa_menyimpan_semua_relasi_pivot(): void
+    {
+        Notification::fake();
+
+        $siswaB = $this->buatSiswa('2526002', 'Siswa B');
+        $siswaC = $this->buatSiswa('2526003', 'Siswa C');
+
+        $this->actingAs($this->admin)->post(route('admin.tasmi.store'), [
+            'siswa_ids' => [$this->siswa->id, $siswaB->id, $siswaC->id],
+            'juz' => 30,
+            'judul' => "Tasmi' Bersama",
+            'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ',
+        ])->assertRedirect(route('admin.tasmi.index'));
+
+        $video = TasmiVideo::where('judul', "Tasmi' Bersama")->first();
+        $this->assertNotNull($video);
+        $this->assertEqualsCanonicalizing(
+            [$this->siswa->id, $siswaB->id, $siswaC->id],
+            $video->siswas->pluck('id')->all()
+        );
+        $this->assertEquals('Siswa A, Siswa B, Siswa C', $video->nama_siswa_list);
+    }
+
+    public function test_store_tanpa_siswa_ditolak(): void
+    {
+        Notification::fake();
+
+        $this->actingAs($this->admin)->post(route('admin.tasmi.store'), [
+            'siswa_ids' => [],
+            'juz' => 30,
+            'judul' => 'Tanpa Siswa',
+            'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ',
+        ])->assertSessionHasErrors('siswa_ids');
+
+        $this->assertDatabaseMissing('tasmi_videos', ['judul' => 'Tanpa Siswa']);
+    }
+
+    public function test_update_mengganti_daftar_siswa_via_sync(): void
+    {
+        $siswaB = $this->buatSiswa('2526002', 'Siswa B');
+
+        $this->actingAs($this->admin)->put(route('admin.tasmi.update', $this->video), [
+            'siswa_ids' => [$siswaB->id],
+            'juz' => 30,
+            'judul' => "Tasmi' Juz 30",
+            'youtube_url' => 'https://youtu.be/dQw4w9WgXcQ',
+        ])->assertRedirect(route('admin.tasmi.index'));
+
+        $this->assertEqualsCanonicalizing(
+            [$siswaB->id],
+            $this->video->fresh()->siswas->pluck('id')->all()
+        );
+    }
+
+    public function test_admin_index_menampilkan_rekap_per_juz_dan_jumlah_siswa(): void
+    {
+        $siswaB = $this->buatSiswa('2526002', 'Siswa B');
+
+        $video2 = TasmiVideo::create([
+            'juz' => 30,
+            'judul' => "Tasmi' Bareng", 'youtube_url' => 'https://youtu.be/abc123XYZ89',
+            'youtube_id' => 'abc123XYZ89', 'diupload_oleh' => $this->admin->id,
+        ]);
+        $video2->siswas()->attach([$this->siswa->id, $siswaB->id]);
+
+        $this->actingAs($this->admin)->get(route('admin.tasmi.index'))
+            ->assertOk()
+            ->assertSee('Rekap Tasmi')
+            ->assertSee('2 siswa')
+            ->assertSee('Siswa A')
+            ->assertSee('Siswa B');
+    }
+
+    private function buatSiswa(string $nis, string $nama): Siswa
+    {
+        return Siswa::create([
+            'nis' => $nis, 'nama' => $nama, 'no_hp' => '081'.substr($nis, -8),
+            'password' => bcrypt('password'), 'jenis_kelamin' => 'L',
+            'kelas_reguler_id' => KelasReguler::first()->id,
+            'kelas_tartil_id' => $this->siswa->kelas_tartil_id,
+            'tanggal_masuk' => now()->subMonths(3)->toDateString(), 'status' => 'aktif',
+        ]);
     }
 }

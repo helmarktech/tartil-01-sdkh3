@@ -16,7 +16,7 @@
         <div style="padding: 16px 20px;">
             <h1 style="font-size: 18px; font-weight: 700; margin: 0 0 6px; color: var(--text-primary);">{{ $tasmi->judul }}</h1>
             <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">
-                <strong>{{ $tasmi->siswa->nama }}</strong> ({{ $tasmi->siswa->nis }}) · Juz {{ $tasmi->juz }}
+                <strong>{{ $tasmi->nama_siswa_list }}</strong> · Juz {{ $tasmi->juz }} · {{ $tasmi->siswas->count() }} siswa
                 {{ $tasmi->tanggal_tasmi ? ' · Tasmi\' '.$tasmi->tanggal_tasmi->format('d F Y') : '' }}
                 · 👁 Ditonton {{ $tasmi->jumlah_ditonton }} kali
             </div>

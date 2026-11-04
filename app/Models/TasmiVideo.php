@@ -10,7 +10,7 @@ class TasmiVideo extends Model
     use Auditable;
 
     protected $fillable = [
-        'siswa_id', 'juz', 'judul', 'youtube_url', 'youtube_id',
+        'juz', 'judul', 'youtube_url', 'youtube_id',
         'deskripsi', 'tanggal_tasmi', 'diupload_oleh',
     ];
 
@@ -18,9 +18,33 @@ class TasmiVideo extends Model
         'tanggal_tasmi' => 'date',
     ];
 
-    public function siswa()
+    /**
+     * Siswa-siswa yang tampil dalam satu video tasmi' (bisa lebih dari satu).
+     */
+    public function siswas()
     {
-        return $this->belongsTo(Siswa::class);
+        return $this->belongsToMany(Siswa::class, 'tasmi_video_siswa')->withTimestamps();
+    }
+
+    /**
+     * Nama seluruh siswa dalam video, digabung koma (urut nama).
+     */
+    public function getNamaSiswaListAttribute(): string
+    {
+        return $this->siswas->sortBy('nama', SORT_NATURAL | SORT_FLAG_CASE)->pluck('nama')->implode(', ');
+    }
+
+    /**
+     * Ringkas nama siswa untuk notifikasi/share: maks $maks nama + "& n lainnya".
+     */
+    public function ringkasNamaSiswa(int $maks = 3): string
+    {
+        $daftar = $this->siswas->sortBy('nama', SORT_NATURAL | SORT_FLAG_CASE)->pluck('nama');
+        if ($daftar->count() <= $maks) {
+            return $daftar->implode(', ');
+        }
+
+        return $daftar->take($maks)->implode(', ').' & '.($daftar->count() - $maks).' lainnya';
     }
 
     public function likes()
