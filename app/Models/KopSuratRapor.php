@@ -10,7 +10,7 @@ class KopSuratRapor extends Model
     protected $table = 'kop_surat_rapors';
     protected $fillable = [
         'semester_id', 'is_default',
-        'logo_path', 'stempel_path', 'ttd_path',
+        'logo_path', 'logo_kanan_path', 'stempel_path', 'ttd_path',
         'judul', 'sub_judul', 'nama_sekolah',
         'alamat', 'telepon', 'email', 'website',
         'tahun_ajaran', 'tanggal_cetak', 'catatan_kaki',
@@ -183,6 +183,14 @@ class KopSuratRapor extends Model
             $snapshot->logo_path = $newLogoPath;
         }
 
+        // Copy logo kanan
+        if ($default->logo_kanan_path && $disk->exists($default->logo_kanan_path)) {
+            $ext = pathinfo($default->logo_kanan_path, PATHINFO_EXTENSION);
+            $newLogoKananPath = 'kop-surat/semester_' . $semesterId . '_logo_kanan_' . $timestamp . '.' . $ext;
+            $disk->copy($default->logo_kanan_path, $newLogoKananPath);
+            $snapshot->logo_kanan_path = $newLogoKananPath;
+        }
+
         // Copy stempel
         if ($default->stempel_path && $disk->exists($default->stempel_path)) {
             $ext = pathinfo($default->stempel_path, PATHINFO_EXTENSION);
@@ -223,6 +231,7 @@ class KopSuratRapor extends Model
         $instance->kepala_sekolah = null;
         $instance->nip_kepala_sekolah = null;
         $instance->logo_path = null;
+        $instance->logo_kanan_path = null;
         $instance->stempel_path = null;
         $instance->ttd_path = null;
         $instance->semester_id = null;
@@ -237,6 +246,11 @@ class KopSuratRapor extends Model
     public function getLogoUrlAttribute(): string
     {
         return $this->logo_path ? asset('storage/' . $this->logo_path) : '';
+    }
+
+    public function getLogoKananUrlAttribute(): string
+    {
+        return $this->logo_kanan_path ? asset('storage/' . $this->logo_kanan_path) : '';
     }
 
     public function getStempelUrlAttribute(): string
@@ -257,6 +271,16 @@ class KopSuratRapor extends Model
         if (file_exists($storagePath)) return $storagePath;
         // Fallback: public_path (perlu symlink storage)
         $publicPath = public_path('storage/' . $this->logo_path);
+        if (file_exists($publicPath)) return $publicPath;
+        return '';
+    }
+
+    public function getLogoKananFullPathAttribute(): string
+    {
+        if (!$this->logo_kanan_path) return '';
+        $storagePath = storage_path('app/public/' . $this->logo_kanan_path);
+        if (file_exists($storagePath)) return $storagePath;
+        $publicPath = public_path('storage/' . $this->logo_kanan_path);
         if (file_exists($publicPath)) return $publicPath;
         return '';
     }
@@ -296,6 +320,17 @@ class KopSuratRapor extends Model
         } catch (\Throwable $e) { return ''; }
     }
 
+    public function getLogoKananBase64Attribute(): string
+    {
+        $path = $this->logo_kanan_full_path;
+        if (!$path || !file_exists($path)) return '';
+        try {
+            $ext = pathinfo($this->logo_kanan_path, PATHINFO_EXTENSION);
+            $mime = in_array(strtolower($ext), ['png']) ? 'png' : 'jpeg';
+            return 'data:image/' . $mime . ';base64,' . base64_encode(file_get_contents($path));
+        } catch (\Throwable $e) { return ''; }
+    }
+
     public function getStempelBase64Attribute(): string
     {
         $path = $this->stempel_full_path;
@@ -326,6 +361,13 @@ class KopSuratRapor extends Model
     {
         if (!$this->logo_path) return '';
         $path = storage_path('app/public/' . $this->logo_path);
+        return file_exists($path) ? $path : '';
+    }
+
+    public function getLogoKananDompdfAttribute(): string
+    {
+        if (!$this->logo_kanan_path) return '';
+        $path = storage_path('app/public/' . $this->logo_kanan_path);
         return file_exists($path) ? $path : '';
     }
 

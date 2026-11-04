@@ -46,13 +46,13 @@
                 @csrf
 
                 <div style="display: grid; gap: 16px;">
-                    {{-- Logo --}}
+                    {{-- Logo Kiri --}}
                     <div>
-                        <label class="form-label">Logo Sekolah</label>
+                        <label class="form-label">Logo Kiri</label>
                         @if($kop->logo_path)
                         <div style="margin-bottom: 8px;">
                             @if($kop->logo_base64)
-                            <img src="{{ $kop->logo_base64 }}" alt="Logo" style="max-height: 80px; max-width: 150px; border: 1px solid var(--border); border-radius: 8px; padding: 4px; background: #fff;">
+                            <img src="{{ $kop->logo_base64 }}" alt="Logo Kiri" style="max-height: 80px; max-width: 150px; border: 1px solid var(--border); border-radius: 8px; padding: 4px; background: #fff;">
                             @else
                             <div style="padding: 8px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 11px; color: #991b1b;">
                                 <strong>File tidak ditemukan.</strong> Path: <code>{{ $kop->logo_full_path }}</code>
@@ -61,7 +61,25 @@
                         </div>
                         @endif
                         <input type="file" name="logo" class="form-input" accept="image/png,image/jpg,image/jpeg" style="width: 100%;">
-                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Format: PNG, JPG, JPEG. Maksimal 2MB. Kosongkan jika tidak ingin mengganti.</p>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Logo di sisi kiri kop surat. Format: PNG, JPG, JPEG. Maksimal 2MB. Kosongkan jika tidak ingin mengganti.</p>
+                    </div>
+
+                    {{-- Logo Kanan --}}
+                    <div>
+                        <label class="form-label">Logo Kanan</label>
+                        @if($kop->logo_kanan_path)
+                        <div style="margin-bottom: 8px;">
+                            @if($kop->logo_kanan_base64)
+                            <img src="{{ $kop->logo_kanan_base64 }}" alt="Logo Kanan" style="max-height: 80px; max-width: 150px; border: 1px solid var(--border); border-radius: 8px; padding: 4px; background: #fff;">
+                            @else
+                            <div style="padding: 8px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 11px; color: #991b1b;">
+                                <strong>File tidak ditemukan.</strong> Path: <code>{{ $kop->logo_kanan_full_path }}</code>
+                            </div>
+                            @endif
+                        </div>
+                        @endif
+                        <input type="file" name="logo_kanan" class="form-input" accept="image/png,image/jpg,image/jpeg" style="width: 100%;">
+                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Logo di sisi kanan kop surat (opsional). Format: PNG, JPG, JPEG. Maksimal 2MB. Kosongkan jika tidak ingin mengganti.</p>
                     </div>
 
                     {{-- Stempel --}}
@@ -213,6 +231,13 @@
                         </div>
                         @endif
                     </div>
+                    @if($kop->logo_kanan_base64)
+                    <img src="{{ $kop->logo_kanan_base64 }}" alt="Logo Kanan" style="height: 70px; width: auto; max-width: 80px; object-fit: contain;">
+                    @elseif($kop->logo_kanan_path)
+                    <div style="height: 70px; width: 80px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #991b1b; font-size: 10px; text-align: center; padding: 4px;">File<br>tidak ada</div>
+                    @else
+                    <div style="width: 70px; height: 70px; background: var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 11px; text-align: center;">No<br>Logo</div>
+                    @endif
                 </div>
 
                 {{-- Info Preview --}}

@@ -36,13 +36,12 @@
         .summary-box { background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
         
         .nilai-grid { display: inline-block; width: 100%; }
-        .nilai-item { float: left; width: 25%; text-align: center; padding: 10px; box-sizing: border-box; }
+        .nilai-item { float: left; width: 33.33%; text-align: center; padding: 10px; box-sizing: border-box; }
         .nilai-value { font-size: 28px; font-weight: bold; }
         .nilai-label { font-size: 11px; color: #888; margin-top: 5px; }
         .nilai-item:nth-child(1) .nilai-value { color: #166534; }
         .nilai-item:nth-child(2) .nilai-value { color: #854d0e; }
-        .nilai-item:nth-child(3) .nilai-value { color: #991b1b; }
-        .nilai-item:nth-child(4) .nilai-value { color: #1c1917; }
+        .nilai-item:nth-child(3) .nilai-value { color: #1c1917; }
         .clear { clear: both; }
         
         .predikat { font-size: 16px; font-weight: bold; text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; margin-top: 10px; }
@@ -85,6 +84,11 @@
                 </div>
                 @endif
             </td>
+            @if($kop->logo_kanan_base64)
+            <td class="kop-logo" style="padding-right: 0; padding-left: 15px;">
+                <img src="{{ $kop->logo_kanan_base64 }}" alt="Logo Kanan">
+            </td>
+            @endif
         </tr>
     </table>
     @endif
@@ -121,10 +125,6 @@
     <div class="section-title">Ringkasan Penilaian</div>
     <div class="nilai-grid">
         <div class="nilai-item">
-            <div class="nilai-value">{{ $rapor['r2_harian'] }}</div>
-            <div class="nilai-label">Rekap Mengaji Harian (B/C/K)</div>
-        </div>
-        <div class="nilai-item">
             <div class="nilai-value">{{ $rapor['r2_penilaian'] }}</div>
             <div class="nilai-label">R2 Penilaian</div>
         </div>
@@ -138,16 +138,15 @@
         </div>
         <div class="clear"></div>
     </div>
-    <p style="font-size:10px; color:#888; text-align:center; margin-top:5px;">Catatan: Rekap Mengaji Harian hanya informasi kegiatan mengaji dan tidak masuk nilai rapor.</p>
 
     <div class="predikat">Predikat: {{ $rapor['predikat'] }}</div>
 
     {{-- Keputusan --}}
     <div class="keputusan">
         @if($rapor['r2_akhir'] >= 80)
-        Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>berhak melanjutkan pembelajaran pada jilid selanjutnya</strong>.
+        Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>berhak melanjutkan pembelajaran pada jenjang pembelajaran tartil berikutnya untuk peningkatan pembelajaran siswa</strong>.
         @else
-        Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>tetap melanjutkan pembelajaran pada jilid yang sama untuk pemantapan</strong>.
+        Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>tetap melanjutkan pembelajaran pada jenjang pembelajaran tartil yang sama untuk pemantapan</strong>.
         @endif
     </div>
 

@@ -42,7 +42,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 
 /* R2 */
 .r2-table { width: 100%; border-collapse: collapse; margin: 4px 0 6px; }
-.r2-table td { width: 33.33%; text-align: center; padding: 5px 3px; border: 1px solid #ddd; }
+.r2-table td { width: 50%; text-align: center; padding: 5px 3px; border: 1px solid #ddd; }
 .r2-label { font-size: 6px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
 .r2-value { font-size: 14px; font-weight: 700; }
 .r2-desc { font-size: 6px; color: #999; }
@@ -93,6 +93,13 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
             <div class="kop-school">{{ $kop->nama_sekolah }}</div>
             @if($kop->alamat || $kop->telepon)
             <div class="kop-meta">{{ $kop->alamat }}{{ $kop->alamat && $kop->telepon ? ' | Telp: ' : '' }}{{ $kop->telepon }}</div>
+            @endif
+        </td>
+        <td style="width: 50px; text-align: right;">
+            @if($kop->logo_kanan_dompdf)
+            <img src="{{ $kop->logo_kanan_dompdf }}" class="kop-logo">
+            @elseif($kop->logo_kanan_base64)
+            <img src="{{ $kop->logo_kanan_base64 }}" class="kop-logo">
             @endif
         </td>
     </tr>
@@ -171,11 +178,6 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 <div class="section-title">B. Rekapitulasi Nilai (R2)</div>
 <table class="r2-table">
     <tr>
-        <td style="background:#e3f2fd">
-            <div class="r2-label">Rekap Mengaji Harian (B/C/K)</div>
-            <div class="r2-value" style="color:#1565c0">{{ $rekap['r2_harian'] }}</div>
-            <div class="r2-desc">Info kegiatan mengaji, tidak masuk nilai rapor</div>
-        </td>
         <td style="background:#e8f5e9">
             <div class="r2-label">R2 Penilaian</div>
             <div class="r2-value" style="color:#2e7d32">{{ $rekap['r2_penilaian'] }}</div>
@@ -204,9 +206,9 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 {{-- Keputusan --}}
 <div class="keputusan">
     @if($rekap['r2_akhir'] >= 80)
-    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan&nbsp;<strong>berhak melanjutkan pembelajaran pada jilid selanjutnya</strong>.
+    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan&nbsp;<strong>berhak melanjutkan pembelajaran pada jenjang pembelajaran tartil berikutnya untuk peningkatan pembelajaran siswa</strong>.
     @else
-    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan&nbsp;<strong>tetap melanjutkan pembelajaran pada jilid yang sama untuk pemantapan</strong>.
+    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan&nbsp;<strong>tetap melanjutkan pembelajaran pada jenjang pembelajaran tartil yang sama untuk pemantapan</strong>.
     @endif
 </div>
 

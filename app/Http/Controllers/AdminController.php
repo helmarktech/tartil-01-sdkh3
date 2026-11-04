@@ -1680,16 +1680,25 @@ class AdminController extends Controller
             'kepala_sekolah' => 'nullable|max:100',
             'nip_kepala_sekolah' => 'nullable|max:50',
             'logo' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
+            'logo_kanan' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
             'stempel' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
             'ttd' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
         ]);
 
-        // Upload logo baru
+        // Upload logo kiri baru
         if ($request->hasFile('logo')) {
             if ($kop->logo_path) {
                 Storage::disk('public')->delete($kop->logo_path);
             }
             $validated['logo_path'] = $request->file('logo')->store('kop-surat', 'public');
+        }
+
+        // Upload logo kanan baru
+        if ($request->hasFile('logo_kanan')) {
+            if ($kop->logo_kanan_path) {
+                Storage::disk('public')->delete($kop->logo_kanan_path);
+            }
+            $validated['logo_kanan_path'] = $request->file('logo_kanan')->store('kop-surat', 'public');
         }
 
         // Upload stempel baru
@@ -1709,7 +1718,7 @@ class AdminController extends Controller
         }
 
         // Hapus key file upload dari array (bukan column di DB)
-        unset($validated['logo'], $validated['stempel'], $validated['ttd']);
+        unset($validated['logo'], $validated['logo_kanan'], $validated['stempel'], $validated['ttd']);
 
         // Debug: Log sebelum update
         $idBefore = $kop->id;
