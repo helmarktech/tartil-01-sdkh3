@@ -223,7 +223,7 @@ Test suite saat ini mencakup:
 | `php artisan r2:precalculate --semester_id=1 --kelas_id=2` | Hitung untuk semester/kelas tertentu |
 | `php artisan r2:sync-semester {semester_id?}` | Hitung rekap R2 untuk semester yang sudah ditutup |
 | `php artisan r2:recalc-rapor-murni {--semester_id=} {--force}` | Hitung ulang `r2_akhir = r2_penilaian` pada snapshot semester ditutup (migrasi ke aturan nilai rapor murni penilaian internal) |
-| `php artisan ta:fix-2026-2027 [--apply]` | Perbaikan one-off TA yang salah label: dry-run inspeksi secara default, `--apply` me-rename TA aktif menjadi 2026/2027, semester aktif menjadi Ganjil (1 Jul–31 Des 2026), dan membuat Genap nonaktif (1 Jan–30 Jun 2027). Juga di-whitelist di System Setup |
+| `php artisan ta:fix-2026-2027 [--apply]` | Perbaikan one-off TA 2026/2027: dry-run inspeksi secara default, `--apply` menerapkan. Dua skenario: (a) rename TA aktif yang salah label menjadi 2026/2027 + semester aktif jadi Ganjil, atau (b) koreksi periode TA 2026/2027 yang sudah ada (Ganjil 1 Jul–31 Des 2026 aktif, Genap 1 Jan–30 Jun 2027 nonaktif). Di-whitelist di System Setup |
 | `php artisan semester:retroactive-lock {semester_id} \| --all` | Kunci/snapshot data semester lama secara retroaktif |
 | `php artisan jurnal:sync-surat` | Sinkronisasi surat/ayat/materi dari `jurnal_kelas` ke `jurnal_harians` |
 | `php artisan jurnal:fix-pertemuan-ke` | Utilitas perbaikan kolom `pertemuan_ke` di `jurnal_kelas` |
