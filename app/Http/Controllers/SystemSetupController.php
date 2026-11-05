@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Jobs\HitungR2Job;
 use App\Services\AutoSetupService;
 use App\Services\PrecalculateReminderService;
-use App\Jobs\HitungR2Job;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class SystemSetupController extends Controller
 {
@@ -27,7 +30,7 @@ class SystemSetupController extends Controller
     {
         try {
             $results = AutoSetupService::runAllSetup();
-            $allSuccess = collect($results)->every(fn($r) => $r['status'] === 'success');
+            $allSuccess = collect($results)->every(fn ($r) => $r['status'] === 'success');
 
             $message = $allSuccess
                 ? 'Setup sistem berhasil diselesaikan!'
@@ -38,7 +41,7 @@ class SystemSetupController extends Controller
                 ->with('setup_results', $results);
         } catch (\Throwable $e) {
             return redirect()->route('admin.system.setup')
-                ->with('error', 'Setup gagal: ' . $e->getMessage());
+                ->with('error', 'Setup gagal: '.$e->getMessage());
         }
     }
 
@@ -62,13 +65,15 @@ class SystemSetupController extends Controller
                 HitungR2Job::dispatch($semesterId, $kelasId);
 
                 $redirectUrl = $request->headers->get('referer', route('admin.system.setup'));
+
                 return redirect($redirectUrl)
                     ->with('success', 'Perhitungan R2 sedang diproses. Data akan tersedia dalam 1-2 menit.');
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 // Tabel jobs belum ada → fallback ke sync
                 if (str_contains($e->getMessage(), "jobs' doesn't exist")) {
                     return $this->runPrecalculateSync($semesterId, $kelasId, $request);
                 }
+
                 return $this->handlePrecalculateError($e, $request);
             } catch (\Throwable $e) {
                 return $this->handlePrecalculateError($e, $request);
@@ -84,13 +89,18 @@ class SystemSetupController extends Controller
     private function runPrecalculateSync(?int $semesterId, ?int $kelasId, Request $request)
     {
         $options = [];
-        if ($semesterId) $options['--semester_id'] = $semesterId;
-        if ($kelasId) $options['--kelas_id'] = $kelasId;
+        if ($semesterId) {
+            $options['--semester_id'] = $semesterId;
+        }
+        if ($kelasId) {
+            $options['--kelas_id'] = $kelasId;
+        }
 
         try {
             $result = AutoSetupService::runArtisan('r2:precalculate', $options);
 
             $redirectUrl = $request->headers->get('referer', route('admin.system.setup'));
+
             return redirect($redirectUrl)
                 ->with($result['status'] === 'success' ? 'success' : 'error', $result['output']);
         } catch (\Throwable $e) {
@@ -104,8 +114,9 @@ class SystemSetupController extends Controller
     private function handlePrecalculateError(\Throwable $e, Request $request)
     {
         $redirectUrl = $request->headers->get('referer', route('admin.system.setup'));
+
         return redirect($redirectUrl)
-            ->with('warning', 'Precalculate dicatat, tapi terjadi error saat proses: ' . $e->getMessage() . '. Popup tidak akan ganggu lagi. Cek halaman Setup Sistem untuk detail.');
+            ->with('warning', 'Precalculate dicatat, tapi terjadi error saat proses: '.$e->getMessage().'. Popup tidak akan ganggu lagi. Cek halaman Setup Sistem untuk detail.');
     }
 
     /**
@@ -114,7 +125,7 @@ class SystemSetupController extends Controller
     public function resetR2Cache()
     {
         $result = AutoSetupService::resetR2Cache();
-        
+
         return redirect()->route('admin.system.setup')
             ->with(str_contains($result, 'Error') ? 'error' : 'success', $result);
     }
@@ -146,11 +157,12 @@ class SystemSetupController extends Controller
             'queue:restart',
             'schedule:run',
             'r2:precalculate',
+            'ta:fix-2026-2027',
         ];
 
         // Security: hanya allow command tertentu
         $baseCommand = explode(' ', $command)[0];
-        if (!in_array($baseCommand, $allowedCommands)) {
+        if (! in_array($baseCommand, $allowedCommands)) {
             return redirect()->route('admin.system.setup')
                 ->with('error', "Command '{$baseCommand}' tidak diizinkan.");
         }
@@ -172,6 +184,7 @@ class SystemSetupController extends Controller
     public function checkStatus()
     {
         $status = AutoSetupService::getSystemStatus();
+
         return response()->json($status);
     }
 
@@ -181,7 +194,7 @@ class SystemSetupController extends Controller
     public function clearAllCache()
     {
         $results = [];
-        
+
         $commands = [
             'cache:clear' => 'Application cache',
             'config:clear' => 'Config cache',
@@ -194,7 +207,7 @@ class SystemSetupController extends Controller
             $results[] = ['label' => $label, 'status' => $result['status']];
         }
 
-        $allSuccess = collect($results)->every(fn($r) => $r['status'] === 'success');
+        $allSuccess = collect($results)->every(fn ($r) => $r['status'] === 'success');
 
         return redirect()->route('admin.system.setup')
             ->with($allSuccess ? 'success' : 'warning', 'Semua cache berhasil di-clear.');
@@ -225,6 +238,7 @@ class SystemSetupController extends Controller
         PrecalculateReminderService::dismissForSession();
 
         $redirectUrl = $request->headers->get('referer', route('admin.dashboard'));
+
         return redirect($redirectUrl);
     }
 
@@ -240,19 +254,19 @@ class SystemSetupController extends Controller
             'subject' => config('webpush.vapid.subject') ?? env('VAPID_SUBJECT'),
         ];
 
-        $subscriptions = \Illuminate\Support\Facades\DB::table('push_subscriptions')
+        $subscriptions = DB::table('push_subscriptions')
             ->orderBy('created_at', 'desc')
             ->get(['id', 'subscribable_type', 'subscribable_id', 'endpoint', 'created_at', 'updated_at'])
             ->map(fn ($s) => [
                 'id' => $s->id,
                 'siswa_id' => $s->subscribable_id,
                 'tipe' => class_basename($s->subscribable_type),
-                'endpoint' => \Illuminate\Support\Str::limit($s->endpoint, 70),
+                'endpoint' => Str::limit($s->endpoint, 70),
                 'created_at' => $s->created_at,
                 'updated_at' => $s->updated_at,
             ]);
 
-        $notifikasiTerakhir = \Illuminate\Support\Facades\DB::table('notifications')
+        $notifikasiTerakhir = DB::table('notifications')
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get(['id', 'notifiable_id', 'data', 'read_at', 'created_at'])
