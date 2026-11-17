@@ -12,8 +12,9 @@ class UjianMunaqosyah extends Model
     protected $fillable = [
         'nama', 'tingkat', 'tanggal_ujian', 'semester_id',
         'status', 'status_pendaftaran',
-        'diajukan_oleh', 'approved_by', 'approved_at', 'catatan'
+        'diajukan_oleh', 'approved_by', 'approved_at', 'catatan',
     ];
+
     protected $casts = [
         'tanggal_ujian' => 'date',
         'approved_at' => 'datetime',
@@ -21,7 +22,23 @@ class UjianMunaqosyah extends Model
 
     // ─── STATUS PENDAFTARAN ───
     public const PENDAFTARAN_BUKA = 'buka';
+
     public const PENDAFTARAN_TUTUP = 'tutup';
+
+    public const STATUS_DIBATALKAN = 'dibatalkan';
+
+    public function isDibatalkan(): bool
+    {
+        return $this->status === self::STATUS_DIBATALKAN;
+    }
+
+    /**
+     * Ujian yang sudah selesai atau dibatalkan bersifat final — tidak bisa diedit/dibatalkan lagi.
+     */
+    public function bisaDikelola(): bool
+    {
+        return ! in_array($this->status, ['selesai', self::STATUS_DIBATALKAN], true);
+    }
 
     public function isPendaftaranBuka(): bool
     {
@@ -101,7 +118,10 @@ class UjianMunaqosyah extends Model
     public function persentaseKelulusan(): float
     {
         $total = $this->pendaftarans()->count();
-        if ($total == 0) return 0;
+        if ($total == 0) {
+            return 0;
+        }
+
         return round(($this->jumlahLulus() / $total) * 100, 2);
     }
 }

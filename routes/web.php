@@ -223,6 +223,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // ===== UJIAN MUNAQOSYAH =====
     Route::get('/munaqosyah', [MunaqosyahController::class, 'adminIndex'])->name('munaqosyah.index');
     Route::post('/munaqosyah', [MunaqosyahController::class, 'adminStore'])->name('munaqosyah.store');
+    Route::put('/munaqosyah/{munaqosyah}', [MunaqosyahController::class, 'adminUpdate'])->name('munaqosyah.update');
+    Route::post('/munaqosyah/{munaqosyah}/batal', [MunaqosyahController::class, 'adminBatal'])->name('munaqosyah.batal');
     Route::get('/munaqosyah/daftar', [MunaqosyahController::class, 'adminDaftar'])->name('munaqosyah.daftar');
     Route::post('/munaqosyah/daftar', [MunaqosyahController::class, 'adminDaftarSimpan'])->name('munaqosyah.daftar.simpan');
     Route::get('/munaqosyah/{munaqosyah}', [MunaqosyahController::class, 'adminDetail'])->name('munaqosyah.detail');

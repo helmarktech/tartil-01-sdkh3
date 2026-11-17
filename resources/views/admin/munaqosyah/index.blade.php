@@ -50,6 +50,49 @@
         </form>
     </div>
 
+    {{-- Form Edit Ujian --}}
+    <div id="formEditUjian" class="card-tartil" style="display: none; margin-bottom: 20px; padding: 24px;">
+        <h3 style="font-size: 16px; margin-bottom: 20px; color: var(--text-primary); font-weight: 600;">Edit Ujian</h3>
+        <form id="formEdit" method="POST" action="">
+            @csrf
+            @method('PUT')
+            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: block; margin-bottom: 6px; font-size: 13px;">Nama Ujian <span style="color:#c62828">*</span></label>
+                    <input type="text" name="nama" class="form-input" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: block; margin-bottom: 6px; font-size: 13px;">Tingkat <span style="color:#c62828">*</span></label>
+                    <select name="tingkat" class="form-input" required>
+                        <option value="unit">Unit</option>
+                        <option value="yayasan">Yayasan</option>
+                        <option value="pesantren">Pesantren</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: block; margin-bottom: 6px; font-size: 13px;">Tanggal Ujian <span style="color:#c62828">*</span></label>
+                    <input type="date" name="tanggal_ujian" class="form-input" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: block; margin-bottom: 6px; font-size: 13px;">Semester <span style="color:#c62828">*</span></label>
+                    <select name="semester_id" class="form-input" required>
+                        @foreach($semesterList as $sem)
+                        <option value="{{ $sem->id }}">{{ $sem->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 16px; margin-bottom: 0;">
+                <label class="form-label" style="display: block; margin-bottom: 6px; font-size: 13px;">Catatan</label>
+                <textarea name="catatan" class="form-input" rows="2" placeholder="Opsional"></textarea>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 20px;">
+                <button type="submit" class="btn-tartil">Simpan Perubahan</button>
+                <button type="button" onclick="document.getElementById('formEditUjian').style.display='none'" class="btn-tartil-outline">Batal</button>
+            </div>
+        </form>
+    </div>
+
     {{-- List Ujian --}}
     <div class="card-tartil table-responsive">
         <table class="table-tartil">
@@ -82,6 +125,8 @@
                             <span class="badge-info">Berlangsung</span>
                         @elseif($u->status == 'selesai')
                             <span class="badge-success">Selesai</span>
+                        @elseif($u->status == 'dibatalkan')
+                            <span class="badge-error">Dibatalkan</span>
                         @else
                             <span class="badge-error">Ditolak</span>
                         @endif
@@ -97,17 +142,30 @@
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                             <a href="{{ route('admin.munaqosyah.detail', $u->id) }}" class="btn-tartil-outline" style="padding: 6px 12px; font-size: 12px;">Detail</a>
 
+                            @if($u->bisaDikelola())
+                            <button type="button" class="btn-tartil-outline" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;"
+                                data-id="{{ $u->id }}"
+                                data-nama="{{ $u->nama }}"
+                                data-tingkat="{{ $u->tingkat }}"
+                                data-tanggal="{{ $u->tanggal_ujian ? $u->tanggal_ujian->format('Y-m-d') : '' }}"
+                                data-semester="{{ $u->semester_id }}"
+                                data-catatan="{{ $u->catatan }}"
+                                onclick="isiFormEdit(this)">Edit</button>
+                            @endif
+
                             {{-- Buka / Tutup Pendaftaran --}}
-                            @if($u->status_pendaftaran === 'tutup')
-                                <form method="POST" action="{{ route('admin.munaqosyah.buka-pendaftaran', $u->id) }}" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="btn-tartil-success" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="return confirm('Buka pendaftaran ujian ini? Siswa akan bisa mendaftar.')">&#128308; Buka</button>
-                                </form>
-                            @else
-                                <form method="POST" action="{{ route('admin.munaqosyah.tutup-pendaftaran', $u->id) }}" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="btn-tartil-warning" style="padding: 6px 12px; font-size: 12px; white-space: nowrap; background: #fff3cd; color: #856404; border: 1px solid #ffc107;" onclick="return confirm('Tutup pendaftaran ujian ini? Data akan di-rekap dan siswa tidak bisa mendaftar lagi.')">&#128308; Tutup</button>
-                                </form>
+                            @if(! $u->isDibatalkan())
+                                @if($u->status_pendaftaran === 'tutup')
+                                    <form method="POST" action="{{ route('admin.munaqosyah.buka-pendaftaran', $u->id) }}" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn-tartil-success" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="return confirm('Buka pendaftaran ujian ini? Siswa akan bisa mendaftar.')">&#128308; Buka</button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('admin.munaqosyah.tutup-pendaftaran', $u->id) }}" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn-tartil-warning" style="padding: 6px 12px; font-size: 12px; white-space: nowrap; background: #fff3cd; color: #856404; border: 1px solid #ffc107;" onclick="return confirm('Tutup pendaftaran ujian ini? Data akan di-rekap dan siswa tidak bisa mendaftar lagi.')">&#128308; Tutup</button>
+                                    </form>
+                                @endif
                             @endif
 
                             @if($u->status == 'pengajuan')
@@ -116,6 +174,10 @@
                                 <button type="submit" class="btn-tartil-success" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="return confirm('Setujui ujian ini?')">Setuju</button>
                             </form>
                             <button onclick="document.getElementById('tolak-{{ $u->id }}').style.display='block'" class="btn-tartil-danger" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;">Tolak</button>
+                            @endif
+
+                            @if($u->bisaDikelola())
+                            <button type="button" onclick="document.getElementById('batal-{{ $u->id }}').style.display='block'" class="btn-tartil-danger" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;">Batalkan</button>
                             @endif
                         </div>
                         @if($u->status == 'pengajuan')
@@ -133,6 +195,21 @@
                             </form>
                         </div>
                         @endif
+                        @if($u->bisaDikelola())
+                        <div id="batal-{{ $u->id }}" style="display: none; margin-top: 8px; padding: 12px; background: #fff3e0; border-radius: 8px;">
+                            <form method="POST" action="{{ route('admin.munaqosyah.batal', $u->id) }}" onsubmit="return confirm('Batalkan ujian ini? Status menjadi Dibatalkan, hilang dari daftar aktif, dan tidak muncul di riwayat siswa. Data pendaftar tetap tersimpan.')">
+                                @csrf
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label class="form-label" style="font-size: 12px;">Alasan Pembatalan (opsional)</label>
+                                    <textarea name="catatan" class="form-input" rows="2"></textarea>
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                    <button type="submit" class="btn-tartil-danger" style="padding: 6px 12px; font-size: 12px;">Ya, Batalkan</button>
+                                    <button type="button" onclick="document.getElementById('batal-{{ $u->id }}').style.display='none'" class="btn-tartil-outline" style="padding: 6px 12px; font-size: 12px;">Tutup</button>
+                                </div>
+                            </form>
+                        </div>
+                        @endif
                     </td>
                 </tr>
                 @empty
@@ -143,4 +220,20 @@
     </div>
     {{ $ujians->links() }}
 </div>
+
+<script>
+function isiFormEdit(btn) {
+    const d = btn.dataset;
+    const form = document.getElementById('formEdit');
+    form.action = '{{ url('admin/munaqosyah') }}/' + d.id;
+    form.querySelector('[name="nama"]').value = d.nama;
+    form.querySelector('[name="tingkat"]').value = d.tingkat;
+    form.querySelector('[name="tanggal_ujian"]').value = d.tanggal;
+    form.querySelector('[name="semester_id"]').value = d.semester;
+    form.querySelector('[name="catatan"]').value = d.catatan || '';
+    document.getElementById('formBuatUjian').style.display = 'none';
+    document.getElementById('formEditUjian').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
 @endsection

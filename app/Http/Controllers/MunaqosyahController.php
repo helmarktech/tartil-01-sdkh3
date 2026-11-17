@@ -25,8 +25,9 @@ class MunaqosyahController extends Controller
             ->withCount('pendaftarans')
             ->orderBy('created_at', 'desc')->paginate(20);
         $semester = Semester::aktif()->first();
+        $semesterList = Semester::orderBy('tanggal_mulai', 'desc')->get();
 
-        return view('admin.munaqosyah.index', compact('ujians', 'semester'));
+        return view('admin.munaqosyah.index', compact('ujians', 'semester', 'semesterList'));
     }
 
     // ==================== ADMIN: DAFTAR SISWA (3-STEP) ====================
@@ -267,6 +268,50 @@ class MunaqosyahController extends Controller
 
         return redirect()->route('admin.munaqosyah.index')
             ->with('success', "Ujian '{$ujian->nama}' berhasil dibuat dan disetujui. Silakan daftarkan siswa melalui menu Daftar Siswa.");
+    }
+
+    // ==================== ADMIN: EDIT DETAIL UJIAN ====================
+    public function adminUpdate(Request $request, UjianMunaqosyah $munaqosyah)
+    {
+        if (! $munaqosyah->bisaDikelola()) {
+            return back()->with('error', "Ujian '{$munaqosyah->nama}' berstatus '{$munaqosyah->status}' sehingga tidak dapat diubah.");
+        }
+
+        $validated = $request->validate([
+            'nama' => 'required|max:100',
+            'tingkat' => 'required|in:unit,yayasan,pesantren',
+            'tanggal_ujian' => 'required|date',
+            'semester_id' => 'required|exists:semesters,id',
+            'catatan' => 'nullable|max:500',
+        ]);
+
+        $munaqosyah->update($validated);
+
+        return redirect()->route('admin.munaqosyah.index')
+            ->with('success', "Ujian '{$munaqosyah->nama}' berhasil diperbarui.");
+    }
+
+    // ==================== ADMIN: BATALKAN UJIAN ====================
+    public function adminBatal(Request $request, UjianMunaqosyah $munaqosyah)
+    {
+        if ($munaqosyah->isDibatalkan()) {
+            return back()->with('error', "Ujian '{$munaqosyah->nama}' sudah dibatalkan sebelumnya.");
+        }
+        if ($munaqosyah->status === 'selesai') {
+            return back()->with('error', "Ujian '{$munaqosyah->nama}' sudah selesai dan tidak dapat dibatalkan.");
+        }
+
+        $request->validate(['catatan' => 'nullable|max:500']);
+
+        $munaqosyah->update([
+            'status' => UjianMunaqosyah::STATUS_DIBATALKAN,
+            'catatan' => $request->filled('catatan') ? $request->catatan : $munaqosyah->catatan,
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+
+        return redirect()->route('admin.munaqosyah.index')
+            ->with('success', "Ujian '{$munaqosyah->nama}' dibatalkan. Data pendaftar tetap tersimpan sebagai histori.");
     }
 
     public function adminApprove(UjianMunaqosyah $munaqosyah)
@@ -639,17 +684,25 @@ class MunaqosyahController extends Controller
     public function siswaIndex()
     {
         $siswa = auth('siswa')->user();
+
+        // Ujian yang dibatalkan tidak ditampilkan di riwayat & statistik siswa
+        $belumBatal = fn ($query) => $query->whereHas(
+            'munaqosyah',
+            fn ($m) => $m->where('status', '!=', UjianMunaqosyah::STATUS_DIBATALKAN)
+        );
+
         $riwayat = MunaqosyahPendaftaran::with(['munaqosyah.semester'])
             ->where('siswa_id', $siswa->id)
+            ->where($belumBatal)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
         // Hitung statistik untuk siswa
         $statistik = [
-            'total_ikut' => MunaqosyahPendaftaran::where('siswa_id', $siswa->id)->count(),
-            'total_lulus' => MunaqosyahPendaftaran::where('siswa_id', $siswa->id)->where('status', MunaqosyahPendaftaran::STATUS_LULUS)->count(),
-            'total_tidak_lulus' => MunaqosyahPendaftaran::where('siswa_id', $siswa->id)->where('status', MunaqosyahPendaftaran::STATUS_TIDAK_LULUS)->count(),
-            'total_terdaftar' => MunaqosyahPendaftaran::where('siswa_id', $siswa->id)->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR)->count(),
+            'total_ikut' => MunaqosyahPendaftaran::where('siswa_id', $siswa->id)->where($belumBatal)->count(),
+            'total_lulus' => MunaqosyahPendaftaran::where('siswa_id', $siswa->id)->where($belumBatal)->where('status', MunaqosyahPendaftaran::STATUS_LULUS)->count(),
+            'total_tidak_lulus' => MunaqosyahPendaftaran::where('siswa_id', $siswa->id)->where($belumBatal)->where('status', MunaqosyahPendaftaran::STATUS_TIDAK_LULUS)->count(),
+            'total_terdaftar' => MunaqosyahPendaftaran::where('siswa_id', $siswa->id)->where($belumBatal)->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR)->count(),
         ];
         $statistik['persentase_kelulusan'] = $statistik['total_ikut'] > 0
             ? round(($statistik['total_lulus'] / $statistik['total_ikut']) * 100, 1)
