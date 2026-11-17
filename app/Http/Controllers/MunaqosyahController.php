@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\UjianMunaqosyah;
-use App\Models\MunaqosyahPendaftaran;
+use App\Models\Kelas;
 use App\Models\MunaqosyahApproval;
+use App\Models\MunaqosyahPendaftaran;
 use App\Models\Semester;
 use App\Models\Siswa;
-use App\Models\Kelas;
+use App\Models\UjianMunaqosyah;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,6 +25,7 @@ class MunaqosyahController extends Controller
             ->withCount('pendaftarans')
             ->orderBy('created_at', 'desc')->paginate(20);
         $semester = Semester::aktif()->first();
+
         return view('admin.munaqosyah.index', compact('ujians', 'semester'));
     }
 
@@ -44,7 +47,7 @@ class MunaqosyahController extends Controller
         // List kelas tartil
         $kelasTartilList = Kelas::where('status', 'aktif')
             ->with('guru')
-            ->withCount(['siswas' => fn($q) => $q->where('status', 'aktif')])
+            ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
             ->orderByRaw("FIELD(jenis, 'BQ 1', 'BQ 2', 'BQ 3', 'BQ 4', 'Tartil', 'Tahfidz')")
             ->orderBy('nama')
             ->get();
@@ -63,8 +66,9 @@ class MunaqosyahController extends Controller
                     ->with('kelasReguler')
                     ->orderBy('nama')
                     ->get()
-                    ->map(function($s) use ($sudahTerdaftar) {
+                    ->map(function ($s) use ($sudahTerdaftar) {
                         $s->sudah_terdaftar = in_array($s->id, $sudahTerdaftar);
+
                         return $s;
                     });
                 $step = 2;
@@ -101,6 +105,7 @@ class MunaqosyahController extends Controller
                 ->first();
             if ($existing) {
                 $skipped++;
+
                 continue;
             }
 
@@ -129,11 +134,11 @@ class MunaqosyahController extends Controller
     public function adminDetail(UjianMunaqosyah $munaqosyah)
     {
         $munaqosyah->loadCount([
-            'pendaftarans as total_pendaftar' => fn($q) => $q->where('status', '!=', 'pending'),
-            'pendaftarans as total_pending' => fn($q) => $q->where('status', 'pending'),
-            'pendaftarans as total_lulus' => fn($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_LULUS), // L
-            'pendaftarans as total_tidak_lulus' => fn($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_TIDAK_LULUS), // TL
-            'pendaftarans as total_menunggu' => fn($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR), // T
+            'pendaftarans as total_pendaftar' => fn ($q) => $q->where('status', '!=', 'pending'),
+            'pendaftarans as total_pending' => fn ($q) => $q->where('status', 'pending'),
+            'pendaftarans as total_lulus' => fn ($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_LULUS), // L
+            'pendaftarans as total_tidak_lulus' => fn ($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_TIDAK_LULUS), // TL
+            'pendaftarans as total_menunggu' => fn ($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR), // T
         ]);
 
         return view('admin.munaqosyah.detail', compact('munaqosyah'));
@@ -154,7 +159,7 @@ class MunaqosyahController extends Controller
 
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Peserta ' . $munaqosyah->nama);
+        $sheet->setTitle('Peserta '.$munaqosyah->nama);
 
         // Judul
         $sheet->mergeCells('A1:F1');
@@ -163,7 +168,7 @@ class MunaqosyahController extends Controller
         $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
 
         $sheet->mergeCells('A2:F2');
-        $sheet->setCellValue('A2', $munaqosyah->nama . ' - ' . ucfirst($munaqosyah->tingkat) . ' - ' . ($munaqosyah->tanggal_ujian ? date('d F Y', strtotime($munaqosyah->tanggal_ujian)) : '-'));
+        $sheet->setCellValue('A2', $munaqosyah->nama.' - '.ucfirst($munaqosyah->tingkat).' - '.($munaqosyah->tanggal_ujian ? date('d F Y', strtotime($munaqosyah->tanggal_ujian)) : '-'));
         $sheet->getStyle('A2')->getFont()->setBold(true);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
 
@@ -171,8 +176,8 @@ class MunaqosyahController extends Controller
         $headers = ['No', 'Nama Siswa', 'Jenis Kelamin (L/P)', 'NIS', 'TTL', 'Nama Ayah'];
         $col = 1;
         foreach ($headers as $header) {
-            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
-            $cellRef = $colLetter . '4';
+            $colLetter = Coordinate::stringFromColumnIndex($col);
+            $cellRef = $colLetter.'4';
             $sheet->setCellValue($cellRef, $header);
             $sheet->getStyle($cellRef)->getFont()->setBold(true);
             $sheet->getStyle($cellRef)->getAlignment()->setHorizontal('center');
@@ -182,34 +187,36 @@ class MunaqosyahController extends Controller
         }
 
         // Data
-        $bulanIndo = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        $bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         $row = 5;
         foreach ($peserta as $i => $p) {
             $s = $p->siswa;
-            if (!$s) continue;
+            if (! $s) {
+                continue;
+            }
 
             // TTL: Surabaya, 12 April 2008
             $ttl = '-';
             if ($s->tempat_lahir && $s->tanggal_lahir) {
-                $tgl = $s->tanggal_lahir instanceof \Carbon\Carbon ? $s->tanggal_lahir : \Carbon\Carbon::parse($s->tanggal_lahir);
-                $ttl = $s->tempat_lahir . ', ' . $tgl->day . ' ' . $bulanIndo[$tgl->month] . ' ' . $tgl->year;
+                $tgl = $s->tanggal_lahir instanceof Carbon ? $s->tanggal_lahir : Carbon::parse($s->tanggal_lahir);
+                $ttl = $s->tempat_lahir.', '.$tgl->day.' '.$bulanIndo[$tgl->month].' '.$tgl->year;
             } elseif ($s->tanggal_lahir) {
-                $tgl = $s->tanggal_lahir instanceof \Carbon\Carbon ? $s->tanggal_lahir : \Carbon\Carbon::parse($s->tanggal_lahir);
-                $ttl = $tgl->day . ' ' . $bulanIndo[$tgl->month] . ' ' . $tgl->year;
+                $tgl = $s->tanggal_lahir instanceof Carbon ? $s->tanggal_lahir : Carbon::parse($s->tanggal_lahir);
+                $ttl = $tgl->day.' '.$bulanIndo[$tgl->month].' '.$tgl->year;
             } elseif ($s->tempat_lahir) {
                 $ttl = $s->tempat_lahir;
             }
 
-            $sheet->setCellValue('A' . $row, $i + 1);
-            $sheet->setCellValue('B' . $row, $s->nama);
-            $sheet->setCellValue('C' . $row, $s->jenis_kelamin === 'P' ? 'P' : 'L');
-            $sheet->setCellValue('D' . $row, $s->nis);
-            $sheet->setCellValue('E' . $row, $ttl);
-            $sheet->setCellValue('F' . $row, $s->nama_ayah ?? '-');
+            $sheet->setCellValue('A'.$row, $i + 1);
+            $sheet->setCellValue('B'.$row, $s->nama);
+            $sheet->setCellValue('C'.$row, $s->jenis_kelamin === 'P' ? 'P' : 'L');
+            $sheet->setCellValue('D'.$row, $s->nis);
+            $sheet->setCellValue('E'.$row, $ttl);
+            $sheet->setCellValue('F'.$row, $s->nama_ayah ?? '-');
 
             // Border
             foreach (range('A', 'F') as $c) {
-                $sheet->getCell($c . $row)->getStyle()->getBorders()->getAllBorders()->setBorderStyle('thin');
+                $sheet->getCell($c.$row)->getStyle()->getBorders()->getAllBorders()->setBorderStyle('thin');
             }
 
             $row++;
@@ -223,14 +230,14 @@ class MunaqosyahController extends Controller
         $sheet->getColumnDimension('E')->setWidth(32);
         $sheet->getColumnDimension('F')->setWidth(28);
 
-        $filename = 'Peserta_Munaqosyah_' . preg_replace('/[^A-Za-z0-9]/', '_', $munaqosyah->nama) . '.xlsx';
+        $filename = 'Peserta_Munaqosyah_'.preg_replace('/[^A-Za-z0-9]/', '_', $munaqosyah->nama).'.xlsx';
 
         $response = new StreamedResponse(function () use ($spreadsheet) {
             $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
         });
         $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        $response->headers->set('Content-Disposition', 'attachment;filename="' . $filename . '"');
+        $response->headers->set('Content-Disposition', 'attachment;filename="'.$filename.'"');
         $response->headers->set('Cache-Control', 'max-age=0');
 
         return $response;
@@ -252,7 +259,8 @@ class MunaqosyahController extends Controller
             'tanggal_ujian' => $request->tanggal_ujian,
             'semester_id' => $request->semester_id,
             'status' => 'disetujui',
-            'diajukan_oleh' => auth()->id(),
+            // FK diajukan_oleh mengarah ke guru_tartils.id — admin bukan guru, jadi null
+            'diajukan_oleh' => auth()->user()?->guru?->id,
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
@@ -268,6 +276,7 @@ class MunaqosyahController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
         return back()->with('success', 'Ujian munaqosyah disetujui.');
     }
 
@@ -279,6 +288,7 @@ class MunaqosyahController extends Controller
             'approved_at' => now(),
             'catatan' => $request->catatan,
         ]);
+
         return back()->with('success', 'Ujian munaqosyah ditolak.');
     }
 
@@ -286,6 +296,7 @@ class MunaqosyahController extends Controller
     public function adminBukaPendaftaran(UjianMunaqosyah $munaqosyah)
     {
         $munaqosyah->bukaPendaftaran();
+
         return back()->with('success', "Pendaftaran ujian '{$munaqosyah->nama}' dibuka. Siswa sekarang bisa mendaftar.");
     }
 
@@ -298,7 +309,7 @@ class MunaqosyahController extends Controller
         $totalTidakLulus = $munaqosyah->jumlahTidakLulus();
 
         return back()->with('success',
-            "Pendaftaran ujian '{$munaqosyah->nama}' ditutup. " .
+            "Pendaftaran ujian '{$munaqosyah->nama}' ditutup. ".
             "Rekap: {$totalPeserta} peserta, {$totalLulus} lulus, {$totalTidakLulus} tidak lulus."
         );
     }
@@ -324,16 +335,21 @@ class MunaqosyahController extends Controller
                     'pengaju_type' => 'admin',
                 ]
             );
-            if ($pendaftaran->wasRecentlyCreated) $count++;
+            if ($pendaftaran->wasRecentlyCreated) {
+                $count++;
+            }
         }
-        return back()->with('success', $count . ' siswa berhasil didaftarkan.');
+
+        return back()->with('success', $count.' siswa berhasil didaftarkan.');
     }
 
     // ==================== GURU: APPROVAL REKAP ====================
     public function guruApprovalRekap()
     {
         $guru = auth()->user()?->guru;
-        if (!$guru) return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        }
         $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id');
 
         $pendaftarans = MunaqosyahPendaftaran::with(['munaqosyah', 'siswa', 'pengaju', 'approval'])
@@ -354,6 +370,7 @@ class MunaqosyahController extends Controller
             ->where('status', 'disetujui')
             ->orderBy('created_at', 'desc')->paginate(20);
         $semester = Semester::aktif()->first();
+
         return view('guru.munaqosyah.index', compact('ujians', 'semester'));
     }
 
@@ -369,20 +386,24 @@ class MunaqosyahController extends Controller
             'siswa_ids.*' => 'exists:siswas,id',
         ]);
         $guru = auth()->user()?->guru;
-        if (!$guru) return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        }
         $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id');
         $count = 0;
 
         foreach ($request->siswa_ids as $siswaId) {
             $siswa = Siswa::find($siswaId);
-            if (!$kelasIds->contains($siswa->kelas_tartil_id)) {
+            if (! $kelasIds->contains($siswa->kelas_tartil_id)) {
                 return back()->with('error', "Siswa {$siswa->nama} tidak ada di kelas Anda.");
             }
             // Cek apakah siswa sudah pernah daftar ke ujian ini (apapun statusnya)
             $existing = MunaqosyahPendaftaran::where('munaqosyah_id', $munaqosyah->id)
                 ->where('siswa_id', $siswaId)
                 ->first();
-            if ($existing) continue; // skip kalau sudah pernah daftar
+            if ($existing) {
+                continue;
+            } // skip kalau sudah pernah daftar
 
             // Buat pendaftaran status T + approval record pending
             $pendaftaran = MunaqosyahPendaftaran::create([
@@ -394,13 +415,14 @@ class MunaqosyahController extends Controller
             ]);
 
             // Buat approval record pending — perlu admin approve baru bisa input nilai
-            \App\Models\MunaqosyahApproval::create([
+            MunaqosyahApproval::create([
                 'pendaftaran_id' => $pendaftaran->id,
                 'status' => 'pending',
             ]);
             $count++;
         }
-        return back()->with('success', $count . ' siswa berhasil didaftarkan.');
+
+        return back()->with('success', $count.' siswa berhasil didaftarkan.');
     }
 
     public function guruDetail(UjianMunaqosyah $munaqosyah)
@@ -408,12 +430,15 @@ class MunaqosyahController extends Controller
         $munaqosyah->load(['pendaftarans.siswa', 'pendaftarans.approval', 'semester']);
         // Guru hanya bisa lihat siswa dari kelasnya sendiri untuk didaftarkan
         $guru = auth()->user()?->guru;
-        if (!$guru) return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        }
         $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id');
         $siswas = Siswa::whereIn('kelas_tartil_id', $kelasIds)
             ->where('status', 'aktif')
             ->whereNotIn('id', $munaqosyah->pendaftarans->pluck('siswa_id'))
             ->orderBy('nama')->get();
+
         return view('guru.munaqosyah.detail', compact('munaqosyah', 'siswas'));
     }
 
@@ -432,11 +457,13 @@ class MunaqosyahController extends Controller
         try {
             foreach ($request->nilai as $n) {
                 $pendaftaran = MunaqosyahPendaftaran::with('approval')->find($n['pendaftaran_id']);
-                if ($pendaftaran->munaqosyah_id !== $munaqosyah->id) continue;
+                if ($pendaftaran->munaqosyah_id !== $munaqosyah->id) {
+                    continue;
+                }
 
                 // Validasi: hanya siswa yang sudah di-approve admin yang bisa dinilai
                 if ($pendaftaran->approval && $pendaftaran->approval->status === 'pending') {
-                    throw new \Exception('Siswa ' . ($pendaftaran->siswa->nama ?? '') . ' belum di-approve oleh admin. Tidak dapat menginput nilai.');
+                    throw new \Exception('Siswa '.($pendaftaran->siswa->nama ?? '').' belum di-approve oleh admin. Tidak dapat menginput nilai.');
                 }
 
                 $pendaftaran->update([
@@ -446,9 +473,11 @@ class MunaqosyahController extends Controller
                 ]);
             }
             DB::commit();
+
             return back()->with('success', 'Nilai berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->with('error', $e->getMessage());
         }
     }
@@ -468,11 +497,13 @@ class MunaqosyahController extends Controller
         try {
             foreach ($request->nilai as $n) {
                 $pendaftaran = MunaqosyahPendaftaran::with('approval')->find($n['pendaftaran_id']);
-                if ($pendaftaran->munaqosyah_id !== $munaqosyah->id) continue;
+                if ($pendaftaran->munaqosyah_id !== $munaqosyah->id) {
+                    continue;
+                }
 
                 // Admin juga harus approve dulu kalau masih pending
                 if ($pendaftaran->approval && $pendaftaran->approval->status === 'pending') {
-                    throw new \Exception('Siswa ' . ($pendaftaran->siswa->nama ?? '') . ' belum di-approve. Approve terlebih dahulu di menu Approval Pendaftaran.');
+                    throw new \Exception('Siswa '.($pendaftaran->siswa->nama ?? '').' belum di-approve. Approve terlebih dahulu di menu Approval Pendaftaran.');
                 }
 
                 $pendaftaran->update([
@@ -482,9 +513,11 @@ class MunaqosyahController extends Controller
                 ]);
             }
             DB::commit();
+
             return back()->with('success', 'Nilai munaqosyah berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->with('error', $e->getMessage());
         }
     }
@@ -508,10 +541,12 @@ class MunaqosyahController extends Controller
             $pendaftaran->delete();
 
             DB::commit();
+
             return back()->with('success', "Pendaftaran '{$namaSiswa}' berhasil dibatalkan.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal membatalkan pendaftaran: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal membatalkan pendaftaran: '.$e->getMessage());
         }
     }
 
@@ -521,10 +556,11 @@ class MunaqosyahController extends Controller
     {
         $count = $munaqosyah->pendaftarans()
             ->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR)
-            ->whereDoesntHave('approval', fn($q) => $q->where('status', 'pending'))
+            ->whereDoesntHave('approval', fn ($q) => $q->where('status', 'pending'))
             ->update([
                 'status' => MunaqosyahPendaftaran::STATUS_LULUS,
             ]);
+
         return back()->with('success', "{$count} siswa dinyatakan lulus.");
     }
 
@@ -532,10 +568,11 @@ class MunaqosyahController extends Controller
     {
         $count = $munaqosyah->pendaftarans()
             ->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR)
-            ->whereDoesntHave('approval', fn($q) => $q->where('status', 'pending'))
+            ->whereDoesntHave('approval', fn ($q) => $q->where('status', 'pending'))
             ->update([
                 'status' => MunaqosyahPendaftaran::STATUS_TIDAK_LULUS,
             ]);
+
         return back()->with('success', "{$count} siswa dinyatakan tidak lulus.");
     }
 
@@ -554,9 +591,9 @@ class MunaqosyahController extends Controller
         $ujians = UjianMunaqosyah::with(['semester'])
             ->withCount([
                 'pendaftarans as total_peserta',
-                'pendaftarans as total_lulus' => fn($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_LULUS),
-                'pendaftarans as total_tidak_lulus' => fn($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_TIDAK_LULUS),
-                'pendaftarans as total_terdaftar' => fn($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR),
+                'pendaftarans as total_lulus' => fn ($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_LULUS),
+                'pendaftarans as total_tidak_lulus' => fn ($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_TIDAK_LULUS),
+                'pendaftarans as total_terdaftar' => fn ($q) => $q->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR),
             ])
             ->orderBy('tanggal_ujian', 'desc')
             ->paginate(20);
