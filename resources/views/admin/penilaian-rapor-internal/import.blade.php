@@ -56,7 +56,17 @@
 
         @if($kelasTerpilih)
         <div style="margin-top: 12px; padding: 10px 14px; background: #E9F0E9; border-radius: 8px; font-size: 13px; color: #5A7D5A;">
-            <strong>Kelas terpilih:</strong> {{ $kelasTerpilih->nama }} ({{ $kelasTerpilih->jenis }}) — {{ $kelasTerpilih->siswas_count }} siswa aktif — {{ $indikators->count() }} indikator: {{ $indikators->pluck('nama_indikator')->implode(', ') }}
+            <strong>Kelas terpilih:</strong> {{ $kelasTerpilih->nama }} ({{ $kelasTerpilih->jenis }}) — {{ $kelasTerpilih->siswas_count }} siswa aktif — {{ $indikators->count() }} indikator:
+            {{-- Daftar indikator bernomor, maksimal 7 baris per kolom — sisanya lanjut ke kolom samping --}}
+            <div style="display: flex; flex-wrap: wrap; gap: 8px 32px; margin-top: 8px;">
+                @foreach($indikators->chunk(7) as $chunk)
+                <ol start="{{ ($loop->index * 7) + 1 }}" style="margin: 0; padding-left: 20px; min-width: 220px; flex: 1;">
+                    @foreach($chunk as $ind)
+                    <li style="line-height: 1.7;">{{ $ind->nama_indikator }}</li>
+                    @endforeach
+                </ol>
+                @endforeach
+            </div>
         </div>
         @endif
     </div>

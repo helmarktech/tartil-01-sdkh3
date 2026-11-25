@@ -388,6 +388,27 @@ class ImportNilaiTest extends TestCase
         $this->assertDatabaseCount('penilaian_rapor_nilais', 1);
     }
 
+    public function test_halaman_import_menampilkan_indikator_bernomer_maksimal_7_per_kolom(): void
+    {
+        // Tambah indikator hingga total 9 → kolom pertama 1-7, kolom kedua mulai dari 8
+        foreach (range(3, 9) as $urutan) {
+            IndikatorPenilaian::create([
+                'jenis_kelas' => 'Tartil', 'nama_indikator' => 'Indikator '.$urutan,
+                'urutan' => $urutan, 'is_default' => true,
+            ]);
+        }
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.penilaian-rapor-internal.import', [
+                'penilaian_id' => $this->penilaian->id,
+                'kelas_id' => $this->kelas->id,
+            ]))
+            ->assertOk()
+            ->assertSee('<ol start="1"', false)
+            ->assertSee('<ol start="8"', false)
+            ->assertSee('Indikator 9');
+    }
+
     public function test_import_rapor_menolak_file_bukan_template(): void
     {
         $file = $this->buatFileExcel([
