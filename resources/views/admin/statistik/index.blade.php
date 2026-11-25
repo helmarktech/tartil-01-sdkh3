@@ -131,11 +131,15 @@
 }
 </style>
 
-<div class="page-header" style="margin-bottom: 24px;">
+<div class="page-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
     <div>
         <h1 class="page-title-display" style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0; color: #1a1a2e;">Statistik</h1>
         <p style="color: #666; font-size: 14px; margin: 4px 0 0;">Dashboard grafik perkembangan 3 Tahun Ajaran terakhir</p>
     </div>
+    <a href="{{ route('admin.statistik.export') }}" class="btn-tartil" style="text-decoration: none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Excel Lengkap
+    </a>
 </div>
 
 <div class="page-intro">

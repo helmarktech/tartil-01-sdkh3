@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\StatistikTahunanExport;
 use App\Models\Guru;
 use App\Models\GuruReguler;
 use App\Models\JurnalHarian;
@@ -35,6 +36,7 @@ use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
@@ -2329,6 +2331,35 @@ class AdminController extends Controller
     public function statistikData(Request $request)
     {
         return response()->json($this->buildStatistikData());
+    }
+
+    /**
+     * Export statistik lengkap ke Excel (multi-sheet).
+     * Perbandingan TA: maksimal 3 TA ke belakang, minimal 1 TA yang punya data.
+     */
+    public function statistikExportExcel()
+    {
+        $data = $this->buildStatistikData();
+
+        // Hanya TA yang benar-benar punya semester (maks 3 terakhir, min 1)
+        $taAda = Semester::select('tahun_ajaran')->distinct()->pluck('tahun_ajaran')->all();
+        $taList = array_values(array_intersect($data['taLabels'] ?? [], $taAda));
+
+        if (empty($taList)) {
+            return back()->with('error', 'Belum ada data tahun ajaran untuk diekspor.');
+        }
+
+        $spreadsheet = (new StatistikTahunanExport($data, $taList))->export();
+
+        $filename = 'Statistik_TARTIL_'.now()->format('Ymd_His').'.xlsx';
+        $response = new StreamedResponse(function () use ($spreadsheet) {
+            (new Xlsx($spreadsheet))->save('php://output');
+        });
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment;filename="'.$filename.'"');
+        $response->headers->set('Cache-Control', 'max-age=0');
+
+        return $response;
     }
 
     /**

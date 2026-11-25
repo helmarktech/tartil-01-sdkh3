@@ -146,6 +146,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // ===== STATISTIK: Dashboard grafik perkembangan =====
     Route::get('/statistik', [AdminController::class, 'statistikDashboard'])->name('statistik.index');
     Route::get('/statistik/data', [AdminController::class, 'statistikData'])->name('statistik.data');
+    Route::get('/statistik/export', [AdminController::class, 'statistikExportExcel'])->name('statistik.export');
 
     // Munaqosyah: Approval Pendaftaran
     Route::get('/munaqosyah-approval', [AdminController::class, 'munaqosyahApprovalIndex'])->name('munaqosyah.approval.index');
