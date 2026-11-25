@@ -1,1 +1,184 @@
 /* Entry CSS untuk build Vite. UI Tartil menggunakan inline CSS di Blade. */
+
+/* ===== TSelect: dropdown kustom seragam untuk <select class="form-input"> =====
+   Daftar opsi native browser diganti panel bergaya Tartil (radius, bayangan,
+   hover lembut, item terpilih beraksen, scrollbar kustom). */
+.tselect {
+  position: relative;
+}
+
+/* Select asli tetap ada untuk submit form & validasi, hanya disembunyikan */
+.tselect-native {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none !important;
+}
+
+.tselect-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+}
+
+.tselect-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tselect-label.is-placeholder {
+  color: #96918d;
+}
+
+.tselect-caret {
+  flex-shrink: 0;
+  color: #96918d;
+  transition: transform 0.2s ease;
+}
+
+.tselect.open .tselect-caret {
+  transform: rotate(180deg);
+}
+
+.tselect-btn.is-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tselect-list {
+  position: absolute;
+  z-index: 1050;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 6px;
+  padding: 6px;
+  display: none;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #d9d5d0;
+  border-radius: 12px;
+  box-shadow:
+    0 12px 32px rgba(37, 33, 29, 0.14),
+    0 2px 8px rgba(37, 33, 29, 0.08);
+}
+
+.tselect.open .tselect-list {
+  display: block;
+  animation: tselect-in 0.15s ease;
+}
+
+/* Panel terbuka ke atas saat ruang di bawah tidak cukup */
+.tselect.up .tselect-list {
+  top: auto;
+  bottom: calc(100% + 6px);
+  margin-top: 0;
+}
+
+.tselect.up .tselect-list {
+  animation-name: tselect-in-up;
+}
+
+@keyframes tselect-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes tselect-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.tselect-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #25211d;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.tselect-item:hover,
+.tselect-item.is-active {
+  background: #efede9;
+}
+
+.tselect-item.is-selected {
+  background: rgba(107, 94, 81, 0.1);
+  color: #554f43;
+  font-weight: 600;
+}
+
+.tselect-check {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: #6b5e51;
+  opacity: 0;
+}
+
+.tselect-item.is-selected .tselect-check {
+  opacity: 1;
+}
+
+.tselect-item.is-disabled {
+  color: #96918d;
+  cursor: default;
+  font-style: italic;
+}
+
+.tselect-item.is-disabled:hover {
+  background: transparent;
+}
+
+.tselect-group {
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #96918d;
+}
+
+/* Scrollbar kustom agar seragam lintas browser */
+.tselect-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tselect-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tselect-list::-webkit-scrollbar-thumb {
+  background: #d9d5d0;
+  border-radius: 4px;
+}
+
+.tselect-list::-webkit-scrollbar-thumb:hover {
+  background: #96918d;
+}
