@@ -149,34 +149,39 @@ class MunaqosyahController extends Controller
 
     /**
      * Export daftar peserta munaqosyah ke Excel.
-     * Format: No, Nama Siswa, Jenis Kelamin (L/P), NIS, TTL, Nama Ayah
+     * Format: No, Nama Siswa, Jenis Kelamin (L/P), NIS, TTL, Nama Ayah, Nama Guru
      */
     public function adminExportPesertaExcel(UjianMunaqosyah $munaqosyah)
     {
+        // Urutan status T → L → TL via sortBy (driver-agnostic, FIELD() hanya ada di MySQL)
         $peserta = $munaqosyah->pendaftarans()
-            ->with('siswa')
+            ->with(['siswa.kelasTartil.guru'])
             ->where('status', '!=', 'pending')
-            ->orderByRaw("FIELD(status, 'T', 'L', 'TL')")
             ->orderBy('created_at')
-            ->get();
+            ->get()
+            ->sortBy(fn ($p) => array_search($p->status, ['T', 'L', 'TL']))
+            ->values();
 
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Peserta '.$munaqosyah->nama);
+        // Judul sheet: karakter \ / ? * : [ ] dilarang dan maks 31 karakter —
+        // nama ujian bebas (misal mengandung "2025/2026") harus disanitasi
+        $judulSheet = str_replace(['\\', '/', '?', '*', ':', '[', ']'], '-', 'Peserta '.$munaqosyah->nama);
+        $sheet->setTitle(mb_substr($judulSheet, 0, 31));
 
         // Judul
-        $sheet->mergeCells('A1:F1');
+        $sheet->mergeCells('A1:G1');
         $sheet->setCellValue('A1', 'DAFTAR PESERTA UJIAN MUNAQOSYAH');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
 
-        $sheet->mergeCells('A2:F2');
+        $sheet->mergeCells('A2:G2');
         $sheet->setCellValue('A2', $munaqosyah->nama.' - '.ucfirst($munaqosyah->tingkat).' - '.($munaqosyah->tanggal_ujian ? date('d F Y', strtotime($munaqosyah->tanggal_ujian)) : '-'));
         $sheet->getStyle('A2')->getFont()->setBold(true);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
 
         // Header
-        $headers = ['No', 'Nama Siswa', 'Jenis Kelamin (L/P)', 'NIS', 'TTL', 'Nama Ayah'];
+        $headers = ['No', 'Nama Siswa', 'Jenis Kelamin (L/P)', 'NIS', 'TTL', 'Nama Ayah', 'Nama Guru'];
         $col = 1;
         foreach ($headers as $header) {
             $colLetter = Coordinate::stringFromColumnIndex($col);
@@ -216,9 +221,10 @@ class MunaqosyahController extends Controller
             $sheet->setCellValue('D'.$row, $s->nis);
             $sheet->setCellValue('E'.$row, $ttl);
             $sheet->setCellValue('F'.$row, $s->nama_ayah ?? '-');
+            $sheet->setCellValue('G'.$row, $s->kelasTartil->guru->nama ?? '-');
 
             // Border
-            foreach (range('A', 'F') as $c) {
+            foreach (range('A', 'G') as $c) {
                 $sheet->getCell($c.$row)->getStyle()->getBorders()->getAllBorders()->setBorderStyle('thin');
             }
 
@@ -232,6 +238,7 @@ class MunaqosyahController extends Controller
         $sheet->getColumnDimension('D')->setWidth(15);
         $sheet->getColumnDimension('E')->setWidth(32);
         $sheet->getColumnDimension('F')->setWidth(28);
+        $sheet->getColumnDimension('G')->setWidth(28);
 
         $filename = 'Peserta_Munaqosyah_'.preg_replace('/[^A-Za-z0-9]/', '_', $munaqosyah->nama).'.xlsx';
 

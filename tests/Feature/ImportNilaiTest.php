@@ -248,6 +248,37 @@ class ImportNilaiTest extends TestCase
         $this->assertSame('T', $this->pendaftaranA->fresh()->status);
     }
 
+    public function test_export_peserta_excel_aman_untuk_nama_ujian_karakter_khusus_dan_memuat_guru(): void
+    {
+        // Regresi production: judul sheet memakai nama ujian mentah — karakter
+        // terlarang (misal "2025/2026") atau > 31 char melempar exception (500).
+        $ujianKhusus = UjianMunaqosyah::create([
+            'nama' => 'Munaqosyah TA 2025/2026: Semester Ganjil',
+            'tingkat' => 'unit',
+            'tanggal_ujian' => now()->addWeek()->toDateString(),
+            'semester_id' => $this->semester->id,
+            'status' => 'disetujui',
+        ]);
+        MunaqosyahPendaftaran::create([
+            'munaqosyah_id' => $ujianKhusus->id,
+            'siswa_id' => $this->siswaA->id,
+            'diajukan_oleh' => $this->admin->id,
+            'pengaju_type' => 'admin',
+            'status' => 'T',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.munaqosyah.export-excel', $ujianKhusus))
+            ->assertOk();
+
+        $rows = $this->parseExcelResponse($response);
+
+        // Kolom Nama Guru ada dan terisi guru kelas tartil siswa
+        $this->assertSame('Nama Guru', $rows[3][6]);
+        $this->assertSame('Siswa A', $rows[4][1]);
+        $this->assertSame('Ust. Test', $rows[4][6]);
+    }
+
     // ==================== PENILAIAN RAPOR ====================
 
     public function test_template_rapor_berisi_siswa_dan_kolom_indikator(): void

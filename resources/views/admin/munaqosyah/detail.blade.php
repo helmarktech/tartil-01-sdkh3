@@ -101,7 +101,7 @@
     {{-- Peserta Overview (hanya nama & status, tanpa aksi) --}}
     {{-- Hanya tampilkan siswa yang sudah terdaftar, bukan pending --}}
     @php
-        $pesertaAktif = $munaqosyah->pendaftarans()->with('siswa.kelasReguler', 'siswa.kelasTartil')
+        $pesertaAktif = $munaqosyah->pendaftarans()->with('siswa.kelasReguler', 'siswa.kelasTartil.guru')
             ->orderByRaw("FIELD(status, 'T', 'L', 'TL')")
             ->orderBy('created_at')
             ->get();
@@ -216,6 +216,7 @@
                     <th>Nama Siswa</th>
                     <th>Kelas Reguler</th>
                     <th>Kelas Tartil</th>
+                    <th>Guru</th>
                     <th>Status</th>
                     <th>Nilai</th>
                     <th style="width: 80px;">Aksi</th>
@@ -229,6 +230,7 @@
                     <td style="font-weight: 500;">{{ $p->siswa->nama ?? '-' }}</td>
                     <td>{{ $p->siswa->kelasReguler->nama ?? '-' }}</td>
                     <td>{{ $p->siswa->kelasTartil->nama ?? '-' }}</td>
+                    <td>{{ $p->siswa->kelasTartil->guru->nama ?? '-' }}</td>
                     <td>
                         <span class="{{ $p->status_badge_class }}">{{ $p->status_label }}</span>
                     </td>
