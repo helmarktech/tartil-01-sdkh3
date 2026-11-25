@@ -22,6 +22,8 @@ Fitur inti meliputi:
 - Kenaikan kelas reguler otomatis saat pembuatan tahun ajaran baru.
 - Rapor PDF per siswa dan per kelas.
 - Ujian munaqosyah dengan pendaftaran dan approval.
+- Import nilai munaqosyah via Excel (admin, semua tingkat unit/yayasan/pesantren): download template dari detail ujian — seluruh peserta terdaftar otomatis terisi — lalu upload untuk update status (T/L/TL), nilai (0–100), dan catatan massal (`MunaqosyahController::adminTemplateImportNilai`/`adminImportNilai`). Peserta dengan approval pending dilewati.
+- Import nilai rapor internal via Excel (admin): halaman `/admin/penilaian-rapor-internal-import` — pilih penilaian → pilih kelas tartil → download template (seluruh siswa aktif kelas otomatis terisi, kolom mengikuti indikator jenis kelas dengan format `Nama (ID:x)`) → upload untuk update nilai massal via `updateOrCreate` + invalidasi cache `RekapR2Akhir` (`PenilaianRaporInternalController::adminImportNilai`/`adminTemplateImportNilai`/`adminProsesImportNilai`).
 - Manajemen tahun ajaran dan semester (ganjil/genap).
 - Hari libur per kelas.
 - Tahfidz: tracking hafalan siswa per juz 1–30 (tidak harus berurutan), dengan rekap per semester yang membedakan total siswa, siswa sudah hafal, dan siswa tuntas per juz.
@@ -200,6 +202,7 @@ Test suite saat ini mencakup:
 - `tests/Feature/KonsistensiJurnalTest.php` — memastikan hitungan hari jurnal konsisten di semua tampilan via `JurnalSiswaService`, termasuk aturan baru `r2_akhir = r2_penilaian`.
 - `tests/Feature/RaporMurniPenilaianTest.php` — memastikan nilai rapor murni dari penilaian internal (B/C/K harian tidak memengaruhi), recalc retroaktif snapshot semester ditutup, dan invalidasi cache R2 saat guru menyimpan nilai.
 - `tests/Feature/TasmiTest.php` — dokumentasi tasmi': parsing URL YouTube, akses galeri/detail semua peran, like multi-guard unik, moderasi komentar admin, dan cascade delete.
+- `tests/Feature/ImportNilaiTest.php` — import nilai via Excel: template munaqosyah prefill peserta, import status/nilai menolak approval pending, template rapor prefill siswa + kolom indikator, import nilai per indikator meng-invalidate cache R2, dan penolakan file bukan template.
 
 > Migration yang mengandung raw SQL khusus MySQL (`SHOW COLUMNS`, `ALTER TABLE ... MODIFY`, dsb.) sudah dibungkus dengan pengecekan driver agar test SQLite bisa berjalan, tanpa mengubah perilaku di MySQL/MariaDB.
 

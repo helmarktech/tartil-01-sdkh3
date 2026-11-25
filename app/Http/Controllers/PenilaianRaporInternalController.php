@@ -17,6 +17,12 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PenilaianRaporInternalController extends Controller
 {
@@ -328,6 +334,308 @@ class PenilaianRaporInternalController extends Controller
         return view('admin.penilaian-rapor-internal.rekap-progress', compact(
             'gurus', 'penilaians', 'penilaianTerpilih', 'penilaianId'
         ));
+    }
+
+    // ═══════════════════════════════════════════════
+    // ADMIN: HALAMAN IMPORT NILAI VIA EXCEL
+    // STEP 1: Pilih Penilaian → STEP 2: Pilih Kelas Tartil
+    // ═══════════════════════════════════════════════
+    public function adminImportNilai(Request $request)
+    {
+        $penilaians = PenilaianRaporInternal::with('semester')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $penilaianTerpilih = null;
+        $kelasList = collect();
+        $kelasTerpilih = null;
+        $indikators = collect();
+
+        if ($request->filled('penilaian_id')) {
+            $penilaianTerpilih = PenilaianRaporInternal::with('semester')->find($request->penilaian_id);
+
+            if ($penilaianTerpilih) {
+                // Urutan alfabetis jenis — FIELD() tidak tersedia di SQLite (testing)
+                $kelasList = Kelas::where('status', 'aktif')
+                    ->with('guru')
+                    ->withCount(['siswas' => fn ($q) => $q->where('status', 'aktif')])
+                    ->orderBy('jenis')
+                    ->orderBy('nama')
+                    ->get();
+
+                if ($request->filled('kelas_id')) {
+                    $kelasTerpilih = $kelasList->firstWhere('id', (int) $request->kelas_id);
+                    if ($kelasTerpilih) {
+                        $indikators = IndikatorPenilaian::byJenis($kelasTerpilih->jenis);
+                    }
+                }
+            }
+        }
+
+        return view('admin.penilaian-rapor-internal.import', compact(
+            'penilaians', 'penilaianTerpilih', 'kelasList', 'kelasTerpilih', 'indikators'
+        ));
+    }
+
+    // ═══════════════════════════════════════════════
+    // ADMIN: TEMPLATE IMPORT NILAI RAPOR
+    // Seluruh siswa aktif di kelas sudah terisi otomatis;
+    // kolom nilai mengikuti indikator sesuai jenis kelas.
+    // ═══════════════════════════════════════════════
+    public function adminTemplateImportNilai(PenilaianRaporInternal $penilaian, Kelas $kelas)
+    {
+        $indikators = IndikatorPenilaian::byJenis($kelas->jenis);
+        if ($indikators->isEmpty()) {
+            return back()->with('error', 'Belum ada indikator untuk jenis kelas "'.$kelas->jenis.'". Atur dulu di menu Pengaturan Kelas.');
+        }
+
+        $siswas = Siswa::where('kelas_tartil_id', $kelas->id)
+            ->where('status', 'aktif')
+            ->orderBy('nama')
+            ->get();
+
+        // Nilai yang sudah ada: [siswa_id][indikator_id] = nilai
+        $nilaiMap = [];
+        $nilaiRows = PenilaianRaporNilai::where('penilaian_id', $penilaian->id)
+            ->whereIn('siswa_id', $siswas->pluck('id'))
+            ->whereNotNull('nilai')
+            ->get();
+        foreach ($nilaiRows as $nr) {
+            $nilaiMap[$nr->siswa_id][$nr->indikator_penilaian_id] = $nr->nilai;
+        }
+
+        $jumlahKolom = 3 + $indikators->count();
+        $kolomTerakhir = Coordinate::stringFromColumnIndex($jumlahKolom);
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Import Nilai Rapor');
+
+        // Judul
+        $sheet->mergeCells('A1:'.$kolomTerakhir.'1');
+        $sheet->setCellValue('A1', 'TEMPLATE IMPORT NILAI RAPOR TARTIL');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+        $sheet->mergeCells('A2:'.$kolomTerakhir.'2');
+        $sheet->setCellValue('A2', $penilaian->nama.' ('.($penilaian->semester->nama ?? '-').') - Kelas '.$kelas->nama.' - '.$kelas->jenis);
+        $sheet->getStyle('A2')->getFont()->setBold(true);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
+
+        $sheet->mergeCells('A3:'.$kolomTerakhir.'3');
+        $sheet->setCellValue('A3', 'Jangan mengubah kolom ID Siswa/NIS/Nama dan header kolom indikator. Isi nilai angka bulat 1-100, kosongkan jika belum dinilai.');
+        $sheet->getStyle('A3')->getFont()->setItalic(true)->setSize(9);
+
+        // Header: kolom indikator membawa ID agar proses import tahan terhadap pengubahan urutan kolom
+        $headers = ['ID Siswa', 'NIS', 'Nama Siswa'];
+        foreach ($indikators as $ind) {
+            $headers[] = $ind->nama_indikator.' (ID:'.$ind->id.')';
+        }
+        $col = 1;
+        foreach ($headers as $header) {
+            $colLetter = Coordinate::stringFromColumnIndex($col);
+            $cellRef = $colLetter.'4';
+            $sheet->setCellValue($cellRef, $header);
+            $sheet->getStyle($cellRef)->getFont()->setBold(true);
+            $sheet->getStyle($cellRef)->getAlignment()->setHorizontal('center');
+            $sheet->getStyle($cellRef)->getFill()->setFillType('solid')->getStartColor()->setRGB('F5F5F4');
+            $sheet->getStyle($cellRef)->getBorders()->getAllBorders()->setBorderStyle('thin');
+            $col++;
+        }
+
+        // Data siswa (prefill nilai yang sudah ada)
+        $row = 5;
+        foreach ($siswas as $s) {
+            $sheet->setCellValue('A'.$row, $s->id);
+            $sheet->setCellValueExplicit('B'.$row, (string) $s->nis, DataType::TYPE_STRING);
+            $sheet->setCellValue('C'.$row, $s->nama);
+
+            $col = 4;
+            foreach ($indikators as $ind) {
+                $nilai = $nilaiMap[$s->id][$ind->id] ?? null;
+                if ($nilai !== null) {
+                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($col).$row, $nilai);
+                }
+                $col++;
+            }
+
+            for ($c = 1; $c <= $jumlahKolom; $c++) {
+                $sheet->getCell(Coordinate::stringFromColumnIndex($c).$row)->getStyle()->getBorders()->getAllBorders()->setBorderStyle('thin');
+            }
+
+            $row++;
+        }
+
+        // Lebar kolom
+        $sheet->getColumnDimension('A')->setWidth(10);
+        $sheet->getColumnDimension('B')->setWidth(14);
+        $sheet->getColumnDimension('C')->setWidth(30);
+        for ($c = 4; $c <= $jumlahKolom; $c++) {
+            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($c))->setWidth(22);
+        }
+
+        $filename = 'Template_Import_Nilai_Rapor_'.preg_replace('/[^A-Za-z0-9]/', '_', $kelas->nama).'.xlsx';
+
+        $response = new StreamedResponse(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        });
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment;filename="'.$filename.'"');
+        $response->headers->set('Cache-Control', 'max-age=0');
+
+        return $response;
+    }
+
+    // ═══════════════════════════════════════════════
+    // ADMIN: PROSES IMPORT NILAI RAPOR
+    // Baris tidak valid dilewati dan dilaporkan per baris; baris valid tetap tersimpan.
+    // Cache R2 siswa yang terpengaruh wajib dibuang agar nilai rapor tidak basi.
+    // ═══════════════════════════════════════════════
+    public function adminProsesImportNilai(Request $request, PenilaianRaporInternal $penilaian, Kelas $kelas)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:2048',
+        ], [
+            'file.required' => 'File wajib diunggah.',
+            'file.mimes' => 'Format file harus xlsx atau xls.',
+            'file.max' => 'Ukuran file maksimal 2MB.',
+        ]);
+
+        $indikators = IndikatorPenilaian::byJenis($kelas->jenis);
+        if ($indikators->isEmpty()) {
+            return back()->with('error', 'Belum ada indikator untuk jenis kelas "'.$kelas->jenis.'".');
+        }
+        $indikatorValid = $indikators->pluck('id')->flip(); // id => true
+
+        try {
+            $spreadsheet = IOFactory::load($request->file('file')->getPathname());
+            $rows = $spreadsheet->getActiveSheet()->toArray();
+        } catch (\Exception $e) {
+            return back()->with('error', 'File tidak dapat dibaca: '.$e->getMessage());
+        }
+
+        // Header template berada di baris ke-4 (judul 2 baris + petunjuk)
+        $headerRow = $rows[3] ?? null;
+        if (! $headerRow || strtoupper(trim((string) ($headerRow[0] ?? ''))) !== 'ID SISWA') {
+            return back()->with('error', 'Format file tidak sesuai. Gunakan template resmi yang diunduh dari tombol "Download Template".');
+        }
+
+        // Petakan kolom indikator dari header: "Nama Indikator (ID:12)" → kolom ke-N = indikator 12
+        $kolomIndikator = []; // index kolom (0-based) => indikator_id
+        foreach ($headerRow as $idx => $headerCell) {
+            if ($idx < 3 || $headerCell === null) {
+                continue;
+            }
+            if (preg_match('/\(ID:(\d+)\)\s*$/', trim((string) $headerCell), $m)) {
+                $indikatorId = (int) $m[1];
+                if (! $indikatorValid->has($indikatorId)) {
+                    return back()->with('error', "Kolom indikator '{$headerCell}' tidak dikenal untuk jenis kelas {$kelas->jenis}. Unduh ulang template terbaru.");
+                }
+                $kolomIndikator[$idx] = $indikatorId;
+            }
+        }
+        if (empty($kolomIndikator)) {
+            return back()->with('error', 'Tidak ada kolom indikator yang dikenali. Gunakan template resmi.');
+        }
+
+        // Siswa aktif kelas ini, di-key by id
+        $siswaMap = Siswa::where('kelas_tartil_id', $kelas->id)
+            ->where('status', 'aktif')
+            ->get()
+            ->keyBy('id');
+
+        $sukses = 0;
+        $nilaiTersimpan = 0;
+        $errors = [];
+        $siswaTerpengaruh = [];
+        // Admin murni bukan guru — kolom diisi_oleh nullable
+        $diisiOleh = auth()->user()?->guru?->id;
+        $now = now();
+
+        DB::beginTransaction();
+        try {
+            foreach (array_slice($rows, 4) as $i => $row) {
+                $baris = $i + 5; // nomor baris di Excel
+
+                // Lewati baris kosong total
+                if (count(array_filter($row, fn ($c) => $c !== null && trim((string) $c) !== '')) === 0) {
+                    continue;
+                }
+
+                $id = trim((string) ($row[0] ?? ''));
+                if (! ctype_digit($id) || ! $siswaMap->has((int) $id)) {
+                    $errors[] = "Baris {$baris}: ID Siswa '{$id}' tidak ditemukan di kelas {$kelas->nama}.";
+
+                    continue;
+                }
+                $siswaId = (int) $id;
+
+                // Validasi seluruh sel nilai dulu — baris dengan sel tidak valid dilewati utuh
+                $nilaiBaris = [];
+                $barisValid = true;
+                foreach ($kolomIndikator as $idx => $indikatorId) {
+                    $raw = trim((string) ($row[$idx] ?? ''));
+                    if ($raw === '') {
+                        continue; // sel kosong = tidak diubah
+                    }
+                    if (! is_numeric($raw) || (int) $raw != (float) $raw || (int) $raw < 1 || (int) $raw > 100) {
+                        $errors[] = "Baris {$baris}: Nilai '{$raw}' tidak valid. Harus angka bulat 1-100 atau dikosongkan.";
+                        $barisValid = false;
+
+                        break;
+                    }
+                    $nilaiBaris[$indikatorId] = (int) $raw;
+                }
+                if (! $barisValid) {
+                    continue;
+                }
+                if (empty($nilaiBaris)) {
+                    continue; // baris tanpa nilai baru
+                }
+
+                foreach ($nilaiBaris as $indikatorId => $nilai) {
+                    PenilaianRaporNilai::updateOrCreate(
+                        [
+                            'penilaian_id' => $penilaian->id,
+                            'siswa_id' => $siswaId,
+                            'indikator_penilaian_id' => $indikatorId,
+                        ],
+                        [
+                            'nilai' => $nilai,
+                            'diisi_oleh' => $diisiOleh,
+                            'tanggal_diisi' => $now,
+                        ]
+                    );
+                    $nilaiTersimpan++;
+                }
+                $siswaTerpengaruh[$siswaId] = true;
+                $sukses++;
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()->with('error', 'Import gagal diproses: '.$e->getMessage());
+        }
+
+        // Nilai rapor murni dari penilaian internal — cache R2 siswa yang
+        // nilainya berubah wajib dibuang agar tidak basi (sama seperti guruSimpanNilai).
+        if (! empty($siswaTerpengaruh)) {
+            RekapR2Akhir::whereIn('siswa_id', array_keys($siswaTerpengaruh))->delete();
+        }
+
+        $message = "Import selesai: {$nilaiTersimpan} nilai dari {$sukses} siswa berhasil disimpan.";
+        if (! empty($errors)) {
+            $message .= ' '.count($errors).' baris dilewati.';
+        }
+
+        return redirect()->route('admin.penilaian-rapor-internal.import', [
+            'penilaian_id' => $penilaian->id,
+            'kelas_id' => $kelas->id,
+        ])
+            ->with('success', $message)
+            ->with('import_errors', $errors);
     }
 
     // ═══════════════════════════════════════════════

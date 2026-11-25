@@ -229,6 +229,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/munaqosyah/daftar', [MunaqosyahController::class, 'adminDaftarSimpan'])->name('munaqosyah.daftar.simpan');
     Route::get('/munaqosyah/{munaqosyah}', [MunaqosyahController::class, 'adminDetail'])->name('munaqosyah.detail');
     Route::get('/munaqosyah/{munaqosyah}/export-excel', [MunaqosyahController::class, 'adminExportPesertaExcel'])->name('munaqosyah.export-excel');
+    Route::get('/munaqosyah/{munaqosyah}/import-nilai/template', [MunaqosyahController::class, 'adminTemplateImportNilai'])->name('munaqosyah.import.template');
+    Route::post('/munaqosyah/{munaqosyah}/import-nilai', [MunaqosyahController::class, 'adminImportNilai'])->name('munaqosyah.import.proses');
     Route::post('/munaqosyah/{munaqosyah}/nilai', [MunaqosyahController::class, 'adminNilaiBatch'])->name('munaqosyah.nilai.admin');
     Route::delete('/munaqosyah/{munaqosyah}/peserta/{pendaftaran}', [MunaqosyahController::class, 'adminBatalPendaftaran'])->name('munaqosyah.peserta.batal');
     Route::post('/munaqosyah/{munaqosyah}/approve', [MunaqosyahController::class, 'adminApprove'])->name('munaqosyah.approve');
@@ -247,6 +249,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/penilaian-rapor-internal', [PenilaianRaporInternalController::class, 'adminStore'])->name('penilaian-rapor-internal.store');
     Route::delete('/penilaian-rapor-internal/{penilaian}', [PenilaianRaporInternalController::class, 'adminDestroy'])->name('penilaian-rapor-internal.destroy');
     Route::get('/penilaian-rapor-internal-rekap', [PenilaianRaporInternalController::class, 'adminRekapProgress'])->name('penilaian-rapor-internal.rekap');
+    // Import nilai rapor via Excel (template prefill siswa per kelas tartil)
+    Route::get('/penilaian-rapor-internal-import', [PenilaianRaporInternalController::class, 'adminImportNilai'])->name('penilaian-rapor-internal.import');
+    Route::get('/penilaian-rapor-internal/{penilaian}/kelas/{kelas}/import-nilai/template', [PenilaianRaporInternalController::class, 'adminTemplateImportNilai'])->name('penilaian-rapor-internal.import.template');
+    Route::post('/penilaian-rapor-internal/{penilaian}/kelas/{kelas}/import-nilai', [PenilaianRaporInternalController::class, 'adminProsesImportNilai'])->name('penilaian-rapor-internal.import.proses');
 
     // ===== DOKUMENTASI TASMI' (admin kelola, semua peran bisa lihat/like/komentar) =====
     Route::get('/tasmi', [TasmiController::class, 'adminIndex'])->name('tasmi.index');

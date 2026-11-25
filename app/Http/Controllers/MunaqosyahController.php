@@ -12,6 +12,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -242,6 +244,204 @@ class MunaqosyahController extends Controller
         $response->headers->set('Cache-Control', 'max-age=0');
 
         return $response;
+    }
+
+    // ==================== ADMIN: TEMPLATE IMPORT NILAI ====================
+    // Template Excel berisi seluruh peserta terdaftar (semua tingkat: unit/yayasan/pesantren)
+    // lengkap dengan status & nilai saat ini — admin tinggal mengisi lalu mengunggah kembali.
+    public function adminTemplateImportNilai(UjianMunaqosyah $munaqosyah)
+    {
+        // Urutan status T → L → TL via sortBy (driver-agnostic, FIELD() hanya ada di MySQL)
+        $peserta = $munaqosyah->pendaftarans()
+            ->with(['siswa.kelasTartil'])
+            ->orderBy('created_at')
+            ->get()
+            ->sortBy(fn ($p) => array_search($p->status, ['T', 'L', 'TL']))
+            ->values();
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Import Nilai');
+
+        // Judul
+        $sheet->mergeCells('A1:G1');
+        $sheet->setCellValue('A1', 'TEMPLATE IMPORT NILAI MUNAQOSYAH');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+        $sheet->mergeCells('A2:G2');
+        $sheet->setCellValue('A2', $munaqosyah->nama.' - '.ucfirst($munaqosyah->tingkat).' - '.($munaqosyah->tanggal_ujian ? date('d F Y', strtotime($munaqosyah->tanggal_ujian)) : '-'));
+        $sheet->getStyle('A2')->getFont()->setBold(true);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
+
+        $sheet->mergeCells('A3:G3');
+        $sheet->setCellValue('A3', 'Jangan mengubah kolom ID Pendaftaran/NIS/Nama/Kelas. Isi Status: T=Terdaftar, L=Lulus, TL=Tidak Lulus. Nilai 0-100 (boleh dikosongkan).');
+        $sheet->getStyle('A3')->getFont()->setItalic(true)->setSize(9);
+
+        // Header
+        $headers = ['ID Pendaftaran', 'NIS', 'Nama Siswa', 'Kelas Tartil', 'Status (T/L/TL)', 'Nilai (0-100)', 'Catatan'];
+        $col = 1;
+        foreach ($headers as $header) {
+            $colLetter = Coordinate::stringFromColumnIndex($col);
+            $cellRef = $colLetter.'4';
+            $sheet->setCellValue($cellRef, $header);
+            $sheet->getStyle($cellRef)->getFont()->setBold(true);
+            $sheet->getStyle($cellRef)->getAlignment()->setHorizontal('center');
+            $sheet->getStyle($cellRef)->getFill()->setFillType('solid')->getStartColor()->setRGB('F5F5F4');
+            $sheet->getStyle($cellRef)->getBorders()->getAllBorders()->setBorderStyle('thin');
+            $col++;
+        }
+
+        // Data peserta terdaftar (prefill status, nilai, catatan saat ini)
+        $row = 5;
+        foreach ($peserta as $p) {
+            $s = $p->siswa;
+            if (! $s) {
+                continue;
+            }
+
+            $sheet->setCellValue('A'.$row, $p->id);
+            $sheet->setCellValueExplicit('B'.$row, (string) $s->nis, DataType::TYPE_STRING);
+            $sheet->setCellValue('C'.$row, $s->nama);
+            $sheet->setCellValue('D'.$row, $s->kelasTartil->nama ?? '-');
+            $sheet->setCellValue('E'.$row, $p->status);
+            if ($p->nilai !== null) {
+                $sheet->setCellValue('F'.$row, $p->nilai);
+            }
+            if ($p->catatan) {
+                $sheet->setCellValue('G'.$row, $p->catatan);
+            }
+
+            foreach (range('A', 'G') as $c) {
+                $sheet->getCell($c.$row)->getStyle()->getBorders()->getAllBorders()->setBorderStyle('thin');
+            }
+
+            $row++;
+        }
+
+        // Lebar kolom
+        $sheet->getColumnDimension('A')->setWidth(14);
+        $sheet->getColumnDimension('B')->setWidth(14);
+        $sheet->getColumnDimension('C')->setWidth(30);
+        $sheet->getColumnDimension('D')->setWidth(18);
+        $sheet->getColumnDimension('E')->setWidth(15);
+        $sheet->getColumnDimension('F')->setWidth(12);
+        $sheet->getColumnDimension('G')->setWidth(30);
+
+        $filename = 'Template_Import_Nilai_Munaqosyah_'.preg_replace('/[^A-Za-z0-9]/', '_', $munaqosyah->nama).'.xlsx';
+
+        $response = new StreamedResponse(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        });
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment;filename="'.$filename.'"');
+        $response->headers->set('Cache-Control', 'max-age=0');
+
+        return $response;
+    }
+
+    // ==================== ADMIN: PROSES IMPORT NILAI ====================
+    // Baris tidak valid dilewati dan dilaporkan per baris; baris valid tetap tersimpan.
+    public function adminImportNilai(Request $request, UjianMunaqosyah $munaqosyah)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:2048',
+        ], [
+            'file.required' => 'File wajib diunggah.',
+            'file.mimes' => 'Format file harus xlsx atau xls.',
+            'file.max' => 'Ukuran file maksimal 2MB.',
+        ]);
+
+        try {
+            $spreadsheet = IOFactory::load($request->file('file')->getPathname());
+            $rows = $spreadsheet->getActiveSheet()->toArray();
+        } catch (\Exception $e) {
+            return back()->with('error', 'File tidak dapat dibaca: '.$e->getMessage());
+        }
+
+        // Header template berada di baris ke-4 (judul 2 baris + petunjuk)
+        $headerRow = $rows[3] ?? null;
+        if (! $headerRow || strtoupper(trim((string) ($headerRow[0] ?? ''))) !== 'ID PENDAFTARAN') {
+            return back()->with('error', 'Format file tidak sesuai. Gunakan template resmi yang diunduh dari tombol "Template Import Nilai".');
+        }
+
+        // Pendaftaran ujian ini, di-key by id agar lookup O(1)
+        $pendaftarans = $munaqosyah->pendaftarans()
+            ->with(['approval', 'siswa'])
+            ->get()
+            ->keyBy('id');
+
+        $sukses = 0;
+        $errors = [];
+
+        DB::beginTransaction();
+        try {
+            foreach (array_slice($rows, 4) as $i => $row) {
+                $baris = $i + 5; // nomor baris di Excel
+
+                // Lewati baris kosong total
+                if (count(array_filter($row, fn ($c) => $c !== null && trim((string) $c) !== '')) === 0) {
+                    continue;
+                }
+
+                $id = trim((string) ($row[0] ?? ''));
+                if (! ctype_digit($id) || ! $pendaftarans->has((int) $id)) {
+                    $errors[] = "Baris {$baris}: ID Pendaftaran '{$id}' tidak ditemukan pada ujian ini.";
+
+                    continue;
+                }
+                $pendaftaran = $pendaftarans->get((int) $id);
+
+                // Konsisten dengan adminNilaiBatch: peserta yang masih pending approval tidak bisa dinilai
+                if ($pendaftaran->approval && $pendaftaran->approval->status === 'pending') {
+                    $errors[] = "Baris {$baris}: ".($pendaftaran->siswa->nama ?? 'Siswa').' belum di-approve admin. Approve terlebih dahulu di menu Approval Pendaftaran.';
+
+                    continue;
+                }
+
+                $status = strtoupper(trim((string) ($row[4] ?? '')));
+                if (! in_array($status, ['T', 'L', 'TL'], true)) {
+                    $errors[] = "Baris {$baris}: Status '{$status}' tidak valid. Gunakan T, L, atau TL.";
+
+                    continue;
+                }
+
+                $nilaiRaw = trim((string) ($row[5] ?? ''));
+                $nilai = null;
+                if ($nilaiRaw !== '') {
+                    if (! is_numeric($nilaiRaw) || (int) $nilaiRaw != (float) $nilaiRaw || (int) $nilaiRaw < 0 || (int) $nilaiRaw > 100) {
+                        $errors[] = "Baris {$baris}: Nilai '{$nilaiRaw}' tidak valid. Harus angka bulat 0-100 atau dikosongkan.";
+
+                        continue;
+                    }
+                    $nilai = (int) $nilaiRaw;
+                }
+
+                $catatan = trim((string) ($row[6] ?? ''));
+
+                $pendaftaran->update([
+                    'status' => $status,
+                    'nilai' => $nilai,
+                    'catatan' => $catatan !== '' ? $catatan : null,
+                ]);
+                $sukses++;
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()->with('error', 'Import gagal diproses: '.$e->getMessage());
+        }
+
+        $message = "Import selesai: {$sukses} nilai peserta berhasil disimpan.";
+        if (! empty($errors)) {
+            $message .= ' '.count($errors).' baris dilewati.';
+        }
+
+        return redirect()->route('admin.munaqosyah.detail', $munaqosyah)
+            ->with('success', $message)
+            ->with('import_errors', $errors);
     }
 
     public function adminStore(Request $request)

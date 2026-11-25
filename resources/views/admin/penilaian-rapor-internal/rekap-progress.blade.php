@@ -8,6 +8,10 @@
             <h1 class="page-title-display">Progress Rapor</h1>
             <p class="page-subtitle">Monitoring pengisian nilai rapor per guru dan kelas</p>
         </div>
+        <a href="{{ route('admin.penilaian-rapor-internal.import', ['penilaian_id' => $penilaianId]) }}" class="btn-tartil-outline" style="text-decoration: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import Nilai via Excel
+        </a>
     </div>
 
     {{-- STEP 1: Pilih Penilaian --}}

@@ -108,12 +108,47 @@
     @endphp
     @if($pesertaAktif->count() > 0)
     {{-- Toggle Form Nilai --}}
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <h3 style="font-size: 16px; margin: 0; color: var(--text-primary); font-weight: 600;">Daftar Peserta</h3>
-        <button type="button" class="btn-tartil" style="font-size: 12px; padding: 6px 14px;" onclick="document.getElementById('formNilaiAdmin').classList.toggle('d-none');">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Input Nilai
-        </button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{{ route('admin.munaqosyah.import.template', $munaqosyah) }}" class="btn-tartil-outline" style="font-size: 12px; padding: 6px 14px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Template Import Nilai
+            </a>
+            <button type="button" class="btn-tartil-outline" style="font-size: 12px; padding: 6px 14px;" onclick="document.getElementById('formImportNilai').classList.toggle('d-none');">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import Nilai
+            </button>
+            <button type="button" class="btn-tartil" style="font-size: 12px; padding: 6px 14px;" onclick="document.getElementById('formNilaiAdmin').classList.toggle('d-none');">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Input Nilai
+            </button>
+        </div>
+    </div>
+
+    {{-- Form Import Nilai via Excel --}}
+    <div id="formImportNilai" class="{{ session('import_errors') ? '' : 'd-none' }}" style="margin-bottom: 20px;">
+        <form method="POST" action="{{ route('admin.munaqosyah.import.proses', $munaqosyah) }}" enctype="multipart/form-data" class="card-tartil" style="padding: 20px;">
+            @csrf
+            <h4 style="font-size: 14px; margin: 0 0 8px;">Import Nilai Munaqosyah via Excel</h4>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px;">
+                Unduh <a href="{{ route('admin.munaqosyah.import.template', $munaqosyah) }}" style="color: var(--accent);">template import</a> — seluruh {{ $pesertaAktif->count() }} peserta terdaftar sudah terisi otomatis. Isi kolom Status (T/L/TL), Nilai (0-100), dan Catatan, lalu unggah kembali file-nya di sini.
+            </p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                <input type="file" name="file" accept=".xlsx,.xls" class="form-input" style="flex: 1; min-width: 220px; font-size: 12px;" required>
+                <button type="submit" class="btn-tartil" style="font-size: 12px; padding: 8px 20px;">Proses Import</button>
+            </div>
+            @if(session('import_errors'))
+            <div style="margin-top: 12px; padding: 10px 14px; background: #FDF2F0; border-radius: 8px; font-size: 12px; color: #A85A52;">
+                <strong>Baris yang dilewati:</strong>
+                <ul style="margin: 6px 0 0; padding-left: 18px;">
+                    @foreach(session('import_errors') as $err)
+                    <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+        </form>
     </div>
 
     {{-- Form Input Nilai (Admin) --}}
