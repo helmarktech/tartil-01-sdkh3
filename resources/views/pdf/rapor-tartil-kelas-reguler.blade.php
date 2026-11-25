@@ -201,9 +201,9 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 {{-- Keputusan --}}
 <div class="keputusan">
     @if($rekap['r2_akhir'] >= 80)
-    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan&nbsp;<strong>berhak melanjutkan pembelajaran pada jenjang pembelajaran tartil berikutnya untuk peningkatan pembelajaran siswa</strong>.
+    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>berhak melanjutkan pembelajaran pada jenjang pembelajaran tartil berikutnya untuk peningkatan pembelajaran siswa</strong>.
     @else
-    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan&nbsp;<strong>tetap melanjutkan pembelajaran pada jenjang pembelajaran tartil yang sama untuk pemantapan</strong>.
+    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>tetap melanjutkan pembelajaran pada jenjang pembelajaran tartil yang sama untuk pemantapan</strong>.
     @endif
 </div>
 
@@ -212,7 +212,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 <table class="ttd-table">
     <tr>
         <td>
-            <div class="ttd-jabatan">Mu'alim</div>
+            <div class="ttd-jabatan"><br>Mu'alim</div>
             <div class="ttd-nama">({{ $kelasTartil->guru->nama ?? '........................' }})</div>
         </td>
         <td style="position: relative;">

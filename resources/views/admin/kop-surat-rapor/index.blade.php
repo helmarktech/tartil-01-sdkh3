@@ -268,9 +268,9 @@
                 {{-- Footer Preview — sama dengan desain TTD pada rapor PDF --}}
                 <div style="border-top: 1px solid #ddd; padding-top: 16px; font-size: 11px; color: #555;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;">
-                        {{-- Mu'alim (kiri) --}}
+                        {{-- Mu'alim (kiri) — sejajar dengan baris nama sekolah di kanan --}}
                         <div style="text-align: center; width: 50%;">
-                            <div style="margin-bottom: 40px; line-height: 1.6;">Mu'alim</div>
+                            <div style="margin-bottom: 40px; line-height: 1.6;"><br>Mu'alim</div>
                             <div style="font-weight: 600;">( ........................ )</div>
                         </div>
                         {{-- Kepala Sekolah (kanan) --}}

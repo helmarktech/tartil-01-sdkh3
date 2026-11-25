@@ -136,6 +136,9 @@ class KopSuratRaporTest extends TestCase
         // Nama sekolah tampil di bawah jabatan Kepala Sekolah pada TTD
         $this->assertStringContainsString('Kepala Sekolah<br>'.$kop->nama_sekolah, $html);
 
+        // Spasi antara "dinyatakan" dan teks tebal kesimpulan terjaga
+        $this->assertStringContainsString('dinyatakan <strong>tetap', $html);
+
         // Lulus: lanjut ke jenjang berikutnya
         $rekap['r2_akhir'] = 85;
         $html = view('pdf.rapor-tartil', compact('siswa', 'penilaian', 'kelas', 'kop', 'rekap'))->render();
