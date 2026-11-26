@@ -299,17 +299,26 @@ if ('serviceWorker' in navigator) {
         list.className = 'tselect-list';
         list.setAttribute('role', 'listbox');
 
-        Array.from(select.children).forEach((child) => {
-            if (child.tagName === 'OPTGROUP') {
-                const grup = document.createElement('div');
-                grup.className = 'tselect-group';
-                grup.textContent = child.label;
-                list.appendChild(grup);
-                Array.from(child.children).forEach((opt) => list.appendChild(buatItem(wrapper, select, opt)));
-            } else if (child.tagName === 'OPTION') {
-                list.appendChild(buatItem(wrapper, select, child));
-            }
-        });
+        // Bangun ulang daftar item dari opsi select asli.
+        // Dipanggil saat init dan setiap kali opsi select dimutasi script lain
+        // (misal filter surat-per-juz pada form setoran hafalan).
+        function bangunList() {
+            list.innerHTML = '';
+            Array.from(select.children).forEach((child) => {
+                if (child.tagName === 'OPTGROUP') {
+                    const grup = document.createElement('div');
+                    grup.className = 'tselect-group';
+                    grup.textContent = child.label;
+                    list.appendChild(grup);
+                    Array.from(child.children).forEach((opt) => list.appendChild(buatItem(wrapper, select, opt)));
+                } else if (child.tagName === 'OPTION') {
+                    list.appendChild(buatItem(wrapper, select, child));
+                }
+            });
+            sinkronLabel(wrapper, select);
+        }
+
+        bangunList();
 
         // Rakit: select asli ikut di dalam wrapper (tersembunyi tapi ikut submit)
         select.parentNode.insertBefore(wrapper, select);
@@ -360,6 +369,10 @@ if ('serviceWorker' in navigator) {
 
         // Sinkron bila value select diubah via script lain
         select.addEventListener('change', () => sinkronLabel(wrapper, select));
+
+        // Bangun ulang item bila opsi select dimutasi script lain
+        // (dropdown dependen, misal surat mengikuti juz terpilih)
+        new MutationObserver(() => bangunList()).observe(select, { childList: true, subtree: true });
     }
 
     function enhanceSemua(root) {
