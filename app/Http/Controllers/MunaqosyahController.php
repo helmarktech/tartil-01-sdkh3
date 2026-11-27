@@ -258,13 +258,40 @@ class MunaqosyahController extends Controller
     // lengkap dengan status & nilai saat ini — admin tinggal mengisi lalu mengunggah kembali.
     public function adminTemplateImportNilai(UjianMunaqosyah $munaqosyah)
     {
-        // Urutan status T → L → TL via sortBy (driver-agnostic, FIELD() hanya ada di MySQL)
         $peserta = $munaqosyah->pendaftarans()
             ->with(['siswa.kelasTartil'])
             ->orderBy('created_at')
-            ->get()
-            ->sortBy(fn ($p) => array_search($p->status, ['T', 'L', 'TL']))
-            ->values();
+            ->get();
+
+        return $this->templateImportNilaiExcel($munaqosyah, $peserta);
+    }
+
+    // ==================== GURU: TEMPLATE IMPORT NILAI (kelas sendiri) ====================
+    public function guruTemplateImportNilai(UjianMunaqosyah $munaqosyah)
+    {
+        $guru = auth()->user()?->guru;
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        }
+        $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id');
+
+        // Hanya peserta dari kelas tartil guru yang bersangkutan
+        $peserta = $munaqosyah->pendaftarans()
+            ->with(['siswa.kelasTartil'])
+            ->whereHas('siswa', fn ($q) => $q->whereIn('kelas_tartil_id', $kelasIds))
+            ->orderBy('created_at')
+            ->get();
+
+        return $this->templateImportNilaiExcel($munaqosyah, $peserta);
+    }
+
+    /**
+     * Bangun file Excel template import nilai dari daftar peserta.
+     */
+    private function templateImportNilaiExcel(UjianMunaqosyah $munaqosyah, $peserta)
+    {
+        // Urutan status T → L → TL via sortBy (driver-agnostic, FIELD() hanya ada di MySQL)
+        $peserta = $peserta->sortBy(fn ($p) => array_search($p->status, ['T', 'L', 'TL']))->values();
 
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -352,6 +379,27 @@ class MunaqosyahController extends Controller
     // Baris tidak valid dilewati dan dilaporkan per baris; baris valid tetap tersimpan.
     public function adminImportNilai(Request $request, UjianMunaqosyah $munaqosyah)
     {
+        return $this->prosesImportNilaiMunaqosyah($request, $munaqosyah, 'admin.munaqosyah.detail');
+    }
+
+    // ==================== GURU: PROSES IMPORT NILAI (kelas sendiri) ====================
+    public function guruImportNilai(Request $request, UjianMunaqosyah $munaqosyah)
+    {
+        $guru = auth()->user()?->guru;
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        }
+        $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id');
+
+        return $this->prosesImportNilaiMunaqosyah($request, $munaqosyah, 'guru.munaqosyah.detail', $kelasIds);
+    }
+
+    /**
+     * Inti proses import nilai munaqosyah. Jika $kelasIds diisi (jalur guru),
+     * hanya pendaftaran siswa kelas tersebut yang boleh diubah.
+     */
+    private function prosesImportNilaiMunaqosyah(Request $request, UjianMunaqosyah $munaqosyah, string $redirectRoute, $kelasIds = null)
+    {
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls|max:2048',
         ], [
@@ -373,11 +421,14 @@ class MunaqosyahController extends Controller
             return back()->with('error', 'Format file tidak sesuai. Gunakan template resmi yang diunduh dari tombol "Template Import Nilai".');
         }
 
-        // Pendaftaran ujian ini, di-key by id agar lookup O(1)
-        $pendaftarans = $munaqosyah->pendaftarans()
-            ->with(['approval', 'siswa'])
-            ->get()
-            ->keyBy('id');
+        // Pendaftaran ujian ini, di-key by id agar lookup O(1).
+        // Jalur guru: dibatasi hanya siswa kelas tartilnya sendiri.
+        $pendaftaransQuery = $munaqosyah->pendaftarans()
+            ->with(['approval', 'siswa']);
+        if ($kelasIds !== null) {
+            $pendaftaransQuery->whereHas('siswa', fn ($q) => $q->whereIn('kelas_tartil_id', $kelasIds));
+        }
+        $pendaftarans = $pendaftaransQuery->get()->keyBy('id');
 
         $sukses = 0;
         $errors = [];
@@ -446,7 +497,7 @@ class MunaqosyahController extends Controller
             $message .= ' '.count($errors).' baris dilewati.';
         }
 
-        return redirect()->route('admin.munaqosyah.detail', $munaqosyah)
+        return redirect()->route($redirectRoute, $munaqosyah)
             ->with('success', $message)
             ->with('import_errors', $errors);
     }
@@ -686,6 +737,13 @@ class MunaqosyahController extends Controller
             return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
         }
         $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id');
+
+        // Daftar pendaftar, statistik, dan form nilai hanya memuat siswa
+        // dari kelas tartil guru — bukan seluruh peserta lintas kelas.
+        $munaqosyah->setRelation('pendaftarans', $munaqosyah->pendaftarans
+            ->filter(fn ($p) => $p->siswa && $kelasIds->contains($p->siswa->kelas_tartil_id))
+            ->values());
+
         $siswas = Siswa::whereIn('kelas_tartil_id', $kelasIds)
             ->where('status', 'aktif')
             ->whereNotIn('id', $munaqosyah->pendaftarans->pluck('siswa_id'))
@@ -698,6 +756,12 @@ class MunaqosyahController extends Controller
     // Validasi: hanya siswa yang sudah di-approve admin yang bisa dinilai
     public function guruNilaiBatch(Request $request, UjianMunaqosyah $munaqosyah)
     {
+        $guru = auth()->user()?->guru;
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan untuk akun ini. Hubungi admin.');
+        }
+        $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id');
+
         $request->validate([
             'nilai' => 'required|array',
             'nilai.*.pendaftaran_id' => 'required|exists:munaqosyah_pendaftarans,id',
@@ -711,6 +775,11 @@ class MunaqosyahController extends Controller
                 $pendaftaran = MunaqosyahPendaftaran::with('approval')->find($n['pendaftaran_id']);
                 if ($pendaftaran->munaqosyah_id !== $munaqosyah->id) {
                     continue;
+                }
+
+                // Guru hanya boleh menilai siswa kelasnya sendiri
+                if (! $kelasIds->contains($pendaftaran->siswa->kelas_tartil_id ?? null)) {
+                    throw new \Exception('Siswa '.($pendaftaran->siswa->nama ?? '').' bukan siswa kelas Anda.');
                 }
 
                 // Validasi: hanya siswa yang sudah di-approve admin yang bisa dinilai
@@ -806,9 +875,7 @@ class MunaqosyahController extends Controller
     // Hanya siswa yang sudah di-approve admin yang bisa diubah statusnya
     public function guruLulusSemua(UjianMunaqosyah $munaqosyah)
     {
-        $count = $munaqosyah->pendaftarans()
-            ->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR)
-            ->whereDoesntHave('approval', fn ($q) => $q->where('status', 'pending'))
+        $count = $this->massStatusQuery($munaqosyah)
             ->update([
                 'status' => MunaqosyahPendaftaran::STATUS_LULUS,
             ]);
@@ -818,14 +885,36 @@ class MunaqosyahController extends Controller
 
     public function guruTidakLulusSemua(UjianMunaqosyah $munaqosyah)
     {
-        $count = $munaqosyah->pendaftarans()
-            ->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR)
-            ->whereDoesntHave('approval', fn ($q) => $q->where('status', 'pending'))
+        $count = $this->massStatusQuery($munaqosyah)
             ->update([
                 'status' => MunaqosyahPendaftaran::STATUS_TIDAK_LULUS,
             ]);
 
         return back()->with('success', "{$count} siswa dinyatakan tidak lulus.");
+    }
+
+    /**
+     * Query mass update status T → L/TL. Admin boleh semua peserta;
+     * guru hanya siswa dari kelas tartilnya sendiri.
+     */
+    private function massStatusQuery(UjianMunaqosyah $munaqosyah)
+    {
+        $query = $munaqosyah->pendaftarans()
+            ->where('status', MunaqosyahPendaftaran::STATUS_TERDAFTAR)
+            ->whereDoesntHave('approval', fn ($q) => $q->where('status', 'pending'));
+
+        $user = auth()->user();
+        if (! $user->isAdmin()) {
+            $guru = $user->guru;
+            if (! $guru) {
+                // Guru tanpa data guru tidak boleh mengubah apa pun
+                return $query->whereRaw('1 = 0');
+            }
+            $kelasIds = Kelas::where('guru_id', $guru->id)->pluck('id');
+            $query->whereHas('siswa', fn ($q) => $q->whereIn('kelas_tartil_id', $kelasIds));
+        }
+
+        return $query;
     }
 
     // ==================== ADMIN: REKAP HISTORY SEKOLAH ====================

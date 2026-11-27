@@ -139,6 +139,10 @@ class KopSuratRaporTest extends TestCase
         // Spasi antara "dinyatakan" dan teks tebal kesimpulan terjaga
         $this->assertStringContainsString('dinyatakan <strong>tetap', $html);
 
+        // Kalimat pembuka kesimpulan: penilaian harian & munaqosyah + nama semester
+        $this->assertStringContainsString('Berdasarkan hasil penilaian harian dan munaqosyah pada semester '.$semester->nama, $html);
+        $this->assertStringNotContainsString('Berdasarkan hasil evaluasi rapor', $html);
+
         // Lulus: lanjut ke jenjang berikutnya
         $rekap['r2_akhir'] = 85;
         $html = view('pdf.rapor-tartil', compact('siswa', 'penilaian', 'kelas', 'kop', 'rekap'))->render();

@@ -61,6 +61,7 @@
     margin: 0 auto;
     font-size: 9px;
 }
+.d-none { display: none !important; }
 </style>
 
 <div>
@@ -70,6 +71,43 @@
             <p class="page-subtitle">{{ $kelas->nama }} ({{ $kelas->jenis }}) — {{ $siswaLengkap }}/{{ $totalSiswa }} siswa lengkap — {{ $indikators->count() }} indikator</p>
         </div>
         <a href="{{ route('guru.penilaian-rapor.pilih-kelas', $penilaian->id) }}" class="btn-tartil-outline" style="text-decoration: none;">Pilih Kelas Lain</a>
+    </div>
+
+    {{-- Import Nilai via Excel (hanya kelas ini) --}}
+    <div class="card-tartil" style="margin-bottom: 16px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 12px; color: var(--text-muted);">
+            Download template berisi {{ $totalSiswa }} siswa kelas ini, isi nilai per indikator, lalu upload kembali.
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{{ route('guru.penilaian-rapor.import.template', [$penilaian->id, $kelas->id]) }}" class="btn-tartil-outline" style="font-size: 12px; padding: 6px 14px; text-decoration: none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Template Import
+            </a>
+            <button type="button" class="btn-tartil" style="font-size: 12px; padding: 6px 14px;" onclick="document.getElementById('formImportNilaiRapor').classList.toggle('d-none');">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import Nilai
+            </button>
+        </div>
+    </div>
+
+    <div id="formImportNilaiRapor" class="{{ session('import_errors') ? '' : 'd-none' }}" style="margin-bottom: 16px;">
+        <form method="POST" action="{{ route('guru.penilaian-rapor.import.proses', [$penilaian->id, $kelas->id]) }}" enctype="multipart/form-data" class="card-tartil" style="padding: 14px 16px;">
+            @csrf
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                <input type="file" name="file" accept=".xlsx,.xls" class="form-input" style="flex: 1; min-width: 220px; font-size: 12px;" required>
+                <button type="submit" class="btn-tartil" style="font-size: 12px; padding: 8px 20px;">Proses Import</button>
+            </div>
+            @if(session('import_errors'))
+            <div style="margin-top: 12px; padding: 10px 14px; background: #FDF2F0; border-radius: 8px; font-size: 12px; color: #A85A52;">
+                <strong>Baris yang dilewati:</strong>
+                <ul style="margin: 6px 0 0; padding-left: 18px;">
+                    @foreach(session('import_errors') as $err)
+                    <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+        </form>
     </div>
 
     {{-- Progress --}}

@@ -353,6 +353,8 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
         Route::get('/munaqosyah/{munaqosyah}', [MunaqosyahController::class, 'guruDetail'])->name('munaqosyah.detail');
         Route::post('/munaqosyah/{munaqosyah}/daftarkan', [MunaqosyahController::class, 'guruDaftarkan'])->name('munaqosyah.daftarkan');
         Route::post('/munaqosyah/{munaqosyah}/nilai', [MunaqosyahController::class, 'guruNilaiBatch'])->name('munaqosyah.nilai');
+        Route::get('/munaqosyah/{munaqosyah}/import-nilai/template', [MunaqosyahController::class, 'guruTemplateImportNilai'])->name('munaqosyah.import.template');
+        Route::post('/munaqosyah/{munaqosyah}/import-nilai', [MunaqosyahController::class, 'guruImportNilai'])->name('munaqosyah.import.proses');
         Route::post('/munaqosyah/{munaqosyah}/lulus-semua', [MunaqosyahController::class, 'guruLulusSemua'])->name('munaqosyah.lulussemua');
         Route::post('/munaqosyah/{munaqosyah}/tidak-lulus-semua', [MunaqosyahController::class, 'guruTidakLulusSemua'])->name('munaqosyah.tidaklulussemua');
     });
@@ -373,6 +375,8 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     Route::get('/penilaian-rapor/{penilaian}/kelas', [PenilaianRaporInternalController::class, 'guruPilihKelas'])->name('penilaian-rapor.pilih-kelas');
     Route::get('/penilaian-rapor/{penilaian}/kelas/{kelasId}/nilai', [PenilaianRaporInternalController::class, 'guruIsiNilai'])->name('penilaian-rapor.isi-nilai');
     Route::post('/penilaian-rapor/{penilaian}/kelas/{kelasId}/nilai', [PenilaianRaporInternalController::class, 'guruSimpanNilai'])->name('penilaian-rapor.simpan-nilai');
+    Route::get('/penilaian-rapor/{penilaian}/kelas/{kelasId}/import-nilai/template', [PenilaianRaporInternalController::class, 'guruTemplateImportNilai'])->name('penilaian-rapor.import.template');
+    Route::post('/penilaian-rapor/{penilaian}/kelas/{kelasId}/import-nilai', [PenilaianRaporInternalController::class, 'guruProsesImportNilai'])->name('penilaian-rapor.import.proses');
     Route::get('/rekap-nilai-rapor', [PenilaianRaporInternalController::class, 'guruRekapNilai'])->name('penilaian-rapor.rekap');
 
     // ===== DATA SISWA KELAS TARTIL (edit no hp oleh guru) =====

@@ -6,36 +6,36 @@
 <title>Rapor {{ $siswa->nama }}</title>
 <style>
 @page { margin: 10mm 10mm 30mm 10mm; size: A4 portrait; }
-body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; margin: 0; padding: 0; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 9px; color: #333; margin: 0; padding: 0; }
 
 /* Kop */
 .kop-table { width: 100%; border-bottom: 2px solid #2c3e50; margin-bottom: 8px; padding-bottom: 6px; }
 .kop-table td { vertical-align: middle; padding: 0; }
-.kop-logo { width: 45px; height: 45px; object-fit: contain; }
-.kop-logo-box { width: 45px; height: 45px; border: 1px solid #ccc; text-align: center; line-height: 45px; font-size: 8px; color: #999; }
-.kop-title { font-size: 12px; font-weight: 700; color: #2c3e50; text-transform: uppercase; text-align: center; }
-.kop-subtitle { font-size: 9px; color: #555; text-align: center; }
-.kop-school { font-size: 10px; font-weight: 700; color: #2c3e50; text-align: center; margin-top: 2px; }
-.kop-meta { font-size: 7px; color: #777; text-align: center; margin-top: 1px; }
+.kop-logo { width: 60px; height: 60px; object-fit: contain; }
+.kop-logo-box { width: 60px; height: 60px; border: 1px solid #ccc; text-align: center; line-height: 60px; font-size: 9px; color: #999; }
+.kop-title { font-size: 13px; font-weight: 700; color: #2c3e50; text-transform: uppercase; text-align: center; }
+.kop-subtitle { font-size: 10px; color: #555; text-align: center; }
+.kop-school { font-size: 11px; font-weight: 700; color: #2c3e50; text-align: center; margin-top: 2px; }
+.kop-meta { font-size: 8px; color: #777; text-align: center; margin-top: 1px; }
 
 /* Info */
 .info-box { width: 100%; border: 1px solid #ccc; border-radius: 3px; padding: 6px 8px; margin-bottom: 8px; background: #fafafa; }
-.info-box td { font-size: 8px; padding: 1px 4px; vertical-align: top; }
+.info-box td { font-size: 9px; padding: 1px 4px; vertical-align: top; }
 .info-box .label { font-weight: 600; color: #444; width: 18%; }
 .info-box .value { width: 32%; }
 
 /* Section */
-.section-title { font-size: 9px; font-weight: 700; color: #2c3e50; margin: 8px 0 4px; padding-bottom: 2px; border-bottom: 1px solid #2c3e50; }
+.section-title { font-size: 10px; font-weight: 700; color: #2c3e50; margin: 8px 0 4px; padding-bottom: 2px; border-bottom: 1px solid #2c3e50; }
 
 /* Data Table */
 .data-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
-.data-table th { background: #2c3e50; color: #fff; font-size: 7px; font-weight: 600; padding: 3px 5px; border: 1px solid #2c3e50; text-align: left; }
-.data-table td { padding: 2px 5px; font-size: 8px; border: 1px solid #ccc; vertical-align: middle; }
+.data-table th { background: #2c3e50; color: #fff; font-size: 8px; font-weight: 600; padding: 3px 5px; border: 1px solid #2c3e50; text-align: left; }
+.data-table td { padding: 3px 5px; font-size: 9px; border: 1px solid #ccc; vertical-align: middle; }
 .data-table tr:nth-child(even) td { background: #f9f9f9; }
 .tc { text-align: center; }
 
 /* Badge */
-.badge { display: inline-block; padding: 1px 4px; border-radius: 2px; font-size: 7px; font-weight: 600; }
+.badge { display: inline-block; padding: 1px 4px; border-radius: 2px; font-size: 8px; font-weight: 600; }
 .bb { background: #e8f5e9; color: #2e7d32; }
 .bc { background: #fff8e1; color: #f57f17; }
 .bk { background: #fbe9e7; color: #c62828; }
@@ -43,26 +43,26 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 /* R2 */
 .r2-table { width: 100%; border-collapse: collapse; margin: 4px 0 6px; }
 .r2-table td { text-align: center; padding: 5px 3px; border: 1px solid #ddd; }
-.r2-label { font-size: 6px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-.r2-value { font-size: 14px; font-weight: 700; }
-.r2-desc { font-size: 6px; color: #999; }
+.r2-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+.r2-value { font-size: 16px; font-weight: 700; }
+.r2-desc { font-size: 7px; color: #999; }
 
 /* Predikat */
 .predikat { text-align: center; padding: 5px; border: 1px solid #2c3e50; border-radius: 3px; margin: 4px 0 8px; }
-.predikat .pl { font-size: 7px; color: #666; text-transform: uppercase; }
-.predikat .pv { font-size: 11px; font-weight: 700; color: #2c3e50; margin-top: 1px; }
-.keputusan { font-size: 9px; text-align: center; padding: 8px 12px; margin: 8px 0; border: 1px solid #d4d4d4; border-radius: 4px; line-height: 1.6; color: #44403c; }
+.predikat .pl { font-size: 8px; color: #666; text-transform: uppercase; }
+.predikat .pv { font-size: 12px; font-weight: 700; color: #2c3e50; margin-top: 1px; }
+.keputusan { font-size: 10px; text-align: center; padding: 8px 12px; margin: 8px 0; border: 1px solid #d4d4d4; border-radius: 4px; line-height: 1.6; color: #44403c; }
 .keputusan strong { color: #171717; }
 
 /* TTD */
 .ttd-spacer { height: 15px; }
 .ttd-table { width: 100%; border-collapse: collapse; }
-.ttd-table td { width: 50%; text-align: center; vertical-align: bottom; font-size: 8px; padding: 0 15px; border: none; }
+.ttd-table td { width: 50%; text-align: center; vertical-align: bottom; font-size: 9px; padding: 0 15px; border: none; }
 .ttd-jabatan { margin-bottom: 30px; line-height: 1.6; }
 .ttd-nama { font-weight: 700; }
-.ttd-nip { font-size: 7px; color: #666; margin-top: 2px; }
+.ttd-nip { font-size: 8px; color: #666; margin-top: 2px; }
 
-.catatan { font-size: 7px; color: #888; font-style: italic; text-align: center; margin-top: 6px; padding: 4px; background: #f5f5f5; border-radius: 2px; }
+.catatan { font-size: 8px; color: #888; font-style: italic; text-align: center; margin-top: 6px; padding: 4px; background: #f5f5f5; border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -70,7 +70,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 {{-- Kop Surat --}}
 <table class="kop-table">
     <tr>
-        <td style="width: 50px;">
+        <td style="width: 64px;">
             @if($kop->logo_base64)
             <img src="{{ $kop->logo_base64 }}" class="kop-logo">
             @else
@@ -85,7 +85,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
             <div class="kop-meta">{{ $kop->alamat }}{{ $kop->alamat && $kop->telepon ? ' | Telp: ' : '' }}{{ $kop->telepon }}</div>
             @endif
         </td>
-        <td style="width: 50px; text-align: right;">
+        <td style="width: 64px; text-align: right;">
             @if($kop->logo_kanan_base64)
             <img src="{{ $kop->logo_kanan_base64 }}" class="kop-logo">
             @endif
@@ -121,7 +121,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
     </tr>
     @if($rekap['is_mutasi'])
     <tr>
-        <td colspan="4" style="background: #FFF8E1; color: #856404; font-size: 7px; padding: 2px 4px; text-align: center;">
+        <td colspan="4" style="background: #FFF8E1; color: #856404; font-size: 8px; padding: 2px 4px; text-align: center;">
             Siswa mutasi masuk — Jurnal dihitung sejak {{ $rekap['tanggal_masuk_kelas_tartil']?->format('d/m/Y') ?? '-' }}
         </td>
     </tr>
@@ -189,9 +189,9 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #333; m
 {{-- Keputusan --}}
 <div class="keputusan">
     @if($rekap['r2_akhir'] >= 80)
-    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>berhak melanjutkan pembelajaran pada jenjang pembelajaran tartil berikutnya untuk peningkatan pembelajaran siswa</strong>.
+    Berdasarkan hasil penilaian harian dan munaqosyah pada semester {{ $penilaian->semester->nama ?? '-' }}, Ananda {{ $siswa->nama }} dinyatakan <strong>berhak melanjutkan pembelajaran pada jenjang pembelajaran tartil berikutnya untuk peningkatan pembelajaran siswa</strong>.
     @else
-    Berdasarkan hasil evaluasi rapor, Ananda {{ $siswa->nama }} dinyatakan <strong>tetap melanjutkan pembelajaran pada jenjang pembelajaran tartil yang sama untuk pemantapan</strong>.
+    Berdasarkan hasil penilaian harian dan munaqosyah pada semester {{ $penilaian->semester->nama ?? '-' }}, Ananda {{ $siswa->nama }} dinyatakan <strong>tetap melanjutkan pembelajaran pada jenjang pembelajaran tartil yang sama untuk pemantapan</strong>.
     @endif
 </div>
 

@@ -384,6 +384,31 @@ class PenilaianRaporInternalController extends Controller
     // ═══════════════════════════════════════════════
     public function adminTemplateImportNilai(PenilaianRaporInternal $penilaian, Kelas $kelas)
     {
+        return $this->templateImportNilaiExcel($penilaian, $kelas);
+    }
+
+    // ═══════════════════════════════════════════════
+    // GURU: TEMPLATE IMPORT NILAI RAPOR (kelas sendiri)
+    // ═══════════════════════════════════════════════
+    public function guruTemplateImportNilai(PenilaianRaporInternal $penilaian, $kelasId)
+    {
+        $guru = auth()->user()?->guru;
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan.');
+        }
+        $kelas = Kelas::where('id', $kelasId)->where('guru_id', $guru->id)->first();
+        if (! $kelas) {
+            return back()->with('error', 'Kelas tidak ditemukan atau bukan kelas Anda.');
+        }
+
+        return $this->templateImportNilaiExcel($penilaian, $kelas);
+    }
+
+    /**
+     * Bangun file Excel template import nilai rapor untuk 1 kelas tartil.
+     */
+    private function templateImportNilaiExcel(PenilaianRaporInternal $penilaian, Kelas $kelas)
+    {
         $indikators = IndikatorPenilaian::byJenis($kelas->jenis);
         if ($indikators->isEmpty()) {
             return back()->with('error', 'Belum ada indikator untuk jenis kelas "'.$kelas->jenis.'". Atur dulu di menu Pengaturan Kelas.');
@@ -494,6 +519,42 @@ class PenilaianRaporInternalController extends Controller
     // ═══════════════════════════════════════════════
     public function adminProsesImportNilai(Request $request, PenilaianRaporInternal $penilaian, Kelas $kelas)
     {
+        return $this->prosesImportNilaiRapor(
+            $request, $penilaian, $kelas,
+            // Admin murni bukan guru — kolom diisi_oleh nullable
+            auth()->user()?->guru?->id,
+            'admin.penilaian-rapor-internal.import',
+            ['penilaian_id' => $penilaian->id, 'kelas_id' => $kelas->id]
+        );
+    }
+
+    // ═══════════════════════════════════════════════
+    // GURU: PROSES IMPORT NILAI RAPOR (kelas sendiri)
+    // ═══════════════════════════════════════════════
+    public function guruProsesImportNilai(Request $request, PenilaianRaporInternal $penilaian, $kelasId)
+    {
+        $guru = auth()->user()?->guru;
+        if (! $guru) {
+            return back()->with('error', 'Data guru tidak ditemukan.');
+        }
+        $kelas = Kelas::where('id', $kelasId)->where('guru_id', $guru->id)->first();
+        if (! $kelas) {
+            return back()->with('error', 'Kelas tidak ditemukan atau bukan kelas Anda.');
+        }
+
+        return $this->prosesImportNilaiRapor(
+            $request, $penilaian, $kelas, $guru->id,
+            'guru.penilaian-rapor.isi-nilai',
+            [$penilaian->id, $kelas->id]
+        );
+    }
+
+    /**
+     * Inti proses import nilai rapor per kelas. Baris tidak valid dilewati
+     * dan dilaporkan per baris; cache R2 siswa terpengaruh dibuang.
+     */
+    private function prosesImportNilaiRapor(Request $request, PenilaianRaporInternal $penilaian, Kelas $kelas, ?int $diisiOleh, string $redirectRoute, array $redirectParams)
+    {
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls|max:2048',
         ], [
@@ -549,8 +610,6 @@ class PenilaianRaporInternalController extends Controller
         $nilaiTersimpan = 0;
         $errors = [];
         $siswaTerpengaruh = [];
-        // Admin murni bukan guru — kolom diisi_oleh nullable
-        $diisiOleh = auth()->user()?->guru?->id;
         $now = now();
 
         DB::beginTransaction();
@@ -630,10 +689,7 @@ class PenilaianRaporInternalController extends Controller
             $message .= ' '.count($errors).' baris dilewati.';
         }
 
-        return redirect()->route('admin.penilaian-rapor-internal.import', [
-            'penilaian_id' => $penilaian->id,
-            'kelas_id' => $kelas->id,
-        ])
+        return redirect()->route($redirectRoute, $redirectParams)
             ->with('success', $message)
             ->with('import_errors', $errors);
     }
